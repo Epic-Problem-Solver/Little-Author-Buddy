@@ -60,7 +60,7 @@ pub struct Settings {
     /// Index into the OS monitor list for the desk; None = primary monitor.
     pub desk_monitor: Option<usize>,
     pub roam_all_monitors: bool,
-    /// Folder for exported journal .md files; None = <Documents>/Little Writer Journal
+    /// Folder for exported journal .md files; None = <Documents>/Little Author Journal
     pub journal_dir: Option<String>,
     /// Selected writing tool; only used if unlocked.
     pub tool: Tool,

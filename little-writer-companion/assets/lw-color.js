@@ -1,4 +1,4 @@
-// Little Writer companion colour helper (fallback for browsers/webviews without CSS relative colour).
+// Little Author Buddy colour helper (fallback for browsers/webviews without CSS relative colour).
 // lwApplyColor(el, '#e8cfa9') sets --body, --shade and --hands (shade = hands = ~25% darker in OKLCH,
 // or lighter when the body is very dark). Same rule as the CSS default in lw-character.css.
 (function (g) {

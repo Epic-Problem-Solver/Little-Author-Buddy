@@ -13,7 +13,7 @@ for (const n of Object.keys(LWPalette.PRESETS)) {
   b.onclick = () => { colors = LWPalette.colors(n); sync(); }; $('presets').append(b);
 }
 document.querySelectorAll('[data-c]').forEach(i => i.oninput = () => { colors[i.dataset.c] = i.value; if (i.dataset.c === 'body') Object.assign(colors, LWPalette.derive(i.value) || {}); ch.setColors(colors); });
-$('buddy').oninput = () => document.title = `Welcome to Little Writer — ${$('buddy').value || 'your buddy'}`;
+$('buddy').oninput = () => document.title = `Welcome to Little Author — ${$('buddy').value || 'your buddy'}`;
 $('finish').onclick = async () => {
   $('finish').disabled = true;
   try { await I('finish_onboarding', { buddy: $('buddy').value, colors, title: $('title').value }); }

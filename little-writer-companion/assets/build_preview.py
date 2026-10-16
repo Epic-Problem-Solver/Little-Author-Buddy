@@ -18,14 +18,14 @@ sections=[
  ('Derived shade/hands from --body only',[cell('proud','idle',f'--body {b}',extra=f'style="--body:{b}"') for b in ['#cfe6ff','#ffd0dc','#d6f0c4','#3a3a48','#1f1a17']]),
 ]
 body=''.join(f'<h2>{t}</h2>{g(c)}' for t,c in sections)
-html=f'''<!doctype html><html><head><meta charset="utf-8"><title>Little Writer — character preview v0.7</title>
+html=f'''<!doctype html><html><head><meta charset="utf-8"><title>Little Author Buddy — character preview v0.7</title>
 <link rel="stylesheet" href="lw-character.css"><script src="lw-color.js"></script><style>
 body{{font:14px system-ui,sans-serif;background:#ead5b3;color:#241414;margin:20px}}
 h2{{margin:16px 0 6px;font-size:17px}}.grid{{display:flex;flex-wrap:wrap;gap:10px}}
 figure{{margin:0;overflow:hidden;background:#f3e4cb;border-radius:12px;padding:6px;text-align:center}}figcaption{{font-weight:600;font-size:13px}}
 #ctl label{{margin-right:14px}}#ctl{{background:#f3e4cb;padding:10px;border-radius:10px;display:inline-block}}
 .hov .lw-ui{{transform:scale(1.12)}}.hov .lw-ui-glyph{{transform:rotate(90deg)}}.hov .lw-ui-gear .lw-ui-bg{{fill:#f4dfbf}}.hov .lw-ui-close .lw-ui-bg{{fill:#e9867a}}
-</style></head><body><h1>Little Writer companion v0.7 — all states</h1>
+</style></head><body><h1>Little Author Buddy v0.7 — all states</h1>
 <div id="ctl"><label>--body <input type="color" data-v="--body" value="#e8cfa9"></label><label>--outline <input type="color" data-v="--outline" value="#241414"></label>
 <label><input type="checkbox" id="js"> use lwApplyColor() fallback</label>
 <button data-p="#e8cfa9,#241414">Beige</button><button data-p="#cfe6ff,#1b2340">Sky</button><button data-p="#ffd0dc,#3a1424">Rose</button><button data-p="#d6f0c4,#1d2b14">Mint</button><button data-p="#2e2a35,#0d0b10">Night</button>

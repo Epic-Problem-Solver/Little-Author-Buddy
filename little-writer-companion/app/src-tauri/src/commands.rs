@@ -64,7 +64,7 @@ pub fn update_settings(st: State<AppState>, settings: store::Settings) {
 
 fn journal_dir(app: &AppHandle, d: &store::Data) -> PathBuf {
     d.settings.journal_dir.as_ref().filter(|p| !p.trim().is_empty()).map(PathBuf::from).unwrap_or_else(|| {
-        app.path().document_dir().unwrap_or_else(|_| app.path().home_dir().unwrap_or_default()).join("Little Writer Journal")
+        app.path().document_dir().unwrap_or_else(|_| app.path().home_dir().unwrap_or_default()).join("Little Author Journal")
     })
 }
 
@@ -150,9 +150,9 @@ pub fn render_png(svg: &str, scale: f32) -> Result<Vec<u8>, String> {
 #[tauri::command]
 pub fn save_snapshot(app: AppHandle, svg: String) -> Result<String, String> {
     let png = render_png(&svg, 2.0)?;
-    let dir = app.path().picture_dir().or_else(|_| app.path().home_dir()).map_err(|e| e.to_string())?.join("Little Writer");
+    let dir = app.path().picture_dir().or_else(|_| app.path().home_dir()).map_err(|e| e.to_string())?.join("Little Author");
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-    let name = format!("little-writer-{}.png", chrono::Local::now().format("%Y-%m-%d_%H-%M-%S"));
+    let name = format!("little-author-{}.png", chrono::Local::now().format("%Y-%m-%d_%H-%M-%S"));
     let path = dir.join(&name);
     std::fs::write(&path, png).map_err(|e| e.to_string())?;
     Ok(path.display().to_string())

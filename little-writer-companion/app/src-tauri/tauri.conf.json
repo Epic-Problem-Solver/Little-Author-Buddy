@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Little Writer Companion",
+  "productName": "Little Author Buddy",
   "version": "0.6.2",
   "identifier": "dev.lwc.companion",
   "build": {
@@ -11,7 +11,7 @@
     "windows": [
       {
         "label": "overlay",
-        "title": "Little Writer Companion",
+        "title": "Little Author Buddy",
         "transparent": true,
         "decorations": false,
         "alwaysOnTop": true,

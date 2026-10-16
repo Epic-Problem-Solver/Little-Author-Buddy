@@ -55,8 +55,8 @@ Inspired by publicly described behavior of _Little Writer Desktop Companion_ (
 
 ### Capture and snapshots — v0.4
 
-- No window is ever excluded from screenshots or recordings (`contentProtected: false` everywhere; no display-affinity exclusion; macOS sharing type not none). Windows are titled and are not tool windows, so OBS Window capture can list them. Recommended OBS mode: Display capture (or Window capture of "Little Writer — Home", using the Windows 10 capture method). Game capture is not supported for desktop windows.
-- **Snapshot** (tray item and the gear menu on the desk): renders the companion plus desk from its SVG (styles inlined, current frame) with resvg into a transparent 2× PNG in `Pictures/Little Writer/little-writer-<date>_<time>.png`, then shows a confirmation. It does not depend on screen capture.
+- No window is ever excluded from screenshots or recordings (`contentProtected: false` everywhere; no display-affinity exclusion; macOS sharing type not none). Windows are titled and are not tool windows, so OBS Window capture can list them. Recommended OBS mode: Display capture (or Window capture of "Little Author — Home", using the Windows 10 capture method). Game capture is not supported for desktop windows.
+- **Snapshot** (tray item and the gear menu on the desk): renders the companion plus desk from its SVG (styles inlined, current frame) with resvg into a transparent 2× PNG in `Pictures/Little Author/little-author-<date>_<time>.png`, then shows a confirmation. It does not depend on screen capture.
 
 ### Writing tools and progression — v0.4
 

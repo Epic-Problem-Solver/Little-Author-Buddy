@@ -1,4 +1,4 @@
-# Little Writer Companion — Test Plan (v1)
+# Little Author Buddy — Test Plan (v1)
 
 Source: `SPEC.md` (as of 2026-10-14 18:18). Scope = v1 acceptance, Windows first; macOS/Linux checks marked **[P2]** run once those builds exist.
 Verification methods: **M** = manual/observed, **A** = automated (unit/integration test), **I** = log/file/DB inspection, **N** = network capture, **S** = static code review.

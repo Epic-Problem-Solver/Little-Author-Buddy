@@ -1,4 +1,4 @@
-/* Little Writer companion v0.7
+/* Little Author Buddy v0.7
    State API: <svg class="lw-char" data-face="…" data-body="…" data-tool="…" data-side="right|left" data-dir="left"> — see README.md */
 .lw-char{
   --body:#e8cfa9;--outline:#241414;

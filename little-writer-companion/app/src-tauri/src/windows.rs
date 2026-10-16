@@ -106,7 +106,7 @@ pub fn do_toggle(app: &AppHandle, c: &input::Counters) -> bool {
         let _ = t.pause.set_text(if p { "Resume listening" } else { "Pause listening" });
     }
     if let Some(t) = app.tray_by_id("main") {
-        let _ = t.set_tooltip(Some(if p { "Little Writer — Paused" } else { "Little Writer — Listening" }));
+        let _ = t.set_tooltip(Some(if p { "Little Author — Paused" } else { "Little Author — Listening" }));
     }
     p
 }
@@ -139,7 +139,7 @@ pub fn open_window(app: &AppHandle, tab: &str) {
             return;
         }
         let _ = tauri::WebviewWindowBuilder::new(&h, "settings", tauri::WebviewUrl::App("settings.html".into()))
-            .title("Little Writer Companion").inner_size(580.0, 680.0).content_protected(false).build();
+            .title("Little Author Buddy").inner_size(580.0, 680.0).content_protected(false).build();
     });
 }
 
@@ -148,7 +148,7 @@ pub fn open_onboarding(app: &AppHandle) {
     let _ = app.run_on_main_thread(move || {
         if let Some(w) = h.get_webview_window("onboarding") { let _ = w.show(); let _ = w.set_focus(); return; }
         let _ = tauri::WebviewWindowBuilder::new(&h, "onboarding", tauri::WebviewUrl::App("onboarding.html".into()))
-            .title("Welcome to Little Writer").inner_size(480.0, 600.0).resizable(false).center()
+            .title("Welcome to Little Author").inner_size(480.0, 600.0).resizable(false).center()
             .always_on_top(true).content_protected(false).build();
     });
 }
@@ -169,7 +169,7 @@ pub fn install_tray(app: &AppHandle, st: &AppState, counters: &Arc<input::Counte
     let c_t = counters.clone();
     TrayIconBuilder::with_id("main")
         .icon(app.default_window_icon().unwrap().clone())
-        .tooltip("Little Writer — Listening")
+        .tooltip("Little Author — Listening")
         .menu(&menu)
         .on_menu_event(move |app, ev| match ev.id().as_ref() {
             "pause" => { do_toggle(app, &c_t); }
@@ -193,7 +193,7 @@ pub fn show_overlay(app: &AppHandle) {
 pub fn create_home(app: &AppHandle, saved: Option<(i32, i32)>) -> tauri::Result<()> {
     let (hw, hh) = (200.0, 200.0);
     let home = tauri::WebviewWindowBuilder::new(app, "home", tauri::WebviewUrl::App("home.html".into()))
-        .title("Little Writer — Home").inner_size(hw, hh).resizable(false).decorations(false)
+        .title("Little Author — Home").inner_size(hw, hh).resizable(false).decorations(false)
         .transparent(true).background_color(tauri::window::Color(0, 0, 0, 0)).always_on_top(true).skip_taskbar(true)
         .shadow(false).visible(false).content_protected(false).build()?;
     let size = home.outer_size().map(|z| (z.width, z.height)).unwrap_or(((hw * 1.0) as u32, (hh * 1.0) as u32));
