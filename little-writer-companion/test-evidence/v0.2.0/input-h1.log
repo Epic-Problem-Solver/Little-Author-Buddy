@@ -1,0 +1,7 @@
+11 plain(expect 11) 11
+ignored(expect +0 except A? shift+a) 11
+held x 2s (expect +1) 12
+  File "<string>", line 1
+    import json;print('canary(29 minus a's)',json.load(open('/tmp/lwc3/h1/.local/share/dev.lwc.companion/state.json')).get('total_keystrokes',0))
+                                                                                                                                            ^
+SyntaxError: unterminated string literal (detected at line 1)

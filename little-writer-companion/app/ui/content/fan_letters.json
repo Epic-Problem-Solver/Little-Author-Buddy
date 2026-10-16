@@ -1,0 +1,777 @@
+{
+  "schemaVersion": 1,
+  "placeholders": [
+    "{projectTitle}",
+    "{tier}",
+    "{wordCount}",
+    "{buddy}"
+  ],
+  "categories": {
+    "encouragement": [
+      {
+        "id": "enc-001",
+        "from": "Marguerite, retired librarian",
+        "body": "I shelved forty years of books and I'd make room for {projectTitle}. {wordCount} words! Mind the due date on the next one."
+      },
+      {
+        "id": "enc-002",
+        "from": "Dev, night-shift nurse",
+        "body": "Read {projectTitle} on my 3 a.m. break. Stayed awake. That's the highest praise I have."
+      },
+      {
+        "id": "enc-003",
+        "from": "Pip, age 9",
+        "body": "i read your {tier} under the covers with a flashlite. mom found out. worth it."
+      },
+      {
+        "id": "enc-004",
+        "from": "Captain Oyelaran, ferry pilot",
+        "body": "{wordCount} words and not one of them ran aground. Steady hands, writer."
+      },
+      {
+        "id": "enc-005",
+        "from": "Hollis, grumpy neighbour",
+        "body": "I don't usually read. I read {projectTitle}. Don't tell anyone."
+      },
+      {
+        "id": "enc-006",
+        "from": "Sunny, barista",
+        "body": "Spelled your name wrong on your cup but I'll never forget {projectTitle}. Next one's on the house."
+      },
+      {
+        "id": "enc-007",
+        "from": "Professor Anwen Price",
+        "body": "A {tier} of genuine structural confidence. I have assigned it to my seminar. They will complain; they will be wrong."
+      },
+      {
+        "id": "enc-008",
+        "from": "Rook, the cat next door",
+        "body": "*sat on {projectTitle}'s pages for warmth. {buddy} tried to shoo me. approved anyway.*"
+      },
+      {
+        "id": "enc-009",
+        "from": "Grandma Lou",
+        "body": "I told everyone at bridge club about your {tier}, and about {buddy}. Now you have to write another so I have something new to brag about."
+      },
+      {
+        "id": "enc-010",
+        "from": "Tomasz, bus driver",
+        "body": "Missed my own stop finishing {projectTitle}. The passengers understood. Mostly."
+      },
+      {
+        "id": "enc-011",
+        "from": "Juniper, aspiring poet",
+        "body": "You made {wordCount} words look easy. I know they weren't. That's the trick, isn't it?"
+      },
+      {
+        "id": "enc-012",
+        "from": "Ines, long-distance runner",
+        "body": "{wordCount} words is a marathon in sentences. You finished. Stretch, hydrate, start the next."
+      },
+      {
+        "id": "enc-013",
+        "from": "Barnaby, overthinker",
+        "body": "I've reread chapter one of {projectTitle} six times trying to find a flaw. I found a comma I liked."
+      },
+      {
+        "id": "enc-014",
+        "from": "Mx. Calloway, book club host",
+        "body": "Our book club argued about {projectTitle} for two hours. Nobody brought up the snacks. Unprecedented."
+      },
+      {
+        "id": "enc-015",
+        "from": "Frankie, food truck owner",
+        "body": "Your {tier} is like a good taco: fully loaded, no filler, slightly messy in the best way."
+      },
+      {
+        "id": "enc-016",
+        "from": "Ada, software engineer",
+        "body": "{wordCount} words, zero merge conflicts with my heart. Shipping it to everyone I know."
+      },
+      {
+        "id": "enc-017",
+        "from": "Rosalind, lighthouse keeper",
+        "body": "Long nights out here. {projectTitle} kept the lamp company."
+      },
+      {
+        "id": "enc-018",
+        "from": "Theo, teenage skeptic",
+        "body": "ok fine. {projectTitle} was actually good. this changes nothing."
+      },
+      {
+        "id": "enc-019",
+        "from": "Mrs. Okafor, primary teacher",
+        "body": "Gold star. Two gold stars. A {tier} deserves the good stickers."
+      },
+      {
+        "id": "enc-020",
+        "from": "Ezra, insomniac",
+        "body": "Started {projectTitle} to fall asleep. Big mistake. Wonderful mistake."
+      },
+      {
+        "id": "enc-021",
+        "from": "Delphine, translator",
+        "body": "I would love to translate {projectTitle}. I would also hate to, because some of these lines are too perfect to move."
+      },
+      {
+        "id": "enc-022",
+        "from": "Gus, retired plumber",
+        "body": "No leaks in this plot. I checked."
+      },
+      {
+        "id": "enc-023",
+        "from": "Kiko, comic artist",
+        "body": "I already doodled three of your characters from {projectTitle} in my margins. Sorry/not sorry."
+      },
+      {
+        "id": "enc-024",
+        "from": "Wren, park ranger",
+        "body": "Read {projectTitle} by campfire. The owls were jealous of your dialogue."
+      },
+      {
+        "id": "enc-025",
+        "from": "Sir Reginald, self-appointed critic",
+        "body": "A {tier} of {wordCount} words. I counted none wasted, and I was looking."
+      },
+      {
+        "id": "enc-026",
+        "from": "Mabel, crossword fanatic",
+        "body": "Seven letters for 'thing you just finished': {tier}-ish. Close enough. Congrats!"
+      },
+      {
+        "id": "enc-027",
+        "from": "Rafael, wedding DJ",
+        "body": "If {projectTitle} had a soundtrack I'd play it till the last guest left."
+      },
+      {
+        "id": "enc-028",
+        "from": "Hana, exchange student",
+        "body": "I read {projectTitle} to practise English. Now I practise it to reread your book."
+      },
+      {
+        "id": "enc-029",
+        "from": "Old Fenwick, fisherman",
+        "body": "Caught nothing all day. Didn't matter. Had {projectTitle} in the tackle box."
+      },
+      {
+        "id": "enc-030",
+        "from": "Priya, startup founder",
+        "body": "{wordCount} words delivered on schedule? Can you consult for my team?"
+      },
+      {
+        "id": "enc-031",
+        "from": "Ottoline, ghost (allegedly)",
+        "body": "Haunted the library for a century. {projectTitle} is the first thing that made me want to stay in one shelf."
+      },
+      {
+        "id": "enc-032",
+        "from": "Benji, golden retriever (via owner)",
+        "body": "He chewed the cover. That means he loved it. Woof, apparently."
+      },
+      {
+        "id": "enc-033",
+        "from": "Celeste, astronomer",
+        "body": "{projectTitle} has more stars in it than my telescope tonight. Clouds, mostly. Still."
+      },
+      {
+        "id": "enc-034",
+        "from": "Marcus, gym coach",
+        "body": "{wordCount} reps of words! That's discipline. Rest day, then back at it."
+      },
+      {
+        "id": "enc-035",
+        "from": "Agnes, 102 years old",
+        "body": "I've read a lot of books. I'd like to read your next {tier} too, so do hurry."
+      },
+      {
+        "id": "enc-036",
+        "from": "Lou & Lou, twins",
+        "body": "We fought over one copy of {projectTitle}. Please write faster so we each get one."
+      },
+      {
+        "id": "enc-037",
+        "from": "Felix, train conductor",
+        "body": "All aboard the next one. {projectTitle} was a smooth ride."
+      },
+      {
+        "id": "enc-038",
+        "from": "Saoirse, folk singer",
+        "body": "Wrote a little tune after reading {projectTitle}. It's mostly humming. It's a compliment."
+      },
+      {
+        "id": "enc-039",
+        "from": "Dr. Hammond, dentist",
+        "body": "Smiled so much reading {projectTitle} my patients thought I'd had work done."
+      },
+      {
+        "id": "enc-040",
+        "from": "Noor, first-time reader of your work",
+        "body": "I didn't know your name a week ago. Now I'm telling strangers about {projectTitle}."
+      },
+      {
+        "id": "enc-041",
+        "from": "Bertrand, chess club treasurer",
+        "body": "Your plot was three moves ahead of me the whole {tier}. Well played."
+      },
+      {
+        "id": "enc-042",
+        "from": "Yusuf, night owl",
+        "body": "Finished {projectTitle} at sunrise. Regret nothing except my alarm."
+      },
+      {
+        "id": "enc-043",
+        "from": "Wilhelmina, cozy-mystery addict",
+        "body": "Please tell {buddy} I saw them napping in chapter three's margins. Adorable. Also, {projectTitle} was brilliant."
+      },
+      {
+        "id": "enc-044",
+        "from": "Arjun, stationery hoarder",
+        "body": "{buddy} deserves a tiny trophy for supervising all {wordCount} words."
+      },
+      {
+        "id": "enc-045",
+        "from": "Bea, pottery teacher",
+        "body": "I hear {buddy} raced back to the desk every time you typed. Same energy I bring to the kiln. Loved {projectTitle}!"
+      },
+      {
+        "id": "enc-046",
+        "from": "Moss, forest-cabin hermit",
+        "body": "Came down the mountain for the first time in a year to say: great {tier}. Give {buddy} a nod from me."
+      },
+      {
+        "id": "enc-047",
+        "from": "Clementine, age 7",
+        "body": "dear {buddy}, you are a good helper. tell your writer i liked the scary part."
+      },
+      {
+        "id": "enc-048",
+        "from": "Rufus, retired stage magician",
+        "body": "A {tier} that appears out of thin air? I know the trick. It's {buddy} and a lot of keystrokes."
+      },
+      {
+        "id": "enc-049",
+        "from": "Ingrid, librarian (Reykjavík branch)",
+        "body": "{projectTitle} is shelved. {buddy} is invited to story hour. Bring snacks."
+      },
+      {
+        "id": "enc-050",
+        "from": "Dash, speedrunner",
+        "body": "{wordCount} words, any%, no glitches. GG to you and {buddy}."
+      },
+      {
+        "id": "enc-051",
+        "from": "Penelope, lifelong pen pal",
+        "body": "Write back soon, and tell {buddy} I've enclosed a sticker. It's for the desk."
+      },
+      {
+        "id": "enc-052",
+        "from": "Colonel Mustard (no relation)",
+        "body": "Rumour says {buddy} wandered off to watch videos mid-draft. All forgiven: {projectTitle} is splendid."
+      }
+    ],
+    "inspirationalQuote": [
+      {
+        "id": "quote-001",
+        "text": "You can't use up creativity. The more you use, the more you have.",
+        "attribution": "Maya Angelou",
+        "source": "Conversations with Maya Angelou (1982 interview, ed. Jeffrey M. Elliot)",
+        "verified": true,
+        "verifiedVia": "https://en.wikiquote.org/wiki/Maya_Angelou"
+      },
+      {
+        "id": "quote-002",
+        "text": "If you find a book you really want to read but it hasn't been written yet, then you must write it.",
+        "attribution": "Toni Morrison",
+        "source": "Talk at the Ohio Arts Council annual meeting, Cincinnati (Sept 1981); reported in The Cincinnati Enquirer, 27 Sept 1981",
+        "verified": true,
+        "verifiedVia": "https://en.wikiquote.org/wiki/Toni_Morrison"
+      },
+      {
+        "id": "quote-003",
+        "text": "There is no agony like bearing an untold story inside you.",
+        "attribution": "Zora Neale Hurston",
+        "source": "Dust Tracks on a Road (1942), ch. 'Books and Things'",
+        "verified": true,
+        "verifiedVia": "https://quoteinvestigator.com/2020/08/25/untold/"
+      },
+      {
+        "id": "quote-004",
+        "text": "A word after a word after a word is power.",
+        "attribution": "Margaret Atwood",
+        "source": "\"Spelling\", True Stories (1981)",
+        "verified": true,
+        "verifiedVia": "https://english.fju.edu.tw/lctd/list/authorWork_Etext.asp?A_ID=55&W_ID=203"
+      },
+      {
+        "id": "quote-005",
+        "text": "The scariest moment is always just before you start. After that, things can only get better.",
+        "attribution": "Stephen King",
+        "source": "On Writing: A Memoir of the Craft (2000)",
+        "verified": true,
+        "verifiedVia": "https://www.selectedreads.com/best-stephen-king-on-writing-quotes/"
+      },
+      {
+        "id": "quote-006",
+        "text": "Inspiration is a visitor. Work is the house it visits.",
+        "attribution": "Original",
+        "source": null,
+        "verified": null,
+        "verifiedVia": null
+      },
+      {
+        "id": "quote-007",
+        "text": "I believe the road to hell is paved with adverbs, and I will shout it from the rooftops.",
+        "attribution": "Stephen King",
+        "source": "On Writing: A Memoir of the Craft (2000), 'Toolbox'",
+        "verified": true,
+        "verifiedVia": "https://en.wikiquote.org/wiki/On_Writing"
+      },
+      {
+        "id": "quote-008",
+        "text": "How we spend our days is, of course, how we spend our lives.",
+        "attribution": "Annie Dillard",
+        "source": "The Writing Life (1989)",
+        "verified": true,
+        "verifiedVia": "https://en.wikiquote.org/wiki/Annie_Dillard"
+      },
+      {
+        "id": "quote-009",
+        "text": "Start writing, no matter about what. The water does not flow until the faucet is turned on.",
+        "attribution": "Louis L'Amour",
+        "source": "Education of a Wandering Man (1989)",
+        "verified": true,
+        "verifiedVia": "https://chadcomello.com/booknotes/education-of-a-wandering-man/"
+      },
+      {
+        "id": "quote-010",
+        "text": "Ever tried. Ever failed. No matter. Try again. Fail again. Fail better.",
+        "attribution": "Samuel Beckett",
+        "source": "Worstward Ho (1983)",
+        "verified": true,
+        "verifiedVia": "https://en.wikiquote.org/wiki/Samuel_Beckett"
+      },
+      {
+        "id": "quote-011",
+        "text": "Either write things worth reading, or do things worth the writing.",
+        "attribution": "Benjamin Franklin",
+        "source": "Poor Richard's Almanack (1738)",
+        "verified": true,
+        "verifiedVia": "https://en.wikiquote.org/wiki/Poor_Richard%27s_Almanack"
+      },
+      {
+        "id": "quote-012",
+        "text": "Fill your paper with the breathings of your heart.",
+        "attribution": "William Wordsworth",
+        "source": "Letter to his wife, Mary Wordsworth (29 April 1812)",
+        "verified": true,
+        "verifiedVia": "https://en.wikiquote.org/wiki/William_Wordsworth"
+      },
+      {
+        "id": "quote-013",
+        "text": "I am enough of an artist to draw freely upon my imagination. Imagination is more important than knowledge.",
+        "attribution": "Albert Einstein",
+        "source": "\"What Life Means to Einstein\", interview by G. S. Viereck, The Saturday Evening Post (26 Oct 1929)",
+        "verified": true,
+        "verifiedVia": "https://en.wikiquote.org/wiki/Albert_Einstein"
+      },
+      {
+        "id": "quote-014",
+        "text": "Writing a first draft and reminding myself that I'm simply shoveling sand into a box so that later I can build castles.",
+        "attribution": "Shannon Hale",
+        "source": "Tweet, 1 March 2011 (archived on author's site)",
+        "verified": true,
+        "verifiedVia": "https://shannonhale.com/extras/qp7zyu7bn0gv08fbibwccqrd2drr8l"
+      },
+      {
+        "id": "quote-015",
+        "text": "This is how you do it: you sit down at the keyboard and you put one word after another until it's done.",
+        "attribution": "Neil Gaiman",
+        "source": "Neil Gaiman's Journal, 'Pens, Rules, Finishing Things...' (2 May 2004)",
+        "verified": true,
+        "verifiedVia": "https://journal.neilgaiman.com/2004/05/pens-rules-finishing-things-and-why.asp"
+      },
+      {
+        "id": "quote-016",
+        "text": "A blank page is just a story that hasn't been introduced yet.",
+        "attribution": "Original",
+        "source": null,
+        "verified": null,
+        "verifiedVia": null
+      },
+      {
+        "id": "quote-017",
+        "text": "Every finished book was once a sentence somebody almost deleted.",
+        "attribution": "Original",
+        "source": null,
+        "verified": null,
+        "verifiedVia": null
+      },
+      {
+        "id": "quote-018",
+        "text": "Write badly with confidence; edit brilliantly with patience.",
+        "attribution": "Original",
+        "source": null,
+        "verified": null,
+        "verifiedVia": null
+      },
+      {
+        "id": "quote-019",
+        "text": "The muse keeps office hours. They start when you sit down.",
+        "attribution": "Original",
+        "source": null,
+        "verified": null,
+        "verifiedVia": null
+      },
+      {
+        "id": "quote-020",
+        "text": "Small words, stacked daily, become tall stories.",
+        "attribution": "Original",
+        "source": null,
+        "verified": null,
+        "verifiedVia": null
+      },
+      {
+        "id": "quote-021",
+        "text": "Your first draft is allowed to be a rumour. The truth comes in revision.",
+        "attribution": "Original",
+        "source": null,
+        "verified": null,
+        "verifiedVia": null
+      },
+      {
+        "id": "quote-022",
+        "text": "Courage, for a writer, is pressing the next key.",
+        "attribution": "Original",
+        "source": null,
+        "verified": null,
+        "verifiedVia": null
+      },
+      {
+        "id": "quote-023",
+        "text": "Stories don't arrive finished. Neither did you.",
+        "attribution": "Original",
+        "source": null,
+        "verified": null,
+        "verifiedVia": null
+      },
+      {
+        "id": "quote-024",
+        "text": "Perfect is a revision pass, not a starting line.",
+        "attribution": "Original",
+        "source": null,
+        "verified": null,
+        "verifiedVia": null
+      },
+      {
+        "id": "quote-025",
+        "text": "The page doesn't judge. It just waits.",
+        "attribution": "Original",
+        "source": null,
+        "verified": null,
+        "verifiedVia": null
+      },
+      {
+        "id": "quote-026",
+        "text": "Momentum is a plot device you can use in real life.",
+        "attribution": "Original",
+        "source": null,
+        "verified": null,
+        "verifiedVia": null
+      },
+      {
+        "id": "quote-027",
+        "text": "A sentence a day is a book a year with ambition to spare.",
+        "attribution": "Original",
+        "source": null,
+        "verified": null,
+        "verifiedVia": null
+      },
+      {
+        "id": "quote-028",
+        "text": "Write the scene you're afraid of; it's usually the one that matters.",
+        "attribution": "Original",
+        "source": null,
+        "verified": null,
+        "verifiedVia": null
+      },
+      {
+        "id": "quote-029",
+        "text": "Ideas are cheap. Finished pages are treasure.",
+        "attribution": "Original",
+        "source": null,
+        "verified": null,
+        "verifiedVia": null
+      },
+      {
+        "id": "quote-030",
+        "text": "You're not behind. You're mid-chapter.",
+        "attribution": "Original",
+        "source": null,
+        "verified": null,
+        "verifiedVia": null
+      },
+      {
+        "id": "quote-031",
+        "text": "The story you tell yourself about writing is also worth revising.",
+        "attribution": "Original",
+        "source": null,
+        "verified": null,
+        "verifiedVia": null
+      },
+      {
+        "id": "quote-032",
+        "text": "Rest is part of the rhythm, not a break from it.",
+        "attribution": "Original",
+        "source": null,
+        "verified": null,
+        "verifiedVia": null
+      },
+      {
+        "id": "quote-033",
+        "text": "Nobody else can write your weird. That's the point.",
+        "attribution": "Original",
+        "source": null,
+        "verified": null,
+        "verifiedVia": null
+      },
+      {
+        "id": "quote-034",
+        "text": "The cursor blinks because it believes in you.",
+        "attribution": "Original",
+        "source": null,
+        "verified": null,
+        "verifiedVia": null
+      },
+      {
+        "id": "quote-035",
+        "text": "Done is a draft. Draft is a door.",
+        "attribution": "Original",
+        "source": null,
+        "verified": null,
+        "verifiedVia": null
+      },
+      {
+        "id": "quote-036",
+        "text": "Write for the reader who needs it, even if that reader is you.",
+        "attribution": "Original",
+        "source": null,
+        "verified": null,
+        "verifiedVia": null
+      },
+      {
+        "id": "quote-037",
+        "text": "Every typo is proof you were moving fast toward something.",
+        "attribution": "Original",
+        "source": null,
+        "verified": null,
+        "verifiedVia": null
+      },
+      {
+        "id": "quote-038",
+        "text": "Doubt is just the critic arriving early. Make it wait outside.",
+        "attribution": "Original",
+        "source": null,
+        "verified": null,
+        "verifiedVia": null
+      },
+      {
+        "id": "quote-039",
+        "text": "One honest line beats a page of clever ones.",
+        "attribution": "Original",
+        "source": null,
+        "verified": null,
+        "verifiedVia": null
+      },
+      {
+        "id": "quote-040",
+        "text": "Finish things. Finishing is a muscle.",
+        "attribution": "Original",
+        "source": null,
+        "verified": null,
+        "verifiedVia": null
+      }
+    ],
+    "humorousSaying": [
+      {
+        "id": "humor-001",
+        "text": "Writing is easy. You just stare at the screen until your forehead bleeds words."
+      },
+      {
+        "id": "humor-002",
+        "text": "My plot has holes. I prefer to call them 'reader participation zones'."
+      },
+      {
+        "id": "humor-003",
+        "text": "I'm not procrastinating; I'm letting the ideas marinate. For three weeks."
+      },
+      {
+        "id": "humor-004",
+        "text": "Writer's block: when your imaginary friends stop talking to you."
+      },
+      {
+        "id": "humor-005",
+        "text": "Kill your darlings. Then write a sequel where they come back."
+      },
+      {
+        "id": "humor-006",
+        "text": "I didn't research how long a body takes to decompose for fun. Okay, partly for fun."
+      },
+      {
+        "id": "humor-007",
+        "text": "The second draft is where you find out what the first draft was trying to say. Badly."
+      },
+      {
+        "id": "humor-008",
+        "text": "My characters are not listening to me. I'm considering grounding them."
+      },
+      {
+        "id": "humor-009",
+        "text": "A writer's search history is a cry for help and a plot outline."
+      },
+      {
+        "id": "humor-010",
+        "text": "Coffee: because the words won't caffeinate themselves."
+      },
+      {
+        "id": "humor-011",
+        "text": "I outline. Then my characters read the outline and laugh."
+      },
+      {
+        "id": "humor-012",
+        "text": "'I'll remember that idea in the morning.' – Famous last words."
+      },
+      {
+        "id": "humor-013",
+        "text": "Every comma I add, I later remove. Every comma I remove, I later add."
+      },
+      {
+        "id": "humor-014",
+        "text": "My editor said 'show, don't tell.' So I showed her the door."
+      },
+      {
+        "id": "humor-015",
+        "text": "Deadlines are like plot twists: you know they're coming and still they shock you."
+      },
+      {
+        "id": "humor-016",
+        "text": "There are three rules for writing a novel. Unfortunately nobody remembers them."
+      },
+      {
+        "id": "humor-017",
+        "text": "Chapter one: rewritten 14 times. Chapter two: exists."
+      },
+      {
+        "id": "humor-018",
+        "text": "I write fiction. My to-do list is my most ambitious work."
+      },
+      {
+        "id": "humor-019",
+        "text": "Adverbs: deeply, truly, incredibly unnecessary."
+      },
+      {
+        "id": "humor-020",
+        "text": "Typing furiously is a mood, not a word count."
+      },
+      {
+        "id": "humor-021",
+        "text": "I asked my muse for inspiration. She left me on read."
+      },
+      {
+        "id": "humor-022",
+        "text": "The book is 90% done. The remaining 90% is editing."
+      },
+      {
+        "id": "humor-023",
+        "text": "I'm a plotter. Well, I plot to start plotting."
+      },
+      {
+        "id": "humor-024",
+        "text": "Synonym for 'said'? Said. Use said. Said said."
+      },
+      {
+        "id": "humor-025",
+        "text": "Some writers have a word count goal. I have a snack count goal."
+      },
+      {
+        "id": "humor-026",
+        "text": "Naming characters is easy. Just spend four hours on a baby-name site."
+      },
+      {
+        "id": "humor-027",
+        "text": "My villain has a better skincare routine than I do."
+      },
+      {
+        "id": "humor-028",
+        "text": "My protagonist just made a choice I didn't approve. Love that for them."
+      },
+      {
+        "id": "humor-029",
+        "text": "Reading is research. That's what I tell myself in the bookshop. Again."
+      },
+      {
+        "id": "humor-030",
+        "text": "I wrote 2,000 words today. 1,800 were 'the'."
+      },
+      {
+        "id": "humor-031",
+        "text": "Draft one: vibes. Draft two: grammar. Draft three: crying. Draft four: done."
+      },
+      {
+        "id": "humor-032",
+        "text": "The only thing harder than writing the end is writing the middle."
+      },
+      {
+        "id": "humor-033",
+        "text": "My novel is set in a world where I meet my deadlines. It's fantasy."
+      },
+      {
+        "id": "humor-034",
+        "text": "Writing tip: sit down. Advanced tip: stay there."
+      },
+      {
+        "id": "humor-035",
+        "text": "Ctrl+S is my love language."
+      },
+      {
+        "id": "humor-036",
+        "text": "My hero's journey includes a nap."
+      },
+      {
+        "id": "humor-037",
+        "text": "Exposition dump? I prefer 'enthusiastic world-sharing'."
+      },
+      {
+        "id": "humor-038",
+        "text": "I'm not talking to myself; I'm workshopping dialogue."
+      },
+      {
+        "id": "humor-039",
+        "text": "If at first you don't succeed, call it a prologue."
+      },
+      {
+        "id": "humor-040",
+        "text": "My manuscript and I are in a committed, complicated relationship."
+      },
+      {
+        "id": "humor-041",
+        "text": "{buddy} has read every draft. {buddy} has notes. {buddy} will not be sharing them."
+      },
+      {
+        "id": "humor-042",
+        "text": "Behind every great writer is a {buddy} pretending to help."
+      },
+      {
+        "id": "humor-043",
+        "text": "{buddy}'s writing process: nap, wander, panic, sprint back to the desk. Relatable."
+      },
+      {
+        "id": "humor-044",
+        "text": "Writer's block is just {buddy} sitting on the keyboard. Metaphorically."
+      },
+      {
+        "id": "humor-045",
+        "text": "{buddy} isn't procrastinating. {buddy} is 'researching' a video about otters."
+      }
+    ]
+  }
+}

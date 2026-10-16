@@ -1,0 +1,132 @@
+<?xml-stylesheet href="../lw-character.css"?>
+<?xml-stylesheet href="debug-overrides.css"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-270 -50 750 290" width="2250" height="870" font-family="system-ui,sans-serif" font-size="9" fill="#241414">
+<rect x="-270" y="-50" width="750" height="290" fill="#f3e4cb"/>
+<text x="-262" y="-34" font-size="11" font-weight="700">Little Writer v0.7.4 desk (DEBUG variant: no top plane, laptop centred) — labels (data-side=right, typing · laptop, 3×)</text>
+<svg x="0" y="0" class="lw-char" data-face="focused" data-body="typing" data-tool="laptop" data-side="right" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" width="240" height="220">
+  <defs>
+    <clipPath id="lw-body-clip"><circle cx="120" cy="110" r="62"/></clipPath>
+  </defs>
+  <g class="lw-scene">
+  <g class="lw-rig lw-rig-back">
+    <g class="lw-hand lw-hand-l"><g transform="translate(52 112)"><g class="lw-hand-inner">
+      <circle r="19" fill="var(--hands)"/>
+      <path d="M13 -12A19 19 0 0 1 -14 13A22 22 0 0 0 13 -12z" fill="var(--shade)" opacity=".6"/>
+      <circle r="19" fill="none" stroke="var(--outline)" stroke-width="6"/>
+    </g></g></g>
+    <g class="lw-hand lw-hand-r lw-hand-backr"><g transform="translate(184 140)"><g class="lw-hand-inner">
+      <circle r="19" fill="var(--hands)"/>
+      <path d="M13 -12A19 19 0 0 1 -14 13A22 22 0 0 0 13 -12z" fill="var(--shade)" opacity=".6"/>
+      <circle r="19" fill="none" stroke="var(--outline)" stroke-width="6"/>
+    </g></g></g>
+    <g class="lw-body">
+      <circle cx="120" cy="110" r="62" fill="var(--shade)"/>
+      <circle cx="108" cy="96" r="58" fill="var(--body)" clip-path="url(#lw-body-clip)"/>
+      <circle cx="120" cy="110" r="62" fill="none" stroke="var(--outline)" stroke-width="7"/>
+    </g>
+    <g class="lw-back">
+      <path d="M62 120a58 58 0 0 0 116 0a62 50 0 0 1-116 0z" fill="var(--shade)" opacity=".7"/>
+      <path d="M114 52q4-10 12-8q-6 2-6 8" fill="none" stroke="var(--outline)" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="120" cy="110" r="62" fill="none" stroke="var(--outline)" stroke-width="7"/>
+    </g>
+    <g class="lw-face">
+      <g class="lw-blush"><ellipse cx="80" cy="118" rx="9" ry="5"/><ellipse cx="146" cy="118" rx="9" ry="5"/></g>
+      <g class="lw-eyes">
+        <g class="lw-eye lw-eye-l"><circle class="lw-eye-dot" cx="88" cy="102" r="8"/><path class="lw-eye-closed" d="M80 103q8 5 16 0"/><path class="lw-eye-happy" d="M80 105q8-10 16 0"/></g>
+        <g class="lw-eye lw-eye-r"><circle class="lw-eye-dot" cx="138" cy="102" r="8"/><path class="lw-eye-closed" d="M130 103q8 5 16 0"/><path class="lw-eye-happy" d="M130 105q8-10 16 0"/></g>
+      </g>
+      <g class="lw-mouth">
+        <path class="lw-m lw-m-smile" d="M104 114q9 12 18 0"/>
+        <path class="lw-m lw-m-flat" d="M106 118h14"/>
+        <path class="lw-m lw-m-side" d="M106 119q8 -2 15 -6"/>
+        <ellipse class="lw-m lw-m-o lw-fill" cx="113" cy="120" rx="6" ry="7"/>
+        <ellipse class="lw-m lw-m-tiny lw-fill" cx="113" cy="120" rx="3" ry="2.5"/>
+        <path class="lw-m lw-m-grin lw-fill" d="M100 113h26q-2 16-13 16t-13-16z"/>
+        <path class="lw-m lw-m-wavy" d="M104 119q3-3 6 0t6 0t6 0"/>
+      </g>
+      <g class="lw-zzz"><text x="166" y="62">z</text><text x="178" y="46">z</text><text x="190" y="30">Z</text></g>
+    </g>
+  </g>
+  <g class="lw-station">
+    <g class="lw-rig lw-rig-mid">
+      <g class="lw-hand lw-hand-l lw-hand-mid"><g transform="translate(52 112)"><g class="lw-hand-inner">
+      <circle r="19" fill="var(--hands)"/>
+      <path d="M13 -12A19 19 0 0 1 -14 13A22 22 0 0 0 13 -12z" fill="var(--shade)" opacity=".6"/>
+      <circle r="19" fill="none" stroke="var(--outline)" stroke-width="6"/>
+    </g></g></g>
+      <g class="lw-hand lw-hand-r lw-hand-mid"><g transform="translate(184 140)"><g class="lw-hand-inner">
+      <circle r="19" fill="var(--hands)"/>
+      <path d="M13 -12A19 19 0 0 1 -14 13A22 22 0 0 0 13 -12z" fill="var(--shade)" opacity=".6"/>
+      <circle r="19" fill="none" stroke="var(--outline)" stroke-width="6"/>
+    </g></g></g>
+    </g>
+    <g class="lw-desk"><g class="lw-flipx">
+      <path class="lw-desk-front" d="M22 150L172 158V217H22z" fill="var(--desk)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+      <path d="M25 205H170V214H25z" fill="var(--desk-shade)"/>
+      <path class="lw-desk-side" d="M172 158L218 170V217H172z" fill="var(--desk-shade)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+      <g class="lw-desk-slab">
+        <path d="M14 144L176 153V160L14 151z" fill="var(--desk-shade)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+        <path d="M176 153L226 165V172L176 160z" fill="var(--desk-side-dark)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+      </g>
+    </g></g>
+    <g class="lw-tools">
+      <g class="lw-tool lw-tool-laptop"><g class="lw-flipx">
+        <path class="lw-laptop-glow" d="M48 90L98 93L94 80L52 78z" fill="var(--screen)"/>
+        <path d="M42 92L104 95V138L42 135z" fill="var(--tool)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+        <path d="M45 125L101 128V135L45 132z" fill="var(--tool-shade)"/>
+        <ellipse cx="73" cy="112" rx="6" ry="6" fill="var(--tool-shade)"/>
+        <path d="M36 137L108 141L114 148L32 144z" fill="var(--tool-shade)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/></g>
+      </g>
+      <g class="lw-tool lw-tool-typewriter"><g class="lw-flipx">
+        <g class="lw-tw-carriage">
+          <path d="M56 84L90 86V108L56 106z" fill="var(--paper)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+          <path class="lw-tw-lines" d="M61 92l24 1.4M61 98l18 1" stroke="var(--paper-shade)" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M38 104L108 108V117L38 113z" fill="var(--tool-shade)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M30 108.5h8M108 112.5h8" stroke="var(--outline)" stroke-width="5" stroke-linecap="round"/>
+        </g>
+        <path d="M40 148L106 152L100 116L46 113z" fill="var(--tool)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+        <path d="M42 140L104 144L106 152L40 148z" fill="var(--tool-shade)"/>
+        <path class="lw-tw-vents" d="M56 124l32 2M58 131l28 1.6" stroke="var(--tool-shade)" stroke-width="3" stroke-linecap="round"/>
+        <path d="M40 148L106 152" stroke="var(--outline)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></g>
+      </g>
+      <g class="lw-tool lw-tool-pen">
+        <path class="lw-pen-paper" d="M62 147L122 150L128 139L70 136z" fill="var(--paper)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+        <path class="lw-pen-ink" d="M100 144q-4-4-8 0t-8 0t-8 0t-8 0" fill="none" stroke="var(--ink)" stroke-width="3" stroke-linecap="round" pathLength="100"/>
+        <g class="lw-inkwell">
+          <path d="M40 132h16l3 10q0 4-11 4t-11-4z" fill="var(--inkwell)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M43 128h10v5H43z" fill="var(--inkwell)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M42 137q6 3 13 0" stroke="var(--ink-shine)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        </g>
+        <g class="lw-quill-rest" transform="translate(40 116) rotate(12)">
+          <g class="lw-quill-art">
+          <path d="M8 14L-22 -38" stroke="var(--outline)" stroke-width="3.5" stroke-linecap="round"/>
+          <path d="M-6 -12q-22-8-26-34q-2-12 6-18q12 14 20 52z" fill="var(--feather)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M-9 -18q-12-10-15-30" fill="none" stroke="var(--feather-shade)" stroke-width="4" stroke-linecap="round"/>
+        </g>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g class="lw-rig lw-rig-front">
+    <g class="lw-hand lw-hand-l lw-hand-front"><g transform="translate(52 112)"><g class="lw-hand-inner">
+        <g class="lw-quill-art">
+          <path d="M8 14L-22 -38" stroke="var(--outline)" stroke-width="3.5" stroke-linecap="round"/>
+          <path d="M-6 -12q-22-8-26-34q-2-12 6-18q12 14 20 52z" fill="var(--feather)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M-9 -18q-12-10-15-30" fill="none" stroke="var(--feather-shade)" stroke-width="4" stroke-linecap="round"/>
+        </g>
+      <circle r="19" fill="var(--hands)"/>
+      <path d="M13 -12A19 19 0 0 1 -14 13A22 22 0 0 0 13 -12z" fill="var(--shade)" opacity=".6"/>
+      <circle r="19" fill="none" stroke="var(--outline)" stroke-width="6"/>
+    </g></g></g>
+    <g class="lw-hand lw-hand-r"><g transform="translate(184 140)"><g class="lw-hand-inner">
+      <circle r="19" fill="var(--hands)"/>
+      <path d="M13 -12A19 19 0 0 1 -14 13A22 22 0 0 0 13 -12z" fill="var(--shade)" opacity=".6"/>
+      <circle r="19" fill="none" stroke="var(--outline)" stroke-width="6"/>
+    </g></g></g>
+  </g>
+  </g>
+</svg>
+
+<g stroke="#1565c0" fill="#1565c0" stroke-width="2.5"><line x1="168" y1="144" x2="188" y2="128"/><path d="M194 123l-12 2 7 8z" stroke-width="1"/></g>
+<rect x="-262" y="-22" width="205" height="28" rx="3" fill="#fffdf7" stroke="#c0392b" stroke-width=".8"/><text x="-257" y="-10">Hands: peek out either side</text><text x="-257" y="1">of the laptop, behind it</text><line x1="-57" y1="-8.0" x2="88" y2="122" stroke="#c0392b" stroke-width=".9"/><circle cx="88" cy="122" r="2.2" fill="#c0392b"/><rect x="-262" y="14" width="205" height="28" rx="3" fill="#fffdf7" stroke="#c0392b" stroke-width=".8"/><text x="-257" y="26">Laptop (moved to the desk's middle):</text><text x="-257" y="37">lid BACK faces us, screen faces buddy</text><line x1="-57" y1="28.0" x2="112" y2="104" stroke="#c0392b" stroke-width=".9"/><circle cx="112" cy="104" r="2.2" fill="#c0392b"/><rect x="-262" y="50" width="205" height="39" rx="3" fill="#fffdf7" stroke="#c0392b" stroke-width=".8"/><text x="-257" y="62">Desk TOP (hidden): tilts toward the</text><text x="-257" y="73">buddy, away from us; only its front</text><text x="-257" y="84">slab edge is visible from here</text><line x1="-57" y1="69.5" x2="150" y2="147" stroke="#c0392b" stroke-width=".9"/><circle cx="150" cy="147" r="2.2" fill="#c0392b"/><rect x="-262" y="96" width="205" height="28" rx="3" fill="#fffdf7" stroke="#c0392b" stroke-width=".8"/><text x="-257" y="108">Laptop base (keyboard deck),</text><text x="-257" y="119">resting on the slab edge</text><line x1="-57" y1="110.0" x2="96" y2="148" stroke="#c0392b" stroke-width=".9"/><circle cx="96" cy="148" r="2.2" fill="#c0392b"/><rect x="-262" y="124" width="205" height="28" rx="3" fill="#fffdf7" stroke="#c0392b" stroke-width=".8"/><text x="-257" y="136">Top slab – front overhang edge</text><text x="-257" y="147">(the topmost visible desk line)</text><line x1="-57" y1="138.0" x2="50" y2="152" stroke="#c0392b" stroke-width=".9"/><circle cx="50" cy="152" r="2.2" fill="#c0392b"/><rect x="-262" y="154" width="205" height="28" rx="3" fill="#fffdf7" stroke="#c0392b" stroke-width=".8"/><text x="-257" y="166">BIG PANEL facing the viewer = the BACK</text><text x="-257" y="177">of the desk (plain, no drawer), now taller</text><line x1="-57" y1="168.0" x2="80" y2="185" stroke="#c0392b" stroke-width=".9"/><circle cx="80" cy="185" r="2.2" fill="#c0392b"/><rect x="-262" y="198" width="205" height="28" rx="3" fill="#fffdf7" stroke="#c0392b" stroke-width=".8"/><text x="-257" y="210">Bottom shade band (level, along the</text><text x="-257" y="221">base; desk bottom is level at y=217)</text><line x1="-57" y1="212.0" x2="60" y2="210" stroke="#c0392b" stroke-width=".9"/><circle cx="60" cy="210" r="2.2" fill="#c0392b"/><rect x="262" y="-22" width="205" height="28" rx="3" fill="#fffdf7" stroke="#c0392b" stroke-width=".8"/><text x="267" y="-10">Buddy: sits BEHIND the desk, right</text><text x="267" y="1">of the tool (body centre 164,110)</text><line x1="262" y1="-8.0" x2="190" y2="80" stroke="#c0392b" stroke-width=".9"/><circle cx="190" cy="80" r="2.2" fill="#c0392b"/><rect x="262" y="40" width="205" height="28" rx="3" fill="#fffdf7" stroke="#c0392b" stroke-width=".8"/><text x="267" y="52">Top slab – side lip (slopes DOWN</text><text x="267" y="63">as it recedes, toward the buddy)</text><line x1="262" y1="54.0" x2="212" y2="165" stroke="#c0392b" stroke-width=".9"/><circle cx="212" cy="165" r="2.2" fill="#c0392b"/><rect x="262" y="90" width="205" height="39" rx="3" fill="#fffdf7" stroke="#c0392b" stroke-width=".8"/><text x="267" y="102">SIDE PANEL: RIGHT end of the desk</text><text x="267" y="113">(buddy's side). Near edge x≈172, far</text><text x="267" y="124">edge x≈218; top slopes DOWN, bottom level</text><line x1="262" y1="109.5" x2="198" y2="195" stroke="#c0392b" stroke-width=".9"/><circle cx="198" cy="195" r="2.2" fill="#c0392b"/><rect x="262" y="160" width="205" height="39" rx="3" fill="#fffdf7" stroke="#c0392b" stroke-width=".8"/><text x="267" y="172">Blue arrow = way the desk FACES:</text><text x="267" y="183">the seat side is the far side,</text><text x="267" y="194">where the buddy sits (away from us)</text><line x1="262" y1="179.5" x2="188" y2="128" stroke="#c0392b" stroke-width=".9"/><circle cx="188" cy="128" r="2.2" fill="#c0392b"/>
+</svg>

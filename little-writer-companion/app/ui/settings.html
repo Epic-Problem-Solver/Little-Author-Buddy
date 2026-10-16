@@ -1,0 +1,67 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Little Writer Companion</title>
+<link rel="stylesheet" href="assets/lw-character.css"><link rel="stylesheet" href="settings.css">
+</head><body>
+<nav><a href="#settings">Settings</a><a href="#projects">Projects</a><a href="#journal">Letter journal</a><a href="#privacy">Privacy</a></nav>
+<div id="warns"></div>
+<section id="settings">
+ <fieldset><legend>Colours</legend><div id="preview"></div>
+  <div id="presets"></div>
+  <span class="sw"><input type="color" data-c="body"><span>Body</span></span><input type="hidden" data-c="shade">
+  <input type="hidden" data-c="hands"><small class="derived">Shading and hands follow the body colour.</small><span class="sw"><input type="color" data-c="outline"><span>Outline</span></span>
+  <details><summary>Desk &amp; tool colours</summary>
+   <span class="sw"><input type="color" data-c="desk"><span>Desk</span></span><span class="sw"><input type="color" data-c="desk_shade"><span>Desk shading</span></span>
+   <span class="sw"><input type="color" data-c="tool"><span>Tool body</span></span><span class="sw"><input type="color" data-c="tool_shade"><span>Tool shading</span></span>
+   <span class="sw"><input type="color" data-c="screen"><span>Laptop screen</span></span><span class="sw"><input type="color" data-c="ink"><span>Ink</span></span>
+   <span class="sw"><input type="color" data-c="feather"><span>Feather</span></span><span class="sw"><input type="color" data-c="feather_shade"><span>Feather shading</span></span>
+   <span class="sw"><input type="color" data-c="paper"><span>Paper</span></span><span class="sw"><input type="color" data-c="paper_shade"><span>Paper shading</span></span>
+  </details></fieldset>
+ <fieldset><legend>Buddy size, speed &amp; bubbles</legend>
+  <label>Buddy size <input type="range" id="bs" min="0.6" max="1.6" step="0.05"> <output id="bsv"></output></label>
+  <label>Walk speed <input type="range" id="ws" min="40" max="300" step="10"> <output id="wsv"></output> px/s</label>
+  <label>Bubble text size <input type="range" id="bp" min="9" max="20" step="1"> <output id="bpv"></output> px</label>
+  <div id="motionPreview"><div id="mpWalker"><div id="mpBubble">Hello!</div><div id="mpChar"></div></div></div>
+  <p class="info">Size and speed also adapt automatically to each monitor's scale.</p></fieldset>
+ <fieldset><legend>Buddy</legend><label>Name <input id="buddy" maxlength="40"></label></fieldset>
+ <fieldset><legend>Writing tool</legend>
+  <label>Tool <select id="tool"><option value="pen">Feather pen</option><option value="typewriter">Typewriter 🔒 finish a Short Story</option><option value="laptop">Laptop 🔒 finish a Novella</option></select></label>
+  <label><input type="checkbox" id="unlockall"> Unlock all (testing) — unlocks every tier and tool without changing your real progress</label></fieldset>
+ <fieldset><legend>Writing</legend>
+  <label>Letter keystrokes per word <input type="range" id="kpw" min="1" max="5" step="1"> <output id="kpwv"></output></label>
+  <label>Fall asleep after (seconds idle) <input type="number" id="idle" min="5"></label>
+  <label>Tier targets (words): Short story <input type="number" id="t1" min="1"> Novella <input type="number" id="t2" min="1"> Novel <input type="number" id="t3" min="1"></label>
+  <p class="info">Only letter keys A–Z count toward words (by key position, so any layout and IME composition on letter keys work). Digits, punctuation, Space, Enter, Backspace, Tab, Delete, modifiers, function keys, arrows and the numpad never count.</p></fieldset>
+ <fieldset><legend>Monitors</legend>
+  <label>Desk monitor <select id="desk"></select></label>
+  <label><input type="checkbox" id="roam"> Wander across all monitors (off = desk monitor only)</label></fieldset>
+ <fieldset><legend>Distraction detection (priority: title &gt; media &gt; scroll)</legend>
+  <label><input type="checkbox" id="dt"> Window title list</label>
+  <label><input type="checkbox" id="dm"> Media playback</label>
+  <label><input type="checkbox" id="ds"> Scrolling without typing</label>
+  <label>Titles (one per line, case-insensitive substring of the focused window)<br><textarea id="titles" rows="5"></textarea></label></fieldset>
+ <fieldset><legend>Letter journal folder</legend><input id="jdir"></fieldset>
+ <button id="save">Save</button><span id="msg"></span>
+</section>
+<section id="projects"><div id="await"></div><div id="cur"></div><div id="queue"></div>
+ <fieldset><legend>New project</legend>
+  <label>Title <input id="pname" value="Untitled"></label>
+  <label>Tier <select id="ptier"></select></label>
+  <button id="padd">Add</button></fieldset><div id="done"></div></section>
+<section id="journal"><p><button id="exp">Export all as .md</button> <span id="expmsg"></span></p><div id="letters"></div></section>
+<section id="privacy">
+ <h3>Privacy</h3>
+ <ul>
+  <li>Everything stays on this computer. The app itself makes no network requests. On Windows, the WebView2 runtime it uses may contact Microsoft for runtime updates, independently of this app.</li>
+  <li>Only keystroke <b>counts</b> are kept. The key's position code is checked in memory (letter key or not) and then discarded; the text you type is never recorded.</li>
+  <li>No per-key timestamps are stored, only a total per day.</li>
+  <li>Window titles are read only to spot distractions and are never saved or logged.</li>
+  <li>Media detection reads only playing/paused. Scroll detection counts wheel ticks only.</li>
+  <li>“Pause listening” in the tray stops all counting.</li>
+  <li>Data: <code id="dpath">state.json</code> in the app data folder; fan letters as .md files in your journal folder. Uninstalling keeps your data unless you tick “delete application data”.</li>
+ </ul>
+</section>
+<script src="domain.js"></script>
+<script src="assets/lw-color.js"></script><script src="character.js"></script>
+<script src="palette.js"></script>
+<script src="motion.js"></script>
+<script src="settings.js"></script>
+</body></html>

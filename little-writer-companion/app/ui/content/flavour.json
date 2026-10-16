@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "states": {
+    "sleeping": [
+      "zzz… one more chapter… zzz",
+      "Dreaming in Times New Roman.",
+      "Just resting my eyes. And my plot.",
+      "*snore* …the butler did it…",
+      "Wake me when the muse arrives.",
+      "Five more minutes. Or words.",
+      "Recharging the imagination battery.",
+      "Zzz… semicolons… zzz",
+      "Napping is basically outlining.",
+      "Shh. The story's brewing.",
+      "{buddy} is off duty. Mostly.",
+      "Shh… {buddy} is dreaming of plot twists.",
+      "{buddy}.exe has stopped responding. zzz"
+    ],
+    "wandering": [
+      "Just stretching my little hands.",
+      "Is that a new icon? Ooh.",
+      "Exploring for plot ideas.",
+      "Taking the scenic route around your desktop.",
+      "I'll be back. Probably.",
+      "Nice taskbar you've got here.",
+      "Looking for my lost motivation. Seen it?",
+      "A walk clears the mind. And the screen.",
+      "Ooh, what's behind this window?",
+      "Wandering, not lost.",
+      "{buddy} is just going for a little stroll.",
+      "Don't mind {buddy}, just inspecting your icons.",
+      "{buddy} has wandered. {buddy} will return. Probably."
+    ],
+    "watchingVideo": [
+      "Ooh, what are we watching?",
+      "This counts as research, right?",
+      "Just one more episode… for character study.",
+      "Scrolling is cardio for thumbs.",
+      "I see you, little distraction.",
+      "Is this the plot of our book now?",
+      "Popcorn? No? Okay.",
+      "Taking notes. Mentally. Barely.",
+      "Ten minutes, then words. Deal?",
+      "Fascinating. Anyway, our story misses you.",
+      "{buddy} is watching too. For solidarity.",
+      "{buddy} won't tell anyone. One more, then words?",
+      "Is this research? {buddy} will allow it."
+    ],
+    "backToWork": [
+      "We're back! Hands on keys!",
+      "Race you to the desk!",
+      "Ooh, words incoming!",
+      "The muse has entered the chat.",
+      "Typing noises intensify.",
+      "Let's make the page jealous.",
+      "Here we go, one word at a time.",
+      "Back where we belong.",
+      "Writing mode: activated.",
+      "I knew you'd come back.",
+      "{buddy} is back at the desk! Go go go!",
+      "{buddy} reporting for typing duty!",
+      "{buddy} never doubted you. Okay, once."
+    ],
+    "projectComplete": [
+      "WE DID IT! The end!",
+      "{projectTitle} is done! Cake?",
+      "{wordCount} words. Look at us!",
+      "A whole {tier}! I'm so proud.",
+      "Mail's here! Fan letters!",
+      "Typing 'The End' never gets old.",
+      "Victory lap around the desktop!",
+      "Okay, author. Take a bow.",
+      "Done! Same time next project?",
+      "That's one for the shelf.",
+      "{buddy} is SO proud of you!",
+      "{projectTitle}: written by you, supervised by {buddy}.",
+      "{buddy} would like a tiny bow too, please."
+    ]
+  }
+}

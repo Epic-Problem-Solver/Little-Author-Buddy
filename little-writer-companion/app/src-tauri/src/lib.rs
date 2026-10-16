@@ -1,0 +1,85 @@
+mod commands;
+mod distraction;
+mod home_geo;
+mod idle;
+mod input;
+mod layout;
+mod platform;
+mod signals;
+mod state;
+mod store;
+mod tick;
+mod windows;
+
+use std::sync::Arc;
+use std::time::Duration;
+use tauri::{Emitter, Manager};
+
+pub fn run() {
+    tauri::Builder::default()
+        .invoke_handler(tauri::generate_handler![
+            commands::race_arrived, commands::get_snapshot, commands::get_data, commands::get_warnings,
+            commands::new_project, commands::start_next, commands::toggle_pause, commands::update_settings,
+            commands::save_letter, commands::export_journal, commands::default_journal_dir, commands::open_settings,
+            commands::quit_app, commands::track_window, commands::save_snapshot, commands::initial_tab,
+            commands::finish_onboarding, commands::reopen_onboarding
+        ])
+        .setup(|app| {
+            let path = app.path().app_data_dir()?.join("state.json");
+            let (data, issue) = store::load(&path, state::now_ms());
+            let mut warnings = vec![];
+            let no_save = issue.as_ref().map_or(false, |i| i.block_save());
+            if let Some(i) = issue { let m = i.message(); eprintln!("{m}"); warnings.push(m); }
+            let comp = platform::has_compositor();
+            let _ = signals::COMPOSITOR.set(comp);
+            if !comp {
+                warnings.push("No compositor detected: transparency is unavailable, so the companion stays in a small box in the corner of the primary monitor. Start a compositor (e.g. picom) and restart for full-screen wandering.".into());
+            }
+            if std::env::var("XDG_SESSION_TYPE").map_or(false, |v| v == "wayland") {
+                warnings.push("Wayland session: v1 only sees keystrokes in X11/XWayland apps; use an X11 session for full counting.".into());
+            }
+            let counters = Arc::new(input::Counters::default());
+            let st: state::AppState = Arc::new(std::sync::Mutex::new(state::Shared {
+                data, path, dirty: false, snap: None, warnings, no_save, interactive_until: 0,
+            }));
+            app.manage(st.clone());
+            app.manage(counters.clone());
+            let handle = app.handle().clone();
+            windows::install_tray(&handle, &st, &counters)?;
+            windows::show_overlay(&handle);
+
+            let st_sig = st.clone();
+            let _ = ctrlc::set_handler(move || { if let Ok(mut s) = st_sig.lock() { s.save(); } std::process::exit(0); });
+            if let Ok(t) = std::env::var("LWC_OPEN") {
+                let h = handle.clone();
+                std::thread::spawn(move || { std::thread::sleep(Duration::from_secs(2)); windows::open_window(&h, &t); });
+            }
+            input::spawn(counters.clone());
+            let saved = st.lock().unwrap().data.settings.home_pos;
+            windows::create_home(&handle, saved)?;
+            for w in app.webview_windows().values() { let _ = w.set_content_protected(false); }
+            if std::env::var("LWC_SNAPSHOT").is_ok() {
+                let h = handle.clone();
+                std::thread::spawn(move || { std::thread::sleep(Duration::from_secs(4)); let _ = h.emit_to("home", "take-snapshot", ()); });
+            }
+            if !st.lock().unwrap().data.onboarded.unwrap_or(true) { windows::open_onboarding(&handle); }
+            let h = handle.clone();
+            std::thread::spawn(move || tick::tick_loop(h, st, counters));
+            let h2 = handle.clone();
+            std::thread::spawn(move || tick::tracker_loop(h2));
+            Ok(())
+        })
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, ev| match ev {
+            tauri::RunEvent::Exit => { if let Some(st) = app.try_state::<state::AppState>() { st.lock().unwrap().save(); } }
+            tauri::RunEvent::WindowEvent { label, event: tauri::WindowEvent::CloseRequested { api, .. }, .. } if label == "home" => {
+                api.prevent_close();
+                windows::quit(app);
+            }
+            tauri::RunEvent::ExitRequested { api, code, .. } => {
+                if code.is_none() { api.prevent_exit(); }
+            }
+            _ => {}
+        });
+}

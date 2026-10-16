@@ -1,0 +1,41 @@
+{
+  "settings": {
+    "keys_per_word": 5,
+    "idle_threshold_ms": 20000,
+    "wander_min_ms": 60000,
+    "wander_max_ms": 300000,
+    "race_back_ms": 1500,
+    "distraction_titles": [
+      "YouTube",
+      "Netflix",
+      "Reddit",
+      "VLC",
+      "Twitch",
+      "Disney+",
+      "Prime Video",
+      "TikTok"
+    ],
+    "detect_titles": true,
+    "detect_media": true,
+    "detect_scroll": true,
+    "scroll_events_threshold": 12,
+    "scroll_window_ms": 6000,
+    "colors": {
+      "body": "#EED6B2",
+      "shade": "#D9B98C",
+      "hands": "#EED6B2",
+      "outline": "#3C2D23"
+    }
+  },
+  "active": {
+    "name": "My Short Story",
+    "tier": "short_story",
+    "target_words": 3000,
+    "keystrokes": 601,
+    "started_at": 1792019219624,
+    "completed_at": null
+  },
+  "queue": [],
+  "completed": [],
+  "total_keystrokes": 601
+}

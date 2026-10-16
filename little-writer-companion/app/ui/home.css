@@ -1,0 +1,15 @@
+html,body{margin:0;width:200px;height:200px;overflow:hidden;background:transparent;font:11px system-ui,sans-serif;color:#241414;user-select:none;cursor:grab}
+#bar{position:absolute;top:2px;right:4px;display:flex;gap:4px;z-index:2}
+.btn{width:24px;height:24px;display:block;cursor:pointer}.btn svg{width:24px;height:24px}
+#deskHost,#charHost{position:absolute;left:40px;top:30px;width:120px;height:110px}#deskHost svg,#charHost svg{width:120px;height:110px;display:block}
+#hud{position:absolute;left:10px;top:144px;width:168px;background:rgba(255,255,255,.88);border-radius:6px;padding:3px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#prog{height:5px;background:#ddd;border-radius:3px;margin-top:2px}#fill{display:block;height:100%;width:0;background:#7aa36b;border-radius:3px}
+#modal{display:none;position:absolute;inset:0;background:rgba(243,228,203,.97);border:2px solid #241414;border-radius:12px;box-sizing:border-box;z-index:3;cursor:default}
+#modal.on{display:flex;align-items:center;justify-content:center}
+#modal form{display:flex;flex-direction:column;gap:6px;width:170px}#modal input{font-size:12px;padding:4px}
+#menu{display:none;position:absolute;top:28px;right:4px;z-index:4;background:#fffaf0;border:2px solid #241414;border-radius:8px;padding:3px;flex-direction:column;gap:2px;cursor:default}
+#menu.on{display:flex}#menu button{font-size:11px;text-align:left;background:none;border:0;padding:3px 6px;border-radius:4px;cursor:pointer}#menu button:hover{background:#f3e4cb}
+.lw-snap,.lw-snap *{animation-play-state:paused!important}
+#deskHost{display:none}#deskHost.on{display:block}
+*{-webkit-user-select:none;user-select:none}::selection{background:transparent}
+#deskHost,#charHost{transform-origin:60px 110px}

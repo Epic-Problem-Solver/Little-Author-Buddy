@@ -1,0 +1,97 @@
+{
+  "settings": {
+    "keys_per_word": 4,
+    "idle_threshold_ms": 20000,
+    "wander_min_ms": 60000,
+    "wander_max_ms": 300000,
+    "race_back_ms": 1500,
+    "distraction_titles": [
+      "YouTube",
+      "Netflix",
+      "Reddit",
+      "VLC",
+      "Twitch",
+      "Disney+",
+      "Prime Video",
+      "TikTok"
+    ],
+    "detect_titles": true,
+    "detect_media": true,
+    "detect_scroll": true,
+    "scroll_events_threshold": 12,
+    "scroll_window_ms": 6000,
+    "colors": {
+      "body": "#ffd0dc",
+      "shade": "#e07a99",
+      "hands": "#e07a99",
+      "outline": "#3a1424"
+    },
+    "ignore_keys": [
+      "ShiftLeft",
+      "ShiftRight",
+      "ControlLeft",
+      "ControlRight",
+      "Alt",
+      "AltGr",
+      "MetaLeft",
+      "MetaRight",
+      "CapsLock",
+      "NumLock",
+      "ScrollLock",
+      "Escape",
+      "F1",
+      "F2",
+      "F3",
+      "F4",
+      "F5",
+      "F6",
+      "F7",
+      "F8",
+      "F9",
+      "F10",
+      "F11",
+      "F12",
+      "PrintScreen",
+      "Pause",
+      "Insert",
+      "Home",
+      "End",
+      "PageUp",
+      "PageDown",
+      "UpArrow",
+      "DownArrow",
+      "LeftArrow",
+      "RightArrow",
+      "Function",
+      "KeyA"
+    ],
+    "tiers": {
+      "short_story": 3000,
+      "novella": 30000,
+      "novel": 60000
+    },
+    "desk_monitor": null,
+    "roam_all_monitors": true,
+    "journal_dir": "/tmp/lwc2/hI/Little Writer Journal"
+  },
+  "active": {
+    "name": "My Short Story",
+    "tier": "short_story",
+    "target_words": 3000,
+    "keystrokes": 12,
+    "started_at": 1792022418347,
+    "completed_at": null
+  },
+  "queue": [],
+  "completed": [],
+  "total_keystrokes": 12,
+  "daily": [
+    {
+      "day": "2026-10-15",
+      "keystrokes": 12
+    }
+  ],
+  "journal": [],
+  "carry_keystrokes": 0,
+  "awaiting_next": false
+}

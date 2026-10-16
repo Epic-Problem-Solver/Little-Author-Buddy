@@ -1,0 +1,28 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Little Writer Companion</title>
+<link rel="stylesheet" href="assets/lw-character.css">
+<style>
+html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden;font-family:system-ui,sans-serif;user-select:none}
+#companion{position:absolute;width:120px;transition:none;will-change:left,top}
+#companion .clip{overflow:hidden;width:120px;height:110px}
+#companion svg{width:120px;height:110px;display:block}
+#bubble{position:absolute;bottom:118px;left:50%;transform:translateX(-50%);white-space:nowrap;background:#fff;border:2px solid #3c2d23;border-radius:10px;padding:3px 8px;font-size:12px;opacity:0;transition:opacity .4s}
+#bubble.on{opacity:1}
+#hud{position:absolute;font-size:11px;color:#3c2d23;background:rgba(255,255,255,.85);border-radius:6px;padding:3px 6px;width:150px}
+#bar{height:5px;background:#ddd;border-radius:3px;margin-top:2px}#bar i{display:block;height:100%;background:#7aa36b;border-radius:3px}
+#letter small{display:block;margin-top:6px;color:#7a6050}
+#letter{position:absolute;display:none;width:280px;background:#fffaf0;border:3px solid #3c2d23;border-radius:10px;padding:12px;font-size:13px;box-shadow:0 4px 18px rgba(0,0,0,.25)}
+#warn{position:absolute;display:none;max-width:420px;white-space:pre-wrap;background:#fff3cd;border:2px solid #b7791f;border-radius:8px;padding:8px;font-size:12px}
+#companion{transform-origin:0 0}
+</style></head>
+<body>
+<div id="companion"><div id="bubble"></div><div class="clip" id="charHost"></div></div>
+<div id="letter"></div>
+<div id="warn"></div>
+<script src="domain.js"></script>
+<script src="assets/lw-color.js"></script><script src="character.js"></script>
+<script src="hide.js"></script>
+<script src="motion.js"></script>
+<script src="content.js"></script>
+<script src="main.js"></script>
+</body></html>

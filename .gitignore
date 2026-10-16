@@ -1,0 +1,10 @@
+# Cargo / Tauri build output
+target/
+
+# Installers and debug symbols
+*.exe
+*.pdb
+
+# OS junk
+Thumbs.db
+Desktop.ini

@@ -1,0 +1,206 @@
+/* Little Writer companion v0.7
+   State API: <svg class="lw-char" data-face="…" data-body="…" data-tool="…" data-side="right|left" data-dir="left"> — see README.md */
+.lw-char{
+  --body:#e8cfa9;--outline:#241414;
+  /* shade + hands: ONE colour derived from --body (~25% darker in OKLCH with chroma ×1.8 so it stays warm, not muddy; lighter instead when the body is very dark).
+     step = 1 when L >= .42, 0 otherwise. lwApplyColor() in lw-color.js sets the same values as a fallback. */
+  --shade:oklch(from var(--body) calc(clamp(0,(l - .42)*1000,1)*(l*.75) + (1 - clamp(0,(l - .42)*1000,1))*min(1,l + .18)) min(.25,c*1.8) h);
+  --hands:var(--shade);
+  --desk:#8a5a35;--desk-shade:#6e4527;--desk-side-dark:#55341d;--paper:#f6efe2;--paper-shade:#d9cdb8;--blush:#e9867a;
+  --tool:#7d8aa0;--tool-shade:#56627a;--screen:#9fe3ff;--ink:#2f3a66;--inkwell:#3b4266;--ink-shine:#8f9ac8;--feather:#f4f0ea;--feather-shade:#cbbfae;
+  overflow:visible;display:block}
+.lw-char *{transform-box:fill-box;transform-origin:center}
+.lw-char :is(.lw-rig,.lw-hand,.lw-hand-inner,.lw-eyes,.lw-face,.lw-scene,.lw-tw-carriage,.lw-laptop-glow){transform-box:view-box}
+.lw-char .lw-rig{transform-origin:120px 172px}
+.lw-char .lw-scene{transform-origin:120px 110px}
+.lw-char .lw-hand-inner{transform-origin:0 0}
+.lw-char .lw-face{transform-origin:120px 110px}
+.lw-char .lw-eyes{transform-origin:113px 102px}
+.lw-char :is(.lw-quill-rest,.lw-flipx,.lw-pen-paper){transform-box:view-box;transform-origin:0 0}
+/* face parts */
+.lw-eye-dot,.lw-fill{fill:var(--outline)}
+.lw-eye-closed,.lw-eye-happy,.lw-m:not(.lw-fill){fill:none;stroke:var(--outline);stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+.lw-eye-closed,.lw-eye-happy,.lw-m,.lw-blush,.lw-zzz,.lw-desk,.lw-tools,.lw-tool,.lw-hand-front,.lw-hand-mid,.lw-back,.lw-quill-rest,.lw-hand-backr{display:none}
+.lw-blush{fill:var(--blush);opacity:.55}
+.lw-zzz text{font:800 24px/1 system-ui,sans-serif;fill:var(--outline);opacity:0}
+/* default face = idle/happy with periodic blink */
+.lw-char .lw-m-smile{display:inline}
+.lw-eye{animation:lw-blink 4s infinite}
+@keyframes lw-blink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+
+/* ---------- FACE STATES ---------- */
+.lw-char[data-face=blink] .lw-eye{animation:lw-blink-fast 1.2s infinite}
+@keyframes lw-blink-fast{0%,70%,100%{transform:scaleY(1)}80%{transform:scaleY(.1)}}
+
+.lw-char[data-face=focused] .lw-m-smile{display:none}
+.lw-char[data-face=focused] .lw-m-flat{display:inline}
+.lw-char[data-face=focused] .lw-eye{animation:lw-blink 5s infinite}
+.lw-char[data-face=focused] .lw-eye-dot{transform:scaleY(.75)}
+.lw-char[data-face=focused] .lw-eyes{animation:lw-scan 1.6s ease-in-out infinite;transform:translateY(4px)}
+@keyframes lw-scan{0%,100%{transform:translate(-3px,4px)}50%{transform:translate(3px,4px)}}
+
+.lw-char[data-face=sleepy] .lw-eye{animation:lw-droop 3s ease-in-out infinite}
+.lw-char[data-face=sleepy] .lw-m-smile{display:none}
+.lw-char[data-face=sleepy] .lw-m-o{display:inline;animation:lw-yawn 3s ease-in-out infinite}
+@keyframes lw-droop{0%,100%{transform:scaleY(.45)}50%{transform:scaleY(.15)}}
+@keyframes lw-yawn{0%,30%,100%{transform:scale(.4)}55%{transform:scale(1.1)}}
+
+.lw-char[data-face=asleep] .lw-eye-dot,.lw-char[data-face=asleep] .lw-m-smile{display:none}
+.lw-char[data-face=asleep] .lw-eye-closed,.lw-char[data-face=asleep] .lw-m-tiny,.lw-char[data-face=asleep] .lw-zzz{display:inline}
+.lw-char[data-face=asleep] .lw-eye{animation:none}
+.lw-char[data-face=asleep] .lw-m-tiny{animation:lw-breathe-m 3s ease-in-out infinite}
+.lw-char[data-face=asleep] .lw-zzz text{animation:lw-z 3s ease-in infinite}
+.lw-char[data-face=asleep] .lw-zzz text:nth-child(2){animation-delay:1s}
+.lw-char[data-face=asleep] .lw-zzz text:nth-child(3){animation-delay:2s}
+@keyframes lw-breathe-m{50%{transform:scale(1.6)}}
+@keyframes lw-z{0%{opacity:0;transform:translate(-10px,10px) scale(.6)}30%{opacity:1}100%{opacity:0;transform:translate(8px,-10px) scale(1.2)}}
+
+.lw-char[data-face=curious] .lw-m-smile{display:none}
+.lw-char[data-face=curious] .lw-m-side{display:inline}
+.lw-char[data-face=curious] .lw-eye-r .lw-eye-dot{transform:scale(1.25)}
+.lw-char[data-face=curious] .lw-eyes{animation:lw-look 3s ease-in-out infinite}
+.lw-char[data-face=curious] .lw-face{animation:lw-tilt 3s ease-in-out infinite}
+@keyframes lw-look{0%,100%{transform:translateX(-5px)}50%{transform:translateX(6px)}}
+@keyframes lw-tilt{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(5deg)}}
+
+.lw-char[data-face=excited] .lw-m-smile{display:none}
+.lw-char[data-face=excited] .lw-m-o{display:inline}
+.lw-char[data-face=excited] .lw-eye-dot{animation:lw-pop .5s ease-in-out infinite alternate}
+.lw-char[data-face=excited] .lw-eye{animation:none}
+.lw-char[data-face=excited] .lw-face{animation:lw-bounce-f .4s ease-in-out infinite alternate}
+@keyframes lw-pop{from{transform:scale(1.1)}to{transform:scale(1.4)}}
+@keyframes lw-bounce-f{to{transform:translateY(-4px)}}
+
+.lw-char[data-face=proud] .lw-eye-dot,.lw-char[data-face=proud] .lw-m-smile{display:none}
+.lw-char[data-face=proud] .lw-eye-happy,.lw-char[data-face=proud] .lw-m-grin,.lw-char[data-face=proud] .lw-blush{display:inline}
+.lw-char[data-face=proud] .lw-eye{animation:none}
+.lw-char[data-face=proud] .lw-face{animation:lw-proud 1.2s ease-in-out infinite}
+@keyframes lw-proud{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+
+.lw-char[data-face=shy] .lw-m-smile{display:none}
+.lw-char[data-face=shy] .lw-m-wavy,.lw-char[data-face=shy] .lw-blush{display:inline}
+.lw-char[data-face=shy] .lw-eyes{transform:translate(-4px,5px)}
+.lw-char[data-face=shy] .lw-eye-dot{transform:scale(.8)}
+.lw-char[data-face=shy] .lw-blush{animation:lw-blush 2s ease-in-out infinite}
+@keyframes lw-blush{50%{opacity:.85}}
+
+/* ---------- BODY STATES ---------- */
+.lw-char[data-body=idle] .lw-rig{animation:lw-breathe 3s ease-in-out infinite}
+@keyframes lw-breathe{50%{transform:scale(1.02,.98)}}
+
+/* ===== DESK SCENE (data-body = typing | sleeping | away-from-desk) =====
+   Layout for data-side="right" (default): desk at the right of the monitor, angled to face the middle (left);
+   tool on the top-left of the desk, buddy BEHIND the desk to the right of the tool.
+   data-side="left" mirrors the whole scene (tool on the right, buddy on the left). */
+.lw-char:is([data-body=typing],[data-body=sleeping],[data-body=away-from-desk]) :is(.lw-desk,.lw-tools){display:inline}
+.lw-char[data-side=left]:is([data-body=typing],[data-body=sleeping],[data-body=away-from-desk]) .lw-scene{transform:scaleX(-1)}
+/* tool selector: laptop is the default when absent/unknown; pen alias quill */
+.lw-char:not([data-tool=typewriter]):not([data-tool=pen]):not([data-tool=quill]) .lw-tool-laptop,
+.lw-char[data-tool=typewriter] .lw-tool-typewriter,
+.lw-char:is([data-tool=pen],[data-tool=quill]) .lw-tool-pen{display:inline}
+.lw-laptop-glow{opacity:0}
+
+/* hand layering at the desk: back-layer left hand and front-layer right hand are never used;
+   .lw-hand-mid (drawn BEHIND desk + tool) are used instead; only exception: pen typing uses .lw-hand-front (holds the quill) */
+.lw-char:is([data-body=typing],[data-body=sleeping]) .lw-hand-mid{display:inline}
+.lw-char:is([data-body=typing],[data-body=sleeping],[data-body=away-from-desk]) :is(.lw-rig-back .lw-hand-l,.lw-rig-front .lw-hand-r){display:none}
+.lw-char[data-body=typing]:is([data-tool=pen],[data-tool=quill]) .lw-hand-mid.lw-hand-l{display:none}
+.lw-char[data-body=typing]:is([data-tool=pen],[data-tool=quill]) .lw-hand-front{display:inline}
+/* quill rests in the inkwell whenever it is not being written with */
+.lw-char:is([data-body=sleeping],[data-body=away-from-desk]) .lw-quill-rest{display:inline}
+
+/* typing: buddy behind the desk to the right of the tool; hands peek out either side of the device */
+.lw-char[data-body=typing] .lw-rig{transform:translate(52px,0);animation:lw-type-bob .3s ease-in-out infinite alternate}
+@keyframes lw-type-bob{from{transform:translate(52px,0)}to{transform:translate(52px,3px)}}
+.lw-char[data-body=typing] .lw-hand-mid.lw-hand-l{transform:translate(-14px,26px)}
+.lw-char[data-body=typing] .lw-hand-mid.lw-hand-r{transform:translate(-86px,2px)}
+.lw-char[data-body=typing] .lw-hand-mid.lw-hand-l .lw-hand-inner{animation:lw-tap .25s ease-in-out infinite alternate}
+.lw-char[data-body=typing] .lw-hand-mid.lw-hand-r .lw-hand-inner{animation:lw-tap .25s ease-in-out infinite alternate-reverse}
+@keyframes lw-tap{from{transform:translateY(0)}to{transform:translateY(-8px)}}
+/* laptop: screen light pulses */
+.lw-char[data-body=typing] .lw-laptop-glow{animation:lw-glow 1.2s ease-in-out infinite}
+@keyframes lw-glow{0%,100%{opacity:.25}50%{opacity:.9}}
+/* typewriter (back to viewer): carriage + paper step one way, then return (direction reversed in v0.7) */
+.lw-char[data-body=typing][data-tool=typewriter] .lw-tw-carriage{animation:lw-carriage 3s steps(12,end) infinite}
+@keyframes lw-carriage{0%{transform:translateX(-4px)}96%{transform:translateX(4px)}100%{transform:translateX(-4px)}} /* steps left→right on screen (as in v0.7/v0.7.3) */
+/* pen: left hand (front) holds the quill; stroke runs RIGHT→LEFT (mirrored in v0.7); right hand rests behind the desk */
+.lw-char[data-body=typing]:is([data-tool=pen],[data-tool=quill]) .lw-hand-front{transform:translate(24px,24px)}
+.lw-char[data-body=typing]:is([data-tool=pen],[data-tool=quill]) .lw-hand-front .lw-hand-inner{animation:lw-scribble 1.6s ease-in-out infinite}
+.lw-char[data-body=typing]:is([data-tool=pen],[data-tool=quill]) .lw-hand-mid.lw-hand-r{transform:translate(-46px,32px)}
+.lw-char[data-body=typing]:is([data-tool=pen],[data-tool=quill]) .lw-hand-mid.lw-hand-r .lw-hand-inner{animation:none}
+.lw-char[data-body=typing]:is([data-tool=pen],[data-tool=quill]) .lw-pen-ink{stroke-dasharray:100;animation:lw-ink 1.6s linear infinite}
+@keyframes lw-scribble{0%{transform:translate(0,0)}12%{transform:translate(-4px,-4px)}25%{transform:translate(-8px,0)}37%{transform:translate(-12px,-4px)}50%{transform:translate(-16px,0)}62%{transform:translate(-20px,-4px)}75%{transform:translate(-32px,0)}88%{transform:translate(-30px,-6px)}100%{transform:translate(0,0)}}
+@keyframes lw-ink{0%{stroke-dasharray:0 100}75%,100%{stroke-dasharray:100 0}}
+
+/* sleeping: slumped toward the tool, both hands hidden behind the desk */
+.lw-char[data-body=sleeping] .lw-rig{animation:lw-sleep 3s ease-in-out infinite}
+.lw-char[data-body=sleeping] .lw-hand-mid.lw-hand-l{transform:translate(26px,55px)}
+.lw-char[data-body=sleeping] .lw-hand-mid.lw-hand-r{transform:translate(-46px,27px)}
+@keyframes lw-sleep{0%,100%{transform:translate(52px,8px) rotate(-10deg) scale(1,.97)}50%{transform:translate(52px,8px) rotate(-10deg) scale(1.03,1)}}
+
+/* away-from-desk: desk + tool only, buddy hidden (see also desk.svg) */
+.lw-char[data-body=away-from-desk] .lw-rig{display:none}
+
+/* ===== WANDERING =====
+   Travel states (walking | rushing | racing): the base art faces/moves LEFT; data-dir absent (= moving right) mirrors .lw-scene.
+   Hand layering: rushing/racing → hand on the side of travel on top, using .lw-hand-front (left hand, in front of the body) and .lw-hand-backr (right hand, behind the body).
+   walking (v0.7.2) → hand on the TRAILING side on top (moving right: left hand on top; moving left: right hand on top), using the base hands.
+   Other wandering states (idle, peeking, watching…) keep the old rule: data-dir="left" mirrors. The desk scene ignores data-dir. */
+.lw-char:is([data-body=walking],[data-body=rushing],[data-body=racing]):not([data-dir=left]) .lw-scene{transform:scaleX(-1)}
+.lw-char[data-dir=left]:not([data-body=typing]):not([data-body=sleeping]):not([data-body=away-from-desk]):not([data-body=walking]):not([data-body=rushing]):not([data-body=racing]) .lw-scene{transform:scaleX(-1)}
+.lw-char:is([data-body=rushing],[data-body=racing]) :is(.lw-hand-front,.lw-hand-backr){display:inline}
+.lw-char:is([data-body=rushing],[data-body=racing]) :is(.lw-rig-back .lw-hand-l,.lw-rig-front .lw-hand-r:not(.lw-hand-front)){display:none}
+.lw-char:not([data-body=typing]) .lw-hand-front .lw-quill-art{display:none}
+
+/* walking: waddle + swinging hands */
+.lw-char[data-body=walking] .lw-rig{animation:lw-waddle .6s ease-in-out infinite}
+.lw-char[data-body=walking] .lw-hand-l .lw-hand-inner{animation:lw-swing .6s ease-in-out infinite}
+.lw-char[data-body=walking] .lw-hand-r .lw-hand-inner{animation:lw-swing .6s ease-in-out infinite reverse}
+@keyframes lw-waddle{0%,100%{transform:rotate(-6deg) translateY(0)}25%,75%{transform:rotate(0) translateY(-8px)}50%{transform:rotate(6deg) translateY(0)}}
+@keyframes lw-swing{0%,100%{transform:translateY(-6px)}50%{transform:translateY(6px)}}
+
+/* peeking: lean out from an edge (host clips along window/screen edge) */
+.lw-char[data-body=peeking] .lw-rig{animation:lw-peek 3s ease-in-out infinite}
+@keyframes lw-peek{0%,15%,100%{transform:translateX(70px) rotate(10deg)}40%,75%{transform:translateX(15px) rotate(-14deg)}}
+
+/* racing (legacy, kept): bouncy run with hands pumping at the sides */
+.lw-char[data-body=racing] .lw-rig{animation:lw-race .28s linear infinite}
+.lw-char[data-body=racing] .lw-hand-l .lw-hand-inner{animation:lw-swing .28s linear infinite}
+.lw-char[data-body=racing] .lw-hand-r .lw-hand-inner{animation:lw-swing .28s linear infinite reverse}
+@keyframes lw-race{0%,100%{transform:rotate(-14deg) translate(0,0)}50%{transform:rotate(-14deg) translate(-4px,-12px)}}
+
+/* rushing (v0.7): leans hard into the direction of travel, both hands stream out BEHIND and flutter */
+.lw-char[data-body=rushing] .lw-rig{animation:lw-rush .26s ease-in-out infinite}
+.lw-char[data-body=rushing] .lw-hand-l{transform:translate(162px,-14px)}
+.lw-char[data-body=rushing] .lw-hand-r{transform:translate(4px,2px)}
+.lw-char[data-body=rushing] .lw-hand-l .lw-hand-inner{animation:lw-trail .26s ease-in-out infinite}
+.lw-char[data-body=rushing] .lw-hand-r .lw-hand-inner{animation:lw-trail .26s ease-in-out infinite reverse}
+@keyframes lw-rush{0%,100%{transform:rotate(-14deg) translate(-4px,0)}50%{transform:rotate(-14deg) translate(-4px,-9px)}}
+@keyframes lw-trail{0%,100%{transform:translate(0,-4px)}50%{transform:translate(6px,5px)}}
+
+/* Zzz stays readable when the scene is mirrored */
+.lw-char[data-side=left]:is([data-body=typing],[data-body=sleeping]) .lw-zzz text{animation-name:lw-z-m}
+@keyframes lw-z-m{0%{opacity:0;transform:translate(-10px,10px) scale(-.6,.6)}30%{opacity:1}100%{opacity:0;transform:translate(8px,-10px) scale(-1.2,1.2)}}
+
+@media (prefers-reduced-motion:reduce){.lw-char *{animation-duration:0s!important;animation-iteration-count:1!important}}
+
+/* ---------- watching (alias away): seen from behind, watching a distraction ---------- */
+.lw-char:is([data-body=watching],[data-body=away]) .lw-face{display:none}
+.lw-char:is([data-body=watching],[data-body=away]) .lw-back{display:inline}
+.lw-char:is([data-body=watching],[data-body=away]) .lw-hand-l{transform:translate(14px,24px)}
+.lw-char:is([data-body=watching],[data-body=away]) .lw-hand-r{transform:translate(-14px,-4px)}
+.lw-char:is([data-body=watching],[data-body=away]) .lw-rig{animation:lw-watch 5s ease-in-out infinite}
+@keyframes lw-watch{0%,100%{transform:rotate(-4deg) scale(1)}45%,60%{transform:rotate(5deg) translateY(-3px) scale(1.04,1.02)}}
+
+/* ---------- UI buttons (ui-close.svg / ui-gear.svg, inline) ---------- */
+.lw-ui{--ui-bg:var(--body,#e8cfa9);--ui-shade:var(--shade,#b77d48);--ui-glyph:var(--body,#e8cfa9);--ui-hover:#f4dfbf;--ui-close-hover:#e9867a;
+  cursor:pointer;display:inline-block;overflow:visible;transition:transform .15s}
+.lw-ui *{transform-box:fill-box;transform-origin:center;transition:fill .15s,transform .3s}
+.lw-ui:hover{transform:scale(1.12)}
+.lw-ui:active{transform:scale(.92)}
+.lw-ui-gear:hover .lw-ui-bg{fill:var(--ui-hover)}
+.lw-ui-gear:hover .lw-ui-glyph{transform:rotate(90deg)}
+.lw-ui-close:hover .lw-ui-bg{fill:var(--ui-close-hover)}
+.lw-ui-close:hover .lw-ui-glyph{transform:rotate(90deg)}
+.lw-ui:focus-visible{outline:3px solid var(--outline,#241414);outline-offset:2px;border-radius:50%}
+

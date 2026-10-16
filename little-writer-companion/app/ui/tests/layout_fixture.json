@@ -1,0 +1,12 @@
+{
+  "race_hold_ms": 1000,
+  "home_max_scale": 1.3,
+  "desk_anchor_x": 40,
+  "desk_anchor_y": 30,
+  "body_center_right": 172,
+  "body_center_left": 68,
+  "body_center_away": 120,
+  "body_center_y": 110,
+  "sprite_w": 120,
+  "sprite_h": 110
+}

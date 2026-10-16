@@ -1,0 +1,5 @@
+<svg class="lw-ui lw-ui-close" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="button" aria-label="Close">
+  <circle class="lw-ui-bg" cx="16" cy="16" r="13" fill="var(--ui-bg,#e8cfa9)" stroke="var(--outline,#241414)" stroke-width="3.5"/>
+  <path class="lw-ui-shade" d="M26 9a13 13 0 0 1-17 17a14 14 0 0 0 17-17z" fill="var(--ui-shade,#b77d48)" opacity=".6"/>
+  <path class="lw-ui-glyph" d="M11 11l10 10M21 11l-10 10" stroke="var(--outline,#241414)" stroke-width="3.5" stroke-linecap="round"/>
+</svg>

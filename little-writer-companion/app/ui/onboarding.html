@@ -1,0 +1,22 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Welcome to Little Writer</title>
+<link rel="stylesheet" href="assets/lw-character.css"><link rel="stylesheet" href="settings.css"><link rel="stylesheet" href="onboarding.css">
+</head><body>
+<div id="stage"><div id="preview"></div></div>
+<section class="step on" id="s1"><h2>Meet your writing buddy</h2>
+ <p>This little companion lives on your desktop and keeps you company while you write. Every word you type helps your buddy finish its own story; when you take a break it naps, wanders around your screen, and sometimes peeks out from behind your windows.</p>
+ <p>Only keystroke <b>counts</b> are used. What you type is never recorded, and nothing leaves your computer.</p>
+ <div class="nav"><span></span><button data-go="2">Let's start →</button></div></section>
+<section class="step" id="s2"><h2>Name your buddy</h2>
+ <label>Name <input id="buddy" maxlength="40" value="Inky"></label>
+ <div class="nav"><button data-go="1">← Back</button><button data-go="3">Next →</button></div></section>
+<section class="step" id="s3"><h2>Pick its colours</h2>
+ <div id="presets"></div>
+ <span class="sw"><input type="color" data-c="body"><span>Body</span></span><input type="hidden" data-c="shade">
+ <input type="hidden" data-c="hands"><small class="derived">Shading and hands follow the body colour.</small><span class="sw"><input type="color" data-c="outline"><span>Outline</span></span>
+ <div class="nav"><button data-go="2">← Back</button><button data-go="4">Next →</button></div></section>
+<section class="step" id="s4"><h2>Your first story</h2>
+ <p>What are you writing? Your buddy starts a Short Story (3,000 words) with you.</p>
+ <label>Story title <input id="title" maxlength="120" placeholder="My Short Story"></label>
+ <div class="nav"><button data-go="3">← Back</button><button id="finish">Start writing ✎</button></div></section>
+<script src="assets/lw-color.js"></script><script src="character.js"></script><script src="palette.js"></script><script src="onboarding.js"></script>
+</body></html>
