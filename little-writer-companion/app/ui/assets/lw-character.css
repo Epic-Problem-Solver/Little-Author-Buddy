@@ -92,12 +92,15 @@
    Layout for data-side="right" (default): desk at the right of the monitor, angled to face the middle (left);
    tool on the top-left of the desk, buddy BEHIND the desk to the right of the tool.
    data-side="left" mirrors the whole scene (tool on the right, buddy on the left). */
+/* Laptop and typewriter are the .lw-tools group drawn before .lw-desk. The pen stays in the group after the desk. */
 .lw-char:is([data-body=typing],[data-body=sleeping],[data-body=away-from-desk]) :is(.lw-desk,.lw-tools){display:inline}
 .lw-char[data-side=left]:is([data-body=typing],[data-body=sleeping],[data-body=away-from-desk]) .lw-scene{transform:scaleX(-1)}
 /* tool selector: laptop is the default when absent/unknown; pen alias quill */
 .lw-char:not([data-tool=typewriter]):not([data-tool=pen]):not([data-tool=quill]) .lw-tool-laptop,
 .lw-char[data-tool=typewriter] .lw-tool-typewriter,
 .lw-char:is([data-tool=pen],[data-tool=quill]) .lw-tool-pen{display:inline}
+/* 1.25× in place (fill-box centre). Pen stays the original size. Desk body centre y is motion.js DESK_BODY_CENTER_Y. */
+.lw-char .lw-tool-laptop,.lw-char .lw-tool-typewriter{transform:scale(1.25)}
 .lw-laptop-glow{opacity:0}
 
 /* hand layering at the desk: back-layer left hand and front-layer right hand are never used;
@@ -110,8 +113,8 @@
 .lw-char:is([data-body=sleeping],[data-body=away-from-desk]) .lw-quill-rest{display:inline}
 
 /* typing: buddy behind the desk to the right of the tool; hands peek out either side of the device */
-.lw-char[data-body=typing] .lw-rig{transform:translate(52px,0);animation:lw-type-bob .3s ease-in-out infinite alternate}
-@keyframes lw-type-bob{from{transform:translate(52px,0)}to{transform:translate(52px,3px)}}
+.lw-char[data-body=typing] .lw-rig{transform:translate(52px,0) scale(1.25);animation:lw-type-bob .3s ease-in-out infinite alternate}
+@keyframes lw-type-bob{from{transform:translate(52px,0) scale(1.25)}to{transform:translate(52px,3px) scale(1.25)}}
 .lw-char[data-body=typing] .lw-hand-mid.lw-hand-l{transform:translate(-14px,26px)}
 .lw-char[data-body=typing] .lw-hand-mid.lw-hand-r{transform:translate(-86px,2px)}
 .lw-char[data-body=typing] .lw-hand-mid.lw-hand-l .lw-hand-inner{animation:lw-tap .25s ease-in-out infinite alternate}
@@ -136,7 +139,7 @@
 .lw-char[data-body=sleeping] .lw-rig{animation:lw-sleep 3s ease-in-out infinite}
 .lw-char[data-body=sleeping] .lw-hand-mid.lw-hand-l{transform:translate(26px,55px)}
 .lw-char[data-body=sleeping] .lw-hand-mid.lw-hand-r{transform:translate(-46px,27px)}
-@keyframes lw-sleep{0%,100%{transform:translate(52px,8px) rotate(-10deg) scale(1,.97)}50%{transform:translate(52px,8px) rotate(-10deg) scale(1.03,1)}}
+@keyframes lw-sleep{0%,100%{transform:translate(52px,8px) rotate(-10deg) scale(1.25,1.2125)}50%{transform:translate(52px,8px) rotate(-10deg) scale(1.2875,1.25)}}
 
 /* away-from-desk: desk + tool only, buddy hidden (see also desk.svg) */
 .lw-char[data-body=away-from-desk] .lw-rig{display:none}

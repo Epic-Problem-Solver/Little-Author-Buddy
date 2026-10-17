@@ -25,9 +25,22 @@
       -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s];
     return '#' + rgb.map(v => Math.round(Math.min(1, Math.max(0, fromLin(v))) * 255).toString(16).padStart(2, '0')).join('');
   }
+  // Same cutoff as store.rs DARK_L. Below this, shade would flip lighter (L + 0.18).
+  const DARK_L = 0.42;
   function lwDeriveShade(hex) {
     const [L, C, H] = hexToOklch(hex);
-    return oklchToHex(L >= 0.42 ? L * 0.75 : Math.min(1, L + 0.18), Math.min(0.25, C * 1.8), H);
+    return oklchToHex(L >= DARK_L ? L * 0.75 : Math.min(1, L + 0.18), Math.min(0.25, C * 1.8), H);
+  }
+  /** OKLCH lightness of #rrggbb, or null when the string is not a 6-digit hex. */
+  function lwBodyLightness(hex) {
+    hex = String(hex).trim();
+    if (!/^#?[0-9a-f]{6}$/i.test(hex)) return null;
+    return hexToOklch(hex)[0];
+  }
+  /** Body colours at or above DARK_L shade darker. Darker bodies are not offered in customization. */
+  function lwBodyAllowed(hex) {
+    const L = lwBodyLightness(hex);
+    return L != null && L >= DARK_L;
   }
   function lwApplyColor(el, hex) {
     const shade = lwDeriveShade(hex);
@@ -37,5 +50,6 @@
     return shade;
   }
   g.lwApplyColor = lwApplyColor; g.lwDeriveShade = lwDeriveShade;
-  if (typeof module !== 'undefined') module.exports = { lwApplyColor, lwDeriveShade };
+  g.lwBodyLightness = lwBodyLightness; g.lwBodyAllowed = lwBodyAllowed;
+  if (typeof module !== 'undefined') module.exports = { lwApplyColor, lwDeriveShade, lwBodyLightness, lwBodyAllowed };
 })(typeof window !== 'undefined' ? window : globalThis);

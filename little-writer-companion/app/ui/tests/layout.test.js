@@ -11,6 +11,7 @@ test('motion geometry matches the shared layout fixture', () => {
   assert.equal(M.BODY_CENTER_LEFT, fx.body_center_left);
   assert.equal(M.BODY_CENTER_AWAY, fx.body_center_away);
   assert.equal(M.BODY_CENTER_Y, fx.body_center_y);
+  assert.equal(M.DESK_BODY_CENTER_Y, fx.desk_body_center_y);
   assert.equal(M.SPRITE_W, fx.sprite_w);
   assert.equal(M.SPRITE_H, fx.sprite_h);
 });

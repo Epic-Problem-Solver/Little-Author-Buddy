@@ -1,7 +1,4 @@
 <svg class="lw-char" data-face="idle" data-body="idle" data-tool="laptop" data-side="right" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" width="240" height="220">
-  <defs>
-    <clipPath id="lw-body-clip"><circle cx="120" cy="110" r="62"/></clipPath>
-  </defs>
   <g class="lw-scene">
   <g class="lw-rig lw-rig-back">
     <g class="lw-hand lw-hand-l"><g transform="translate(52 112)"><g class="lw-hand-inner">
@@ -16,11 +13,13 @@
     </g></g></g>
     <g class="lw-body">
       <circle cx="120" cy="110" r="62" fill="var(--shade)"/>
-      <circle cx="108" cy="96" r="58" fill="var(--body)" clip-path="url(#lw-body-clip)"/>
+      <!-- Offset highlight, cut to the body circle so it cannot sit outside the outline. -->
+      <path d="M149.47 55.45 A58 58 0 1 1 61.59 130.78 A62 62 0 0 1 149.47 55.45 Z" fill="var(--body)"/>
       <circle cx="120" cy="110" r="62" fill="none" stroke="var(--outline)" stroke-width="7"/>
     </g>
     <g class="lw-back">
-      <path d="M62 120a58 58 0 0 0 116 0a62 50 0 0 1-116 0z" fill="var(--shade)" opacity=".7"/>
+      <!-- Back shade, cut to the body circle so the bottom cannot pass the outline. -->
+      <path d="M62 120A58 58 0 0 0 65.2 139A62 62 0 0 0 174.8 139A58 58 0 0 0 178 120A62 50 0 0 1 62 120Z" fill="var(--shade)" opacity=".7"/>
       <path d="M114 52q4-10 12-8q-6 2-6 8" fill="none" stroke="var(--outline)" stroke-width="4" stroke-linecap="round"/>
       <circle cx="120" cy="110" r="62" fill="none" stroke="var(--outline)" stroke-width="7"/>
     </g>
@@ -55,15 +54,6 @@
       <circle r="19" fill="none" stroke="var(--outline)" stroke-width="6"/>
     </g></g></g>
     </g>
-    <g class="lw-desk"><g class="lw-flipx">
-      <path class="lw-desk-front" d="M22 150L172 158V217H22z" fill="var(--desk)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
-      <path d="M25 205H170V214H25z" fill="var(--desk-shade)"/>
-      <path class="lw-desk-side" d="M172 158L218 170V217H172z" fill="var(--desk-shade)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
-      <g class="lw-desk-slab">
-        <path d="M14 144L176 153V160L14 151z" fill="var(--desk-shade)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
-        <path d="M176 153L226 165V172L176 160z" fill="var(--desk-side-dark)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
-      </g>
-    </g></g>
     <g class="lw-tools">
       <g class="lw-tool lw-tool-laptop"><g class="lw-flipx">
         <path class="lw-laptop-glow" d="M104 110L130 111L127 103L107 102z" fill="var(--screen)"/>
@@ -84,6 +74,17 @@
         <path class="lw-tw-vents" d="M106 132l28 1.2M108 138l24 1" stroke="var(--tool-shade)" stroke-width="3" stroke-linecap="round"/>
         <path d="M92 151L148 154" stroke="var(--outline)" stroke-width="5" stroke-linecap="round"/></g>
       </g>
+    </g>
+    <g class="lw-desk"><g class="lw-flipx">
+      <path class="lw-desk-front" d="M22 150H172V217H22z" fill="var(--desk)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+      <path d="M25 205H170V214H25z" fill="var(--desk-shade)"/>
+      <path class="lw-desk-side" d="M172 150L218 162V217H172z" fill="var(--desk-shade)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+      <g class="lw-desk-slab">
+        <path d="M14 144H176V151H14z" fill="var(--desk-shade)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+        <path d="M176 144L226 156V163L176 151z" fill="var(--desk-side-dark)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+      </g>
+    </g></g>
+    <g class="lw-tools">
       <g class="lw-tool lw-tool-pen">
         <path class="lw-pen-paper" d="M90 153L150 156L156 145L98 142z" fill="var(--paper)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
         <path class="lw-pen-ink" d="M136 150q-4-4-8 0t-8 0t-8 0t-8 0" fill="none" stroke="var(--ink)" stroke-width="3" stroke-linecap="round" pathLength="100"/>

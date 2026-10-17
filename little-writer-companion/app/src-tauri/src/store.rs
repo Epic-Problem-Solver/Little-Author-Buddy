@@ -84,7 +84,7 @@ impl Tiers {
         match tier { Tier::Novella => self.novella, Tier::Novel => self.novel, Tier::ShortStory => self.short_story }.max(1)
     }
 }
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(default)]
 pub struct Colors {
     pub body: String, pub shade: String, pub hands: String, pub outline: String,
@@ -93,9 +93,10 @@ pub struct Colors {
     pub screen: String, pub ink: String, pub feather: String, pub feather_shade: String,
     pub paper: String, pub paper_shade: String,
 }
-/// v0.6/v0.7: one body picker. Shade + hands are one colour derived from the body with Animator's rule
-/// (assets/lw-color.js `lwDeriveShade`, same as the CSS default): in OKLCH, L x0.75 and chroma x1.8 (max .25);
-/// when the body is dark (OKLCH L < DARK_L) the shade flips lighter (L + 0.18).
+/// Shade + hands are one colour derived from the body with Animator's rule
+/// (assets/lw-color.js `lwDeriveShade`, same as the CSS default): in OKLCH, L x0.75 and chroma x1.8 (max .25).
+/// The formula still lightens when L < DARK_L, but customization and `Colors::derive` refuse those bodies.
+/// Desk and writing-tool colours are not derived; `derive` pins them to the Beige defaults.
 pub const DARK_L: f64 = 0.42;
 fn parse_hex(h: &str) -> Option<(f64, f64, f64)> {
     let h = h.trim().trim_start_matches('#');
@@ -133,9 +134,29 @@ pub fn derive_body(body: &str) -> Option<(String, String)> {
     let shade = oklch_hex(if l >= DARK_L { l * 0.75 } else { (l + 0.18).min(1.0) }, (c * 1.8).min(0.25), h);
     Some((shade.clone(), shade))
 }
+/// A choosable body: valid #rrggbb whose OKLCH lightness does not trip the lighten branch.
+pub fn body_allowed(body: &str) -> bool {
+    oklch(body).is_some_and(|(l, _, _)| l >= DARK_L)
+}
+fn pin_furniture(c: &mut Colors) {
+    let d = Colors::default();
+    c.desk = d.desk;
+    c.desk_shade = d.desk_shade;
+    c.tool = d.tool;
+    c.tool_shade = d.tool_shade;
+    c.screen = d.screen;
+    c.ink = d.ink;
+    c.feather = d.feather;
+    c.feather_shade = d.feather_shade;
+    c.paper = d.paper;
+    c.paper_shade = d.paper_shade;
+}
 impl Colors {
-    /// Recompute shade + hands from body (keeps body; invalid body falls back to the default palette).
+    /// Recompute shade + hands from a light body. A missing or too-dark body becomes the Beige body.
+    /// Desk, tools, ink, feather, and paper are always the Beige defaults. Outline is kept.
     pub fn derive(&mut self) {
+        pin_furniture(self);
+        if !body_allowed(&self.body) { self.body = Colors::default().body; }
         match derive_body(&self.body) {
             Some((s, h)) => { self.shade = s; self.hands = h; }
             None => { let d = Colors::default(); self.body = d.body; self.shade = d.shade; self.hands = d.hands; }
@@ -555,7 +576,10 @@ pub fn load(path: &PathBuf, now: u64) -> (Data, Option<LoadIssue>) {
                 clamp_motion(&mut d.settings);
                 // v0.5 migration: existing saves skip onboarding (default buddy name), fresh-looking ones get it
                 if d.onboarded.is_none() { d.onboarded = Some(!d.needs_title()); }
-                d.settings.colors.derive(); // v0.6 migration: keep body, recompute shade + hands
+                let before = d.settings.colors.clone();
+                // Light body only; shade + hands recomputed; desk and writing tools pinned to Beige.
+                d.settings.colors.derive();
+                if d.settings.colors != before { save(path, &d); }
                 return (d, None);
             }
             Err(e) => LoadErrorKind::Parse(e),
@@ -595,5 +619,25 @@ mod colour_tests {
         for (b, s) in fx { assert_eq!(derive_body(&b).unwrap().0, s, "{b}"); }
         let mut c = Colors { body: "#cfe6ff".into(), shade: "#000000".into(), hands: "#000000".into(), ..Colors::default() };
         c.derive(); assert_eq!(c.body, "#cfe6ff"); assert_ne!(c.shade, "#000000"); assert_eq!(c.shade, c.hands);
+        // A body that would invert is replaced; outline stays; desk and tools return to Beige.
+        let beige = Colors::default();
+        let mut dark = Colors { body: "#1d2a4a".into(), desk: "#000000".into(), tool: "#111111".into(), paper: "#222222".into(), screen: "#333333".into(), ink: "#444444".into(), feather: "#555555".into(), outline: "#abcdef".into(), ..beige.clone() };
+        dark.derive();
+        assert!(!body_allowed("#1d2a4a"));
+        assert!(body_allowed("#e8cfa9"));
+        assert!(body_allowed("#cfe6ff"));
+        assert_eq!(dark.body, beige.body);
+        assert_eq!(dark.outline, "#abcdef");
+        assert_eq!(dark.desk, beige.desk);
+        assert_eq!(dark.desk_shade, beige.desk_shade);
+        assert_eq!(dark.tool, beige.tool);
+        assert_eq!(dark.tool_shade, beige.tool_shade);
+        assert_eq!(dark.screen, beige.screen);
+        assert_eq!(dark.ink, beige.ink);
+        assert_eq!(dark.feather, beige.feather);
+        assert_eq!(dark.feather_shade, beige.feather_shade);
+        assert_eq!(dark.paper, beige.paper);
+        assert_eq!(dark.paper_shade, beige.paper_shade);
+        assert!(oklch(&dark.shade).unwrap().0 < oklch(&dark.body).unwrap().0);
     }
 }

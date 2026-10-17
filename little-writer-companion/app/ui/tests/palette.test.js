@@ -16,3 +16,30 @@ test('invalid input -> null; presets carry derived shade', () => {
   assert.equal(P.derive('nope'), null);
   const c = P.colors('Sky'); assert.equal(c.shade, P.derive(c.body).shade);
 });
+test('every preset keeps the beige desk and writing tools', () => {
+  const beige = P.colors('Beige');
+  const keys = ['desk', 'desk_shade', 'tool', 'tool_shade', 'screen', 'ink', 'feather', 'feather_shade', 'paper', 'paper_shade'];
+  for (const name of ['Sky', 'Rose', 'Mint']) {
+    const c = P.colors(name);
+    for (const k of keys) assert.equal(c[k], beige[k], `${name} ${k}`);
+    assert.notEqual(c.body, beige.body);
+    assert.equal(c.desk, '#8a5a35');
+    assert.equal(c.tool, '#7d8aa0');
+    assert.equal(c.paper, '#f6efe2');
+  }
+});
+test('bodies that would invert cannot be chosen; light presets can', () => {
+  assert.equal(P.bodyAllowed('#1d2a4a'), false);
+  assert.equal(P.bodyAllowed('#000000'), false);
+  assert.equal(P.bodyAllowed('#3a1424'), false);
+  assert.equal(P.bodyAllowed('nope'), false);
+  assert.equal(P.bodyAllowed('#e8cfa9'), true);
+  assert.equal(P.bodyAllowed('#777777'), true);
+  for (const name of Object.keys(P.PRESETS)) assert.equal(P.bodyAllowed(P.PRESETS[name].body), true, name);
+  const fixed = P.normalize({ body: '#1d2a4a', outline: '#abcdef', desk: '#000000', tool: '#111111' });
+  assert.equal(fixed.body, P.PRESETS.Beige.body);
+  assert.equal(fixed.outline, '#abcdef');
+  assert.equal(fixed.desk, '#8a5a35');
+  assert.equal(fixed.tool, '#7d8aa0');
+  assert.equal(fixed.shade, P.derive(fixed.body).shade);
+});

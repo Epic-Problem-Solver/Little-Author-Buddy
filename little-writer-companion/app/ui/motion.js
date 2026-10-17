@@ -13,6 +13,9 @@
     BODY_CENTER_LEFT: 68,
     BODY_CENTER_AWAY: 120,
     BODY_CENTER_Y: 110,
+    // Desk pose scales the rig 1.25 about (120,172) then translates +52. Centre x stays 172 / 68.
+    // Centre y: 172 + (110-172)*1.25 = 94.5. The runner still uses BODY_CENTER_Y.
+    DESK_BODY_CENTER_Y: 94.5,
     SCALE_ORIGIN_X: 60,
     SCALE_ORIGIN_Y: 110,
     SPRITE_W: 120,
@@ -20,15 +23,16 @@
     /**
      * BUG-23: where the race-back runner must stop so its body centre is exactly on the desk buddy's rendered body
      * centre. Mirrors the home window layout: the 120x110 host at (40,30) CSS px, svg 240x220 -> x0.5, scaled by
-     * min(userScale, 1.3) around its bottom-centre (60,110); desk-scene body centre svg (172,110) side right,
-     * (68,110) side left. homeCss = home window top-left in overlay CSS px, f = home CSS px -> overlay CSS px
-     * (home scale / overlay DPR), k = the runner's current sprite scale (its away-pose body centre is svg (120,110)).
+     * min(userScale, 1.3) around its bottom-centre (60,110). Desk-scene body centre svg x is 172 (right) or
+     * 68 (left). The 1.25 desk scale drops that centre to svg y DESK_BODY_CENTER_Y. homeCss = home window
+     * top-left in overlay CSS px, f = home CSS px -> overlay CSS px (home scale / overlay DPR), k = the
+     * runner's current sprite scale (its away-pose body centre stays svg (120,110)).
      * Returns { body: [x,y], target: top-left for the runner }.
      */
     deskBodyTarget(homeCss, f, side, userScale, k) {
       const hsc = Math.min(userScale || 1, M.HOME_MAX_SCALE);
       const bx = (side === 'left' ? M.BODY_CENTER_LEFT : M.BODY_CENTER_RIGHT) * 0.5;
-      const by = M.BODY_CENTER_Y * 0.5;
+      const by = M.DESK_BODY_CENTER_Y * 0.5;
       const px = M.SCALE_ORIGIN_X + (bx - M.SCALE_ORIGIN_X) * hsc;
       const py = M.SCALE_ORIGIN_Y + (by - M.SCALE_ORIGIN_Y) * hsc;
       const body = [homeCss[0] + (M.DESK_ANCHOR_X + px) * f, homeCss[1] + (M.DESK_ANCHOR_Y + py) * f];
@@ -76,6 +80,100 @@
     },
     /** The runner scale that matches the desk buddy's size: same cap, same home->overlay factor. */
     deskScale(f, userScale) { return f * Math.min(userScale || 1, M.HOME_MAX_SCALE); },
+    /**
+     * Move the box (x, y, w, h) the smallest amount that puts it fully inside monitor m {x,y,w,h}.
+     * pad insets the monitor. A box wider or taller than the monitor stays pinned to the padded
+     * start, so it remains on this monitor instead of straddling the next one.
+     */
+    fitBox(x, y, w, h, m, pad = 0) {
+      const left = m.x + pad, top = m.y + pad, right = m.x + m.w - pad, bottom = m.y + m.h - pad;
+      let nx = x, ny = y;
+      if (nx < left) nx = left;
+      if (nx + w > right) nx = right - w;
+      if (nx < left) nx = left;
+      if (ny < top) ny = top;
+      if (ny + h > bottom) ny = bottom - h;
+      if (ny < top) ny = top;
+      return [nx, ny];
+    },
+    /**
+     * Monitor a bubble stays on. `cur` is the monitor from the previous frame (or null).
+     * `anchor` is the buddy centre. Switching waits until that point is `margin` px inside
+     * a different monitor, so a centre that ditheres on the seam cannot flip the bubble
+     * back and forth.
+     */
+    bubbleMonitor(cur, anchor, ms, margin = 12) {
+      const inside = (m) => anchor[0] >= m.x + margin && anchor[0] <= m.x + m.w - margin
+        && anchor[1] >= m.y + margin && anchor[1] <= m.y + m.h - margin;
+      const fresh = cur && ms.find(m => m.i === cur.i);
+      if (!fresh) return ms.find(inside) || M.monitorAt(anchor, ms);
+      if (inside(fresh)) return fresh;
+      return ms.find(m => m.i !== fresh.i && inside(m)) || fresh;
+    },
+    /**
+     * Monitor that actually holds the window (x0,y0)-(x1,y1). Largest overlap wins.
+     * An equal overlap goes to the monitor that contains the window centre, then to
+     * whichever of those is nearest that centre. A window on no monitor uses monitorAt.
+     */
+    monitorForWindow(x0, y0, x1, y1, ms) {
+      const area = (m) => {
+        const w = Math.min(x1, m.x + m.w) - Math.max(x0, m.x);
+        const h = Math.min(y1, m.y + m.h) - Math.max(y0, m.y);
+        return w > 0 && h > 0 ? w * h : 0;
+      };
+      let bestA = 0, tied = [];
+      for (const m of ms) {
+        const a = area(m);
+        if (a > bestA + 0.5) { bestA = a; tied = [m]; }
+        else if (a > 0 && Math.abs(a - bestA) <= 0.5) tied.push(m);
+      }
+      const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+      if (!tied.length) return M.monitorAt([cx, cy], ms);
+      if (tied.length === 1) return tied[0];
+      const holds = tied.filter(m => cx >= m.x && cx <= m.x + m.w && cy >= m.y && cy <= m.y + m.h);
+      return M.monitorAt([cx, cy], holds.length ? holds : tied);
+    },
+    /**
+     * Top-left where the sprite stands to watch the window, fully on `m`.
+     * Horizontally centred on the part of the window that lies on that monitor.
+     * Vertically just above the window bottom, then clamped onto the monitor.
+     */
+    watchGoal(x0, y0, x1, y1, m, bw, bh, k, margin = 8) {
+      const sw = bw * k, sh = bh * k;
+      const left = Math.max(x0, m.x), right = Math.min(x1, m.x + m.w);
+      const cx = left < right ? (left + right) / 2 : m.x + m.w / 2;
+      const winBottom = Math.min(Math.max(y1, m.y), m.y + m.h);
+      return M.fitBox(cx - sw / 2, winBottom - sh - 10, sw, sh, m, margin);
+    },
+    /**
+     * Visual look once standing still. Prefer `primary` (the window centre).
+     * Within `dead` px, use `fallback` (the monitor centre). Within `dead` of that
+     * too, return null so the caller keeps the direction already on screen.
+     * Returns 'left' | 'right' | null. This is the look, not the data-dir value.
+     */
+    lookToward(spriteCx, primary, fallback, dead = 24) {
+      const pick = (t) => (Math.abs(t - spriteCx) < dead ? null : (t > spriteCx ? 'right' : 'left'));
+      return pick(primary) || pick(fallback);
+    },
+    /**
+     * data-dir for a visual look. Walking, rushing, and racing face the named way.
+     * Peeking, watching, and the other still poses face the opposite name: the art
+     * faces left, and data-dir=left mirrors it.
+     */
+    dirForLook(body, look) {
+      const travel = body === 'walking' || body === 'rushing' || body === 'racing';
+      if (travel) return look === 'left' ? 'left' : 'right';
+      return look === 'right' ? 'left' : 'right';
+    },
+    /**
+     * Which way a hide spot should look. A screen edge's `side` is the outer edge,
+     * so look inward. A window's `side` is the sprite side pressed against the glass:
+     * 'right' means the character is left of the window and should look right.
+     */
+    hideLook(side, atWindow) {
+      const lookRight = atWindow ? side === 'right' : side === 'left';
+      return lookRight ? 'right' : 'left';
+    },
     clampDt(ms) { return Number.isFinite(ms) && ms > 0 ? Math.min(ms / 1000, M.MAX_DT) : 0; },
     /** Sprite scale on a monitor: monitor scale relative to the overlay's DPR, times the user's size setting. */
     scaleFor(monitorScale, overlayDpr, userScale = 1) { return ((monitorScale || 1) / (overlayDpr || 1)) * (userScale || 1); },

@@ -12,7 +12,17 @@ for (const n of Object.keys(LWPalette.PRESETS)) {
   const b = document.createElement('button'); b.type = 'button'; b.textContent = n;
   b.onclick = () => { colors = LWPalette.colors(n); sync(); }; $('presets').append(b);
 }
-document.querySelectorAll('[data-c]').forEach(i => i.oninput = () => { colors[i.dataset.c] = i.value; if (i.dataset.c === 'body') Object.assign(colors, LWPalette.derive(i.value) || {}); ch.setColors(colors); });
+document.querySelectorAll('[data-c]').forEach(i => {
+  const apply = () => {
+    if (i.dataset.c === 'body' && !LWPalette.bodyAllowed(i.value)) { i.value = colors.body; return; }
+    colors = LWPalette.normalize({
+      body: i.dataset.c === 'body' ? i.value : colors.body,
+      outline: i.dataset.c === 'outline' ? i.value : colors.outline,
+    });
+    sync();
+  };
+  i.oninput = apply; i.onchange = apply;
+});
 $('buddy').oninput = () => document.title = `Welcome to Little Author — ${$('buddy').value || 'your buddy'}`;
 $('finish').onclick = async () => {
   $('finish').disabled = true;

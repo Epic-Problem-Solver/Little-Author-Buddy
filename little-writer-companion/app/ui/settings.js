@@ -5,11 +5,19 @@ let data, ch;
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 let curTab = 'settings';
 function tab(t0) { const t = t0 || (location.hash ? location.hash.slice(1) : curTab); curTab = t; document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id === t)); document.querySelectorAll('nav a').forEach(a => a.classList.toggle('on', a.hash === '#' + t)); load(); }
-function colors() { const c = {}; document.querySelectorAll('[data-c]').forEach(i => c[i.dataset.c] = i.value); return c; }
+let lastBody = LWPalette.PRESETS.Beige.body;
+function colors() {
+  const body = document.querySelector('[data-c=body]');
+  if (body && !LWPalette.bodyAllowed(body.value)) body.value = lastBody;
+  else if (body) lastBody = body.value;
+  return LWPalette.normalize({ body: body ? body.value : lastBody, outline: document.querySelector('[data-c=outline]').value });
+}
 async function load() {
   data = await I('get_data'); const s = data.settings, snap = await I('get_snapshot');
   $('warns').innerHTML = (await I('get_warnings')).map(w => `<div>${esc(w)}</div>`).join('');
-  document.querySelectorAll('[data-c]').forEach(i => i.value = s.colors[i.dataset.c]); ch && ch.setColors(s.colors);
+  const shown = LWPalette.normalize(s.colors); lastBody = shown.body;
+  document.querySelectorAll('[data-c]').forEach(i => { if (shown[i.dataset.c]) i.value = shown[i.dataset.c]; });
+  ch && ch.setColors(shown);
   $('kpw').value = Math.min(5, Math.max(1, s.keys_per_word)); $('kpwv').textContent = $('kpw').value; $('idle').value = Math.round(s.idle_threshold_ms / 1000);
   $('t1').value = s.tiers.short_story; $('t2').value = s.tiers.novella; $('t3').value = s.tiers.novel;
     $('dt').checked = s.detect_titles; $('dm').checked = s.detect_media; $('ds').checked = s.detect_scroll; $('titles').value = s.distraction_titles.join('\n');
@@ -40,12 +48,19 @@ async function load() {
 }
 for (const n of Object.keys(LWPalette.PRESETS)) {
   const b = document.createElement('button'); b.type = 'button'; b.textContent = n;
-  b.onclick = () => { for (const [k, x] of Object.entries(LWPalette.colors(n))) { const i = document.querySelector(`[data-c=${k}]`); if (i) i.value = x; } ch.setColors(colors()); };
+  b.onclick = () => { const c = LWPalette.colors(n); lastBody = c.body; document.querySelector('[data-c=body]').value = c.body; document.querySelector('[data-c=outline]').value = c.outline; deriveInputs(); const shown = colors(); ch.setColors(shown); mp && mp.setColors(shown); };
   $('presets').append(b);
 }
-// single body picker: shading + hands are derived (dark bodies get a lighter shade)
+// Body picker only. Shading and hands are derived. A body with OKLCH L < 0.42 snaps back.
 function deriveInputs() { const d = LWPalette.derive(document.querySelector('[data-c=body]').value); if (d) for (const k in d) document.querySelector(`[data-c=${k}]`).value = d[k]; }
-document.querySelectorAll('[data-c]').forEach(i => i.oninput = () => { if (i.dataset.c === 'body') deriveInputs(); ch.setColors(colors()); mp && mp.setColors(colors()); });
+document.querySelectorAll('[data-c]').forEach(i => {
+  const apply = () => {
+    if (i.dataset.c === 'body' && !LWPalette.bodyAllowed(i.value)) { i.value = lastBody; return; }
+    if (i.dataset.c === 'body') { lastBody = i.value; deriveInputs(); }
+    const shown = colors(); ch.setColors(shown); mp && mp.setColors(shown);
+  };
+  i.oninput = apply; i.onchange = apply;
+});
 $('kpw').oninput = () => $('kpwv').textContent = $('kpw').value;
 $('save').onclick = async () => {
   const s = { ...data.settings, colors: colors(), keys_per_word: Math.min(5, Math.max(1, +$('kpw').value | 0)), idle_threshold_ms: Math.max(5, +$('idle').value) * 1000,

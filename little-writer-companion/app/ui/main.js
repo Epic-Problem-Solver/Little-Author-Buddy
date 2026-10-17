@@ -47,12 +47,47 @@ function randomSpot() { // always fully inside a monitor, never in gaps
 }
 function seam(a, b) { return LWMotion.seam(a, b); }
 function route(from, to) { return LWMotion.route(from, to, monitorsCss(), center); }
-function setGoal(t) {
+function setGoal(t, slack = 2) {
   if (!t) return;
-  if (goal && Math.hypot(goal[0] - t[0], goal[1] - t[1]) < 2) return;
+  if (goal && Math.hypot(goal[0] - t[0], goal[1] - t[1]) < slack) return;
   goal = t; path = pos ? route(pos, t) : [t];
 }
 const atGoal = () => !path.length;
+// Still poses mirror on data-dir=left, so that attribute faces the other way from walking.
+function visualLook() {
+  const body = ch.el.getAttribute('data-body') || '';
+  const namedLeft = ch.el.getAttribute('data-dir') === 'left';
+  const travel = body === 'walking' || body === 'rushing' || body === 'racing';
+  return travel ? (namedLeft ? 'left' : 'right') : (namedLeft ? 'right' : 'left');
+}
+function applyLook(body, look) {
+  if (ch.el.getAttribute('data-body') !== body) ch.setBody(body);
+  const dir = LWMotion.dirForLook(body, look);
+  if ((ch.el.getAttribute('data-dir') === 'left') !== (dir === 'left')) ch.setDir(dir);
+}
+function faceHide(h) { applyLook('peeking', LWMotion.hideLook(h.side, !!h.win)); }
+function watchBox(w) {
+  const [x0, y0] = toCss(w.x, w.y), [x1, y1] = toCss(w.x + w.w, w.y + w.h);
+  return [x0, y0, x1, y1];
+}
+// On arrival, face the window. If it is straight ahead, face the monitor centre.
+// If that is straight ahead too, keep the way he was already looking.
+function faceWatch() {
+  if (!snap || !snap.watch || !pos) return;
+  const [x0, y0, x1, y1] = watchBox(snap.watch);
+  const m = LWMotion.monitorForWindow(x0, y0, x1, y1, monitorsCss());
+  const k = kNow || m.k || 1;
+  const spanL = Math.max(x0, m.x), spanR = Math.min(x1, m.x + m.w);
+  const look = LWMotion.lookToward(pos[0] + BW * k / 2, (spanL + spanR) / 2, m.x + m.w / 2, 24) || visualLook();
+  ch.setFace('curious');
+  applyLook(LWCharacter.supportsBody('watching') ? 'watching' : 'peeking', look);
+}
+function ensureWatchWalk() {
+  if (ch.el.getAttribute('data-body') === 'walking') return;
+  const look = visualLook();
+  ch.setFace('curious');
+  applyLook('walking', look);
+}
 
 // ---- hiding / peeking -------------------------------------------------------------------
 // Hide spots: outer monitor edges (no adjacent monitor there) and the foreground window's left/right edges.
@@ -90,7 +125,8 @@ function onTarget(t) {
   if (LWHide.verdict(t, r, w, h) === 'popout') return popOut();
   const g = LWHide.windowGeom(hide.side, hide.yFrac, r, w, h);
   hide.line = g.line; hide.pos = g.pos;
-  if (hide.since) { pos = [g.pos[0], g.pos[1]]; path = []; goal = g.pos; } else setGoal(g.pos);
+  if (hide.since) { pos = [g.pos[0], g.pos[1]]; path = []; goal = g.pos; faceHide(hide); }
+  else setGoal(g.pos, 8);
 }
 function popOut() {
   endHide();
@@ -105,6 +141,54 @@ function applyClip(k) {
   comp.style.clipPath = (l || r) ? `inset(0 ${r / k}px 0 ${l / k}px)` : '';
   bubble.style.display = (l || r) ? 'none' : '';
 }
+// Speech bubble. index.html pins it with bottom:118px over the 110px sprite (8px gap).
+// The shift is computed from layout size. Measuring getBoundingClientRect after clearing
+// the transform put the bubble back on the seam for a frame, then shoved it off again,
+// so near a monitor edge it jittered instead of sliding.
+const BUBBLE_BOTTOM = 118;
+let bubbleHold = null, bubbleSizeKey = '', bubbleNat = null;
+function bubbleNatural() {
+  const key = bubble.textContent + '\n' + (bubble.style.fontSize || '');
+  if (bubbleNat && bubbleSizeKey === key) return bubbleNat;
+  const max = bubble.style.maxWidth, ws = bubble.style.whiteSpace;
+  bubble.style.maxWidth = 'none';
+  bubble.style.whiteSpace = 'nowrap';
+  bubbleNat = { w: bubble.offsetWidth, h: bubble.offsetHeight };
+  bubbleSizeKey = key;
+  bubble.style.maxWidth = max;
+  bubble.style.whiteSpace = ws;
+  return bubbleNat;
+}
+function placeBubble(k) {
+  const showing = pos && bubble.classList.contains('on') && bubble.style.display !== 'none';
+  if (!showing) { bubbleHold = null; return; }
+  const kk = k || 1;
+  const nat = bubbleNatural();
+  if (nat.w < 1 || nat.h < 1) return;
+  const ms = monitorsCss();
+  const anchor = [pos[0] + BW * kk / 2, pos[1] + BH * kk / 2];
+  const held = bubbleHold == null ? null : ms.find(m => m.i === bubbleHold) || null;
+  const m = LWMotion.bubbleMonitor(held, anchor, ms, 12);
+  bubbleHold = m.i;
+  const pad = 4, room = Math.max(8, m.w - pad * 2);
+  let w = nat.w, h = nat.h;
+  const visualW = (bw) => bw * kk;
+  if (visualW(nat.w) > room) {
+    bubble.style.whiteSpace = 'normal';
+    bubble.style.maxWidth = (room / kk) + 'px';
+    w = bubble.offsetWidth; h = bubble.offsetHeight;
+  } else if (bubble.style.maxWidth) {
+    bubble.style.maxWidth = '';
+    bubble.style.whiteSpace = '';
+  }
+  const box = {
+    x: pos[0] + (BW / 2 - w / 2) * kk,
+    y: pos[1] + (BH - BUBBLE_BOTTOM - h) * kk,
+    w: w * kk, h: h * kk,
+  };
+  const [dx, dy] = LWMotion.fitBox(box.x, box.y, box.w, box.h, m, pad);
+  bubble.style.transform = `translate(calc(-50% + ${(dx - box.x) / kk}px), ${(dy - box.y) / kk}px)`;
+}
 
 // ---- state ------------------------------------------------------------------------------
 let raceHoldUntil = 0, rushing = false, arrivedSent = false, handedOff = false, settling = false;
@@ -116,6 +200,7 @@ function syncPose(s, mode) {
   if (mode === lastMode) return;
   handedOff = false; arrivedSent = false; settling = false;
   if (mode === 'race_back') { raceHoldUntil = Date.now() + LWDomain.RACE_HOLD_MS; ch.setFace('excited'); ch.setBody('idle'); rushing = false; }
+  else if (mode === 'watch') { const look = visualLook(); ch.setFace('curious'); applyLook('walking', look); }
   else ch.setState(mode);
   ({ asleep: () => say('sleeping'), wander: () => say('wandering'), watch: () => say('watchingVideo'), race_back: () => say('backToWork') }[mode] || (() => {}))();
   lastMode = mode; wanderGoal = null; endHide();
@@ -126,23 +211,23 @@ function syncPath(s, mode) {
   if (mode === 'race_back' && !rushing) { rushing = true; ch.setState('race_back'); const t = raceTarget(); ch.setWalkDir(t[0] < pos[0] ? 'left' : 'right'); setGoal(t); }
   if (mode === 'wander') {
     if (hide) {
-      if (atGoal() && !hide.since) { hide.since = Date.now(); ch.setBody('peeking'); ch.setFace(hide.face); ch.setDir(hide.side === 'right' ? 'right' : 'left'); }
+      if (atGoal() && !hide.since) { hide.since = Date.now(); ch.setFace(hide.face); faceHide(hide); }
       if (hide && hide.since && Date.now() - hide.since > hide.dur) { endHide(); ch.setState('wander'); wanderGoal = randomSpot(); }
     } else if (!wanderGoal || atGoal()) {
       hide = (s.force_hide || Math.random() < 0.4) ? pickHide() : null;
       if (!hide) wanderGoal = randomSpot();
     }
-    setGoal(hide ? hide.pos : wanderGoal);
+    setGoal(hide ? hide.pos : wanderGoal, hide ? 8 : 2);
   } else if (mode === 'watch' && s.watch) {
-    const [x, y] = toCss(s.watch.x + s.watch.w, s.watch.y + s.watch.h), m = monitorAt([x - 10, y - 10]);
-    setGoal([Math.min(x, m.x + m.w) - BW * m.k * 0.9, Math.min(y, m.y + m.h) - BH * m.k - 10]);
+    const [x0, y0, x1, y1] = watchBox(s.watch), m = LWMotion.monitorForWindow(x0, y0, x1, y1, monitorsCss());
+    setGoal(LWMotion.watchGoal(x0, y0, x1, y1, m, BW, BH, m.k), 16);
+    if (atGoal()) faceWatch(); else ensureWatchWalk();
   } else if (atHome(mode)) { pos = deskPos(); path = []; goal = pos.slice(); }
   else if (mode !== 'watch') setGoal(mode === 'race_back' ? raceTarget() : deskPos());
 }
 function syncHud(s, mode) {
   ch.setColors(s.colors);
   ch.setTool(s.tool);
-  if (mode === 'watch' && !hide) ch.setBody(LWCharacter.supportsBody('watching') ? 'watching' : 'peeking');
   bubble.style.fontSize = ((s.bubble_px || 12)) + 'px';
   comp.style.visibility = atHome(mode) || handedOff ? 'hidden' : 'visible';
   const now = Date.now(), ws = (s.warnings || []).filter(w => (seenWarn[w] ??= now) > now - 60000);
@@ -172,10 +257,15 @@ function frame(t) {
       const n = LWMotion.step(pos, to, vel, vmax, dt, kNow);
       pos = n.pos; vel = path.length > 1 && n.arrived ? n.v || vel : n.v; // keep momentum through seam waypoints
       if (n.arrived) path.shift();
-      if (Math.abs(dx) > 1 && !(hide && hide.since)) ch.setWalkDir(dx < 0 ? 'left' : 'right'); // also drives hand layering
+      // Watching and peeking use the opposite data-dir from walking, so only a travel pose follows dx.
+      const bodyNow = ch.el.getAttribute('data-body');
+      const travel = bodyNow === 'walking' || bodyNow === 'rushing' || bodyNow === 'racing';
+      if (path.length && Math.abs(dx) > 1 && !(hide && hide.since) && travel) ch.setWalkDir(dx < 0 ? 'left' : 'right');
     } else vel = 0;
+    if (lastMode === 'watch' && snap && snap.watch) { if (path.length) ensureWatchWalk(); else faceWatch(); }
     comp.style.left = pos[0] + 'px'; comp.style.top = pos[1] + 'px'; comp.style.transform = Math.abs(kNow - 1) > 1e-3 ? `scale(${kNow})` : '';
     applyClip(kNow);
+    placeBubble(kNow);
     // BUG-23: while rushing, keep re-aiming at the desk buddy's body with the current scale, and report arrival
     // (the hand-off is arrival-driven; the backend only has a safety timeout).
     if (lastMode === 'race_back' && rushing && !arrivedSent) {
