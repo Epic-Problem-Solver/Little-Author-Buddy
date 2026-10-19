@@ -141,7 +141,7 @@ unsafe extern "C" fn tap_cb(_proxy: *mut c_void, ty: u32, event: *mut c_void, _u
             let code = code as u32;
             match ty {
                 KEY_DOWN => { if let Some(c) = COUNTERS.get() { with_down(|d| c.key_down(code, d)); } }
-                KEY_UP => with_down(|d| d.remove(&code)),
+                KEY_UP => { with_down(|d| { d.remove(&code); }); }
                 _ => {}
             }
         }

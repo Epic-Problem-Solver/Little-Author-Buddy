@@ -104,13 +104,13 @@ fn owned_string(value: *const c_void) -> Option<String> {
     }
 }
 
-fn ax_string(element: *mut c_void, attr: &str) -> Option<String> {
-    owned_string(copy_value(element, attr)?)
+fn ax_string(element: *const c_void, attr: &str) -> Option<String> {
+    owned_string(copy_value(element as *mut c_void, attr)?)
 }
 
-fn ax_point_size(element: *mut c_void) -> Option<(f64, f64, f64, f64)> {
-    let pos = copy_value(element, "AXPosition")?;
-    let Some(size) = copy_value(element, "AXSize") else { unsafe { CFRelease(pos); } return None; };
+fn ax_point_size(element: *const c_void) -> Option<(f64, f64, f64, f64)> {
+    let pos = copy_value(element as *mut c_void, "AXPosition")?;
+    let Some(size) = copy_value(element as *mut c_void, "AXSize") else { unsafe { CFRelease(pos); } return None; };
     let mut point = CGPoint { x: 0.0, y: 0.0 };
     let mut sz = CGSize { width: 0.0, height: 0.0 };
     let ok_p = unsafe { AXValueGetValue(pos, 1, &mut point as *mut CGPoint as *mut c_void) };
@@ -119,9 +119,9 @@ fn ax_point_size(element: *mut c_void) -> Option<(f64, f64, f64, f64)> {
     if ok_p == 0 || ok_s == 0 { None } else { Some((point.x, point.y, sz.width, sz.height)) }
 }
 
-fn window_id(element: *mut c_void) -> Option<u32> {
+fn window_id(element: *const c_void) -> Option<u32> {
     let mut id = 0u32;
-    let err = unsafe { _AXUIElementGetWindow(element, &mut id) };
+    let err = unsafe { _AXUIElementGetWindow(element as *mut c_void, &mut id) };
     if err == 0 && id != 0 { Some(id) } else { None }
 }
 

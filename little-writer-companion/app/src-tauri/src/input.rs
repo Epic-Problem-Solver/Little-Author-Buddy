@@ -291,9 +291,9 @@ mod tests {
     #[cfg(target_os = "macos")]
     #[test]
     fn layout_table_counts_unshifted_letters_only() {
-        let mut pairs = Vec::new();
+        let mut pairs: Vec<(u32, u32)> = Vec::new();
         for (i, kc) in ANSI_LETTERS.iter().enumerate() {
-            pairs.push((*kc, b'a' + i as u32));
+            pairs.push((*kc, b'a' as u32 + i as u32));
         }
         pairs.push((0x0C, b'a' as u32)); // physical Q produces a, still one letter key
         let t = letters_from_unshifted(pairs).unwrap();
