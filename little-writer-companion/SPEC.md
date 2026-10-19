@@ -1,6 +1,6 @@
 Target: Cross-platform (Windows first, then macOS and Linux) desktop overlay companion (personal productivity tool, not a Steam clone or reverse-engineer of the commercial game).
 
-Inspired by publicly described behavior of _Little Writer Desktop Companion_ (keystrokes advance a lazy writer companion). User explicitly excludes monetary progression / upgrade economy.
+Inspired by publicly described behavior of _Little Writer Desktop Companion_ (keystrokes advance a lazy writer companion). User explicitly excludes monetary progression / upgrade economy. Optional supporter content is sold off-app; see Distribution.
 
 ## Goals
 
@@ -10,9 +10,9 @@ Inspired by publicly described behavior of _Little Writer Desktop Companion_ (
 
 ## Non-goals
 
-- No in-app currency, shops, skill upgrades, or paid progression.
+- No in-app currency, shop, skill upgrades, or paid progression. Writing tools and story tiers unlock only from completed projects. Hats and mini-games are supporter content packs sold on the website; they do not change writing progress (see Distribution).
 - No recording or exfiltration of typed content (counts and timing only).
-- No Steam API, DRM, or binary reverse-engineering of the commercial game.
+- No Steam API, DRM, license keys, or binary reverse-engineering of the commercial game.
 - Windows is the first build target; macOS and Linux follow from the same codebase (platform-specific input hooks behind one interface).
 
 ## Core behaviors
@@ -113,6 +113,31 @@ Always-on-top, click-through optional when not interacting; tray icon for pause 
 - **Persistence:** local SQLite or JSON for projects, settings, letter journal.
 - **Privacy:** on-device only; document that key _contents_ are never stored.
 
+## Distribution
+
+One public repository and one `main` branch hold the app and the supporter content. GitHub Releases of the free installer are the beta and the lasting free download. The website's free button links to that Release. The website (WordPress + Stripe) sells supporter content as a zip. There is no paid fork and no second installer.
+
+**License.** MIT. The MIT License fits because the free app and the supporter content are both public, and paying is a way to support the author rather than a lock on the files. Anyone may use, copy, modify, and share the program and the packs, including people who build from the GitHub repository instead of buying the zip. The license asks only that the copyright notice and permission text stay with the code. Testers and contributors can try the source during the beta, and the website can still sell the ready-made supporter pack to people who want the hats and mini-games without building them.
+
+### Free app
+
+- The writing companion: keystroke counts, idle and wander, fan letters, and the pen, typewriter, and laptop ladder earned from completed projects.
+- `app/scripts/sync-assets.sh` copies `assets/` and `content/` into `app/ui/`. It does not copy `supporter/`.
+- One installer. The rest of this spec is the free app's behavior.
+
+### Supporter packs
+
+- Source lives in `supporter/` in this same repository and is public. Hats are SVG art. Mini-games are chase-the-cursor and click-the-buddy, shipped as scripts. Each pack has a manifest with `id`, `kind` (`hat` or `game`), `minAppVersion`, and `files`.
+- The Stripe product is a zip built from `supporter/`. A new hat or game is a new zip, not a new build of the app.
+- The app loads installed packs from a `packs/` directory beside `state.json` in the `dev.lwc.companion` data directory (`%APPDATA%\dev.lwc.companion\packs\` on Windows, `~/.local/share/dev.lwc.companion/packs/` on Linux, `~/Library/Application Support/dev.lwc.companion/packs/` on macOS). Loading is local, the same kind of read as `content/*.json`. The app refuses a pack whose `minAppVersion` is newer than itself.
+- No license key, account, or network check is required. Building `supporter/` from source is allowed.
+- A hat is an extra SVG layer on a documented anchor in `assets/character.svg`. Hat packs ship only after that anchor is stable.
+
+### What payment does not change
+
+- Story tiers and writing tools stay derived from completed projects.
+- The app has no currency, shop, or upgrade screen.
+
 ## Milestones
 
 1. Spec sign-off (style + idle behaviour).
@@ -131,7 +156,8 @@ Always-on-top, click-through optional when not interacting; tray icon for pause 
 - Runs on Windows, survives overnight, pauseable from tray.
 - Typing clearly advances the active project; idle triggers sleep or wander; typing resumes desk animation.
 - Completing a project shows at least one fan letter from each category over a few completions.
-- No monetary systems; no typed text retained.
+- No in-app monetary systems; no typed text retained.
+
 ## v0.5.0 additions
 - Onboarding (4 steps). `Data.onboarded: Option<bool>`: None on an old save → migrated to `!needs_title()`. Missing or corrupt file → `Some(false)`.
 - Settings: `buddy_name` (default "Inky", max 40 chars), `buddy_scale` 0.6–1.6, `walk_speed` 40–300 logical px/s, `bubble_px` 9–20. Colours: `paper`, `paper_shade`.
