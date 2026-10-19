@@ -146,7 +146,7 @@
       {
         "id": "enc-028",
         "from": "Hana, exchange student",
-        "body": "I read {projectTitle} to practise English. Now I practise it to reread your book."
+        "body": "I read {projectTitle} to practise English. Now I practise English to reread your book."
       },
       {
         "id": "enc-029",
@@ -184,14 +184,9 @@
         "body": "I've read a lot of books. I'd like to read your next {tier} too, so do hurry."
       },
       {
-        "id": "enc-036",
-        "from": "Lou & Lou, twins",
-        "body": "We fought over one copy of {projectTitle}. Please write faster so we each get one."
-      },
-      {
         "id": "enc-037",
         "from": "Felix, train conductor",
-        "body": "All aboard the next one. {projectTitle} was a smooth ride."
+        "body": "All aboard for the next one. {projectTitle} was an exhilarating ride."
       },
       {
         "id": "enc-038",
