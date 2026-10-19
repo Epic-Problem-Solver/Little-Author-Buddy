@@ -1,13 +1,11 @@
 //! Invoke handlers. Window creation stays async so WebView2 does not deadlock.
 
-use crate::input;
 use crate::signals;
 use crate::state::{self, AppState};
 use crate::store::{self, Tier};
 use crate::windows;
-use std::path::PathBuf;
+use std::path::{Component, Path, PathBuf};
 use std::sync::atomic::Ordering;
-use std::sync::Arc;
 use tauri::{AppHandle, Emitter, Manager, State};
 
 #[tauri::command]
@@ -45,7 +43,7 @@ pub fn start_next(st: State<AppState>) -> bool {
 }
 
 #[tauri::command]
-pub fn update_settings(st: State<AppState>, settings: store::Settings) {
+pub fn update_settings(st: State<AppState>, settings: store::Settings) -> Result<(), String> {
     let mut s = st.lock().unwrap();
     let mut v = settings;
     v.keys_per_word = store::clamp_kpw(v.keys_per_word);
@@ -58,47 +56,110 @@ pub fn update_settings(st: State<AppState>, settings: store::Settings) {
     v.tiers.novella = v.tiers.novella.max(1);
     v.tiers.novel = v.tiers.novel.max(1);
     v.home_pos = s.data.settings.home_pos;
+    v.distraction_titles = store::clamp_titles(v.distraction_titles);
+    v.journal_dir = match v.journal_dir.as_deref().map(str::trim).filter(|p| !p.is_empty()) {
+        None => None,
+        Some(p) if store::journal_dir_ok(p) => Some(p.to_string()),
+        Some(_) => return Err("journal folder must be an absolute path without ..".into()),
+    };
     s.data.settings = v;
     s.save();
+    Ok(())
 }
 
-fn journal_dir(app: &AppHandle, d: &store::Data) -> PathBuf {
-    d.settings.journal_dir.as_ref().filter(|p| !p.trim().is_empty()).map(PathBuf::from).unwrap_or_else(|| {
-        app.path().document_dir().unwrap_or_else(|_| app.path().home_dir().unwrap_or_default()).join("Little Author Journal")
-    })
+const CATEGORY_MAX: usize = 64;
+const FROM_MAX: usize = 120;
+const BODY_MAX: usize = 4000;
+const PROJECT_MAX: usize = 120;
+
+fn take_chars(s: &str, n: usize) -> String { s.chars().take(n).collect() }
+
+fn clip_letter(category: String, from: String, body: String, project: String) -> (String, String, String, String) {
+    (
+        take_chars(category.trim(), CATEGORY_MAX),
+        take_chars(from.trim(), FROM_MAX),
+        take_chars(&body, BODY_MAX),
+        take_chars(project.trim(), PROJECT_MAX),
+    )
+}
+
+fn fallback_journal_dir(app: &AppHandle) -> PathBuf {
+    app.path().document_dir().unwrap_or_else(|_| app.path().home_dir().unwrap_or_default()).join("Little Author Journal")
+}
+
+/// Saved folder when it is absolute and has no `..`, otherwise Documents/Little Author Journal.
+fn journal_dir_display(app: &AppHandle, d: &store::Data) -> PathBuf {
+    match d.settings.journal_dir.as_deref().map(str::trim).filter(|p| !p.is_empty()) {
+        Some(p) if store::journal_dir_ok(p) => PathBuf::from(p),
+        _ => fallback_journal_dir(app),
+    }
+}
+
+/// Create the journal folder and return its canonical path. Refuses `..` and relative paths.
+fn open_journal_dir(path: PathBuf) -> Result<PathBuf, String> {
+    let shown = path.to_string_lossy();
+    if !path.is_absolute() || shown.contains("..") || path.components().any(|c| matches!(c, Component::ParentDir)) {
+        return Err("journal folder must be an absolute path without ..".into());
+    }
+    std::fs::create_dir_all(&path).map_err(|e| e.to_string())?;
+    let canon = path.canonicalize().map_err(|e| e.to_string())?;
+    if canon.to_string_lossy().contains("..") { return Err("journal folder must be an absolute path without ..".into()); }
+    Ok(canon)
+}
+
+fn journal_dir(app: &AppHandle, d: &store::Data) -> Result<PathBuf, String> {
+    open_journal_dir(journal_dir_display(app, d))
 }
 
 fn letter_md(l: &store::Letter) -> (String, String) {
     let day = store::day_string(l.received_at);
     let slug: String = l.project.chars().map(|c| if c.is_alphanumeric() { c } else { '-' }).collect();
-    (format!("{day}-{}-{}.md", slug, l.received_at),
+    (format!("{day}-{slug}-{}.md", l.received_at),
      format!("# Fan letter — {}\n\n*{} · {}*\n\n{}\n\n— {}\n", l.project, l.category, day, l.body, l.from))
+}
+
+/// A generated markdown name only. A name with a separator or `..` is refused.
+fn journal_file(dir: &Path, name: &str) -> Result<PathBuf, String> {
+    if name.is_empty() || !name.ends_with(".md") || name.contains(['/', '\\', '\0']) || name.contains("..") {
+        return Err("journal file name is not allowed".into());
+    }
+    let path = dir.join(name);
+    match path.parent() {
+        Some(parent) if parent == dir => Ok(path),
+        _ => Err("journal file escaped its folder".into()),
+    }
+}
+
+fn write_journal_file(dir: &Path, letter: &store::Letter) -> Result<PathBuf, String> {
+    let (name, md) = letter_md(letter);
+    let path = journal_file(dir, &name)?;
+    std::fs::write(&path, md).map_err(|e| e.to_string())?;
+    Ok(path)
 }
 
 #[tauri::command]
 pub fn save_letter(app: AppHandle, st: State<AppState>, category: String, from: String, body: String, project: String) -> Result<String, String> {
+    let (category, from, body, project) = clip_letter(category, from, body, project);
     let mut s = st.lock().unwrap();
     let l = store::Letter { category, from, body, project, received_at: state::now_ms() };
     s.data.journal.push(l.clone());
     s.save();
-    let dir = journal_dir(&app, &s.data);
-    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-    let (name, md) = letter_md(&l);
-    std::fs::write(dir.join(&name), md).map_err(|e| e.to_string())?;
-    Ok(dir.join(name).display().to_string())
+    let dir = journal_dir(&app, &s.data)?;
+    Ok(write_journal_file(&dir, &l)?.display().to_string())
 }
 
 #[tauri::command]
-pub fn export_journal(app: AppHandle, st: State<AppState>, dir: Option<String>) -> Result<String, String> {
+pub fn export_journal(app: AppHandle, st: State<AppState>) -> Result<String, String> {
     let s = st.lock().unwrap();
-    let d = dir.filter(|x| !x.trim().is_empty()).map(PathBuf::from).unwrap_or_else(|| journal_dir(&app, &s.data));
-    std::fs::create_dir_all(&d).map_err(|e| e.to_string())?;
-    for l in &s.data.journal { let (n, md) = letter_md(l); std::fs::write(d.join(n), md).map_err(|e| e.to_string())?; }
-    Ok(format!("{} letters exported to {}", s.data.journal.len(), d.display()))
+    let dir = journal_dir(&app, &s.data)?;
+    for l in &s.data.journal { write_journal_file(&dir, l)?; }
+    Ok(format!("{} letters exported to {}", s.data.journal.len(), dir.display()))
 }
 
 #[tauri::command]
-pub fn default_journal_dir(app: AppHandle, st: State<AppState>) -> String { journal_dir(&app, &st.lock().unwrap().data).display().to_string() }
+pub fn default_journal_dir(app: AppHandle, st: State<AppState>) -> String {
+    journal_dir_display(&app, &st.lock().unwrap().data).display().to_string()
+}
 
 #[tauri::command]
 pub async fn open_settings(app: AppHandle, tab: Option<String>) { windows::open_window(&app, tab.as_deref().unwrap_or("settings")) }
@@ -135,31 +196,22 @@ pub async fn reopen_onboarding(app: AppHandle) { windows::open_onboarding(&app) 
 #[tauri::command]
 pub async fn quit_app(app: AppHandle) { windows::quit(&app) }
 
-/// Render a self-contained SVG (styles already inlined by the UI) to a transparent PNG.
-pub fn render_png(svg: &str, scale: f32) -> Result<Vec<u8>, String> {
-    use resvg::{tiny_skia, usvg};
-    let mut opt = usvg::Options::default();
-    opt.fontdb_mut().load_system_fonts();
-    let tree = usvg::Tree::from_str(svg, &opt).map_err(|e| e.to_string())?;
-    let size = tree.size().to_int_size().scale_by(scale).ok_or("bad size")?;
-    let mut pix = tiny_skia::Pixmap::new(size.width(), size.height()).ok_or("bad size")?;
-    resvg::render(&tree, tiny_skia::Transform::from_scale(scale, scale), &mut pix.as_mut());
-    pix.encode_png().map_err(|e| e.to_string())
-}
-
+/// Track only the foreground window id Rust last published, or clear tracking.
 #[tauri::command]
-pub fn save_snapshot(app: AppHandle, svg: String) -> Result<String, String> {
-    let png = render_png(&svg, 2.0)?;
-    let dir = app.path().picture_dir().or_else(|_| app.path().home_dir()).map_err(|e| e.to_string())?.join("Little Author");
-    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-    let name = format!("little-author-{}.png", chrono::Local::now().format("%Y-%m-%d_%H-%M-%S"));
-    let path = dir.join(&name);
-    std::fs::write(&path, png).map_err(|e| e.to_string())?;
-    Ok(path.display().to_string())
+pub fn track_window(id: Option<u64>) -> Result<(), String> {
+    match id {
+        None => { *signals::TRACK.lock().unwrap() = None; Ok(()) }
+        Some(id) => {
+            let last = signals::LAST_FG.load(Ordering::Relaxed);
+            if id != 0 && id == last {
+                *signals::TRACK.lock().unwrap() = Some(id);
+                Ok(())
+            } else {
+                Err("not the foreground window".into())
+            }
+        }
+    }
 }
-
-#[tauri::command]
-pub fn track_window(id: Option<u64>) { *signals::TRACK.lock().unwrap() = id; }
 
 #[tauri::command]
 pub fn race_arrived(app: AppHandle) {
@@ -168,21 +220,54 @@ pub fn race_arrived(app: AppHandle) {
     let _ = app.emit_to("overlay", "handoff", ());
 }
 
-#[tauri::command]
-pub fn toggle_pause(app: AppHandle, c: State<Arc<input::Counters>>) -> bool { windows::do_toggle(&app, &c) }
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn renders_png_with_alpha() {
-        let svg = r##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" width="240" height="220"><circle cx="120" cy="110" r="62" fill="#e8cfa9" stroke="#241414" stroke-width="8"/></svg>"##;
-        let png = render_png(svg, 2.0).unwrap();
-        let pix = resvg::tiny_skia::Pixmap::decode_png(&png).unwrap();
-        assert_eq!((pix.width(), pix.height()), (480, 440));
-        assert_eq!(pix.pixel(0, 0).unwrap().alpha(), 0, "corner must be transparent");
-        assert_eq!(pix.pixel(240, 220).unwrap().alpha(), 255, "body must be opaque");
+    fn journal_files_stay_inside_the_folder_and_fields_are_capped() {
+        let root = std::env::temp_dir().join(format!("lwc-journal-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(&root).unwrap();
+        let dir = open_journal_dir(root.join("letters")).unwrap();
+        let letter = store::Letter {
+            category: "encouragement".into(), from: "Ada".into(), body: "hello".into(),
+            project: "../outside".into(), received_at: 1_700_000_000_000,
+        };
+        let path = write_journal_file(&dir, &letter).unwrap();
+        assert_eq!(path.parent().unwrap().canonicalize().unwrap(), dir);
+        let name = path.file_name().unwrap().to_string_lossy();
+        assert!(!name.contains("..") && !name.contains('/') && !name.contains('\\'));
+        assert!(journal_file(&dir, "../x.md").is_err());
+        assert!(journal_file(&dir, r"..\x.md").is_err());
+        assert!(journal_file(&dir, "nested/x.md").is_err());
+        assert!(!store::journal_dir_ok("relative/journal"));
+        let escaped = format!("{}{}..{}outside", dir.display(), std::path::MAIN_SEPARATOR, std::path::MAIN_SEPARATOR);
+        assert!(!store::journal_dir_ok(&escaped));
+        assert!(store::journal_dir_ok(&dir.display().to_string()));
+        let (c, f, b, p) = clip_letter("c".repeat(200), "f".repeat(300), "b".repeat(5000), "p".repeat(200));
+        assert_eq!(c.chars().count(), 64);
+        assert_eq!(f.chars().count(), 120);
+        assert_eq!(b.chars().count(), 4000);
+        assert_eq!(p.chars().count(), 120);
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn track_window_accepts_only_the_published_foreground() {
+        signals::LAST_FG.store(0, Ordering::Relaxed);
+        *signals::TRACK.lock().unwrap() = None;
+        assert!(track_window(Some(99)).is_err());
+        assert!(signals::TRACK.lock().unwrap().is_none());
+        assert!(track_window(Some(0)).is_err());
+        signals::LAST_FG.store(42, Ordering::Relaxed);
+        assert!(track_window(Some(42)).is_ok());
+        assert_eq!(*signals::TRACK.lock().unwrap(), Some(42));
+        assert!(track_window(Some(7)).is_err());
+        assert_eq!(*signals::TRACK.lock().unwrap(), Some(42));
+        assert!(track_window(None).is_ok());
+        assert!(signals::TRACK.lock().unwrap().is_none());
+        signals::LAST_FG.store(0, Ordering::Relaxed);
     }
 
     #[test]

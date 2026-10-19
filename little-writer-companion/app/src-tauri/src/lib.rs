@@ -13,15 +13,15 @@ mod windows;
 
 use std::sync::Arc;
 use std::time::Duration;
-use tauri::{Emitter, Manager};
+use tauri::Manager;
 
 pub fn run() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             commands::race_arrived, commands::get_snapshot, commands::get_data, commands::get_warnings,
-            commands::new_project, commands::start_next, commands::toggle_pause, commands::update_settings,
+            commands::new_project, commands::start_next, commands::update_settings,
             commands::save_letter, commands::export_journal, commands::default_journal_dir, commands::open_settings,
-            commands::quit_app, commands::track_window, commands::save_snapshot, commands::initial_tab,
+            commands::quit_app, commands::track_window, commands::initial_tab,
             commands::finish_onboarding, commands::reopen_onboarding
         ])
         .setup(|app| {
@@ -58,10 +58,6 @@ pub fn run() {
             let saved = st.lock().unwrap().data.settings.home_pos;
             windows::create_home(&handle, saved)?;
             for w in app.webview_windows().values() { let _ = w.set_content_protected(false); }
-            if std::env::var("LWC_SNAPSHOT").is_ok() {
-                let h = handle.clone();
-                std::thread::spawn(move || { std::thread::sleep(Duration::from_secs(4)); let _ = h.emit_to("home", "take-snapshot", ()); });
-            }
             if !st.lock().unwrap().data.onboarded.unwrap_or(true) { windows::open_onboarding(&handle); }
             let h = handle.clone();
             std::thread::spawn(move || tick::tick_loop(h, st, counters));

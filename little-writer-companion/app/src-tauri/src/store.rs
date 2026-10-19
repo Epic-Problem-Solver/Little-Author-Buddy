@@ -1,6 +1,6 @@
 //! JSON persistence for settings and projects. Only counts are stored, never key contents.
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::{Component, Path, PathBuf};
 
 /// Writing-project size. Wire values stay `short_story` / `novella` / `novel`.
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
@@ -153,9 +153,10 @@ fn pin_furniture(c: &mut Colors) {
 }
 impl Colors {
     /// Recompute shade + hands from a light body. A missing or too-dark body becomes the Beige body.
-    /// Desk, tools, ink, feather, and paper are always the Beige defaults. Outline is kept.
+    /// Outline, desk, tools, ink, feather, and paper are always the Beige defaults.
     pub fn derive(&mut self) {
         pin_furniture(self);
+        self.outline = Colors::default().outline;
         if !body_allowed(&self.body) { self.body = Colors::default().body; }
         match derive_body(&self.body) {
             Some((s, h)) => { self.shade = s; self.hands = h; }
@@ -531,6 +532,26 @@ impl Data {
 /// Keystrokes-per-word slider range is 1..=5 (v0.3); older files may hold larger values.
 pub fn clamp_kpw(v: u64) -> u64 { v.clamp(1, 5) }
 
+pub const MAX_TITLES: usize = 32;
+pub const MAX_TITLE_LEN: usize = 80;
+
+/// Keep at most 32 distraction titles, each at most 80 characters.
+pub fn clamp_titles(titles: Vec<String>) -> Vec<String> {
+    titles.into_iter()
+        .map(|t| t.trim().chars().take(MAX_TITLE_LEN).collect::<String>())
+        .filter(|t| !t.is_empty())
+        .take(MAX_TITLES)
+        .collect()
+}
+
+/// A journal folder the user chose: absolute, not too long, and no `..` segment.
+pub fn journal_dir_ok(raw: &str) -> bool {
+    let raw = raw.trim();
+    if raw.is_empty() || raw.chars().count() > 512 || raw.contains("..") { return false; }
+    let p = Path::new(raw);
+    p.is_absolute() && !p.components().any(|c| matches!(c, Component::ParentDir))
+}
+
 /// Clamp the motion/size sliders to their ranges (NaN -> default).
 pub fn clamp_motion(s: &mut Settings) {
     let f = |v: f64, lo: f64, hi: f64, d: f64| if v.is_finite() { v.clamp(lo, hi) } else { d };
@@ -577,9 +598,14 @@ pub fn load(path: &PathBuf, now: u64) -> (Data, Option<LoadIssue>) {
                 // v0.5 migration: existing saves skip onboarding (default buddy name), fresh-looking ones get it
                 if d.onboarded.is_none() { d.onboarded = Some(!d.needs_title()); }
                 let before = d.settings.colors.clone();
-                // Light body only; shade + hands recomputed; desk and writing tools pinned to Beige.
+                // Light body only; shade + hands recomputed. Outline, desk, and writing tools pinned.
                 d.settings.colors.derive();
-                if d.settings.colors != before { save(path, &d); }
+                let titles = clamp_titles(d.settings.distraction_titles.clone());
+                let titles_changed = titles != d.settings.distraction_titles;
+                d.settings.distraction_titles = titles;
+                let journal_bad = d.settings.journal_dir.as_deref().is_some_and(|p| !journal_dir_ok(p));
+                if journal_bad { d.settings.journal_dir = None; }
+                if d.settings.colors != before || titles_changed || journal_bad { save(path, &d); }
                 return (d, None);
             }
             Err(e) => LoadErrorKind::Parse(e),
@@ -619,7 +645,7 @@ mod colour_tests {
         for (b, s) in fx { assert_eq!(derive_body(&b).unwrap().0, s, "{b}"); }
         let mut c = Colors { body: "#cfe6ff".into(), shade: "#000000".into(), hands: "#000000".into(), ..Colors::default() };
         c.derive(); assert_eq!(c.body, "#cfe6ff"); assert_ne!(c.shade, "#000000"); assert_eq!(c.shade, c.hands);
-        // A body that would invert is replaced; outline stays; desk and tools return to Beige.
+        // A body that would invert is replaced. Outline, desk, and tools return to Beige.
         let beige = Colors::default();
         let mut dark = Colors { body: "#1d2a4a".into(), desk: "#000000".into(), tool: "#111111".into(), paper: "#222222".into(), screen: "#333333".into(), ink: "#444444".into(), feather: "#555555".into(), outline: "#abcdef".into(), ..beige.clone() };
         dark.derive();
@@ -627,7 +653,7 @@ mod colour_tests {
         assert!(body_allowed("#e8cfa9"));
         assert!(body_allowed("#cfe6ff"));
         assert_eq!(dark.body, beige.body);
-        assert_eq!(dark.outline, "#abcdef");
+        assert_eq!(dark.outline, beige.outline);
         assert_eq!(dark.desk, beige.desk);
         assert_eq!(dark.desk_shade, beige.desk_shade);
         assert_eq!(dark.tool, beige.tool);

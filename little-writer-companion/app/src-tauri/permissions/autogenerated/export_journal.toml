@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-export-journal"
+description = "Enables the export_journal command without any pre-configured scope."
+commands.allow = ["export_journal"]
+
+[[permission]]
+identifier = "deny-export-journal"
+description = "Denies the export_journal command without any pre-configured scope."
+commands.deny = ["export_journal"]

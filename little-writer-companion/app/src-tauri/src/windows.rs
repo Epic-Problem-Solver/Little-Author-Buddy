@@ -159,11 +159,10 @@ pub fn install_tray(app: &AppHandle, st: &AppState, counters: &Arc<input::Counte
     let projects = MenuItem::with_id(app, "projects", "Projects…", true, None::<&str>)?;
     let settings = MenuItem::with_id(app, "settings", "Settings…", true, None::<&str>)?;
     let journal = MenuItem::with_id(app, "journal", "Letter journal…", true, None::<&str>)?;
-    let snapshot = MenuItem::with_id(app, "snapshot", "Snapshot (save PNG)", true, None::<&str>)?;
     let privacy = MenuItem::with_id(app, "privacy", "Privacy…", true, None::<&str>)?;
     let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
     let sep = PredefinedMenuItem::separator(app)?;
-    let menu = Menu::with_items(app, &[&pause, &interact, &projects, &settings, &journal, &snapshot, &privacy, &sep, &quit_item])?;
+    let menu = Menu::with_items(app, &[&pause, &interact, &projects, &settings, &journal, &privacy, &sep, &quit_item])?;
     app.manage(TrayItems { pause, interact });
     let st_q = st.clone();
     let c_t = counters.clone();
@@ -176,7 +175,6 @@ pub fn install_tray(app: &AppHandle, st: &AppState, counters: &Arc<input::Counte
             "interact" => { let on = st_q.lock().unwrap().interactive_until == 0; set_interactive(app, &st_q, on); }
             "settings" | "journal" | "projects" | "privacy" => open_window(app, ev.id().as_ref()),
             "quit" => quit(app),
-            "snapshot" => { let _ = app.emit_to("home", "take-snapshot", ()); }
             _ => {}
         })
         .build(app)?;

@@ -1,5 +1,5 @@
 const I = window.__TAURI__.core.invoke, $ = id => document.getElementById(id);
-// Presets from Animator (assets/preview.html): body, shade, hands, outline
+// Presets set the body colour. Shade and hands are derived. The outline stays #241414.
 const TIER_UNLOCK = LWDomain.TIER_UNLOCK, TOOL_UNLOCK = LWDomain.TOOL_UNLOCK;
 let data, ch;
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -10,7 +10,7 @@ function colors() {
   const body = document.querySelector('[data-c=body]');
   if (body && !LWPalette.bodyAllowed(body.value)) body.value = lastBody;
   else if (body) lastBody = body.value;
-  return LWPalette.normalize({ body: body ? body.value : lastBody, outline: document.querySelector('[data-c=outline]').value });
+  return LWPalette.normalize({ body: body ? body.value : lastBody });
 }
 async function load() {
   data = await I('get_data'); const s = data.settings, snap = await I('get_snapshot');
@@ -48,7 +48,7 @@ async function load() {
 }
 for (const n of Object.keys(LWPalette.PRESETS)) {
   const b = document.createElement('button'); b.type = 'button'; b.textContent = n;
-  b.onclick = () => { const c = LWPalette.colors(n); lastBody = c.body; document.querySelector('[data-c=body]').value = c.body; document.querySelector('[data-c=outline]').value = c.outline; deriveInputs(); const shown = colors(); ch.setColors(shown); mp && mp.setColors(shown); };
+  b.onclick = () => { const c = LWPalette.colors(n); lastBody = c.body; document.querySelector('[data-c=body]').value = c.body; deriveInputs(); const shown = colors(); ch.setColors(shown); mp && mp.setColors(shown); };
   $('presets').append(b);
 }
 // Body picker only. Shading and hands are derived. A body with OKLCH L < 0.42 snaps back.
@@ -68,13 +68,18 @@ $('save').onclick = async () => {
     desk_monitor: $('desk').value === '' ? null : +$('desk').value, roam_all_monitors: $('roam').checked, journal_dir: $('jdir').value.trim() || null,
     buddy_scale: +$('bs').value, walk_speed: +$('ws').value, bubble_px: +$('bp').value, buddy_name: $('buddy').value.trim() || data.settings.buddy_name,
     tool: $('tool').value, unlock_all: $('unlockall').checked, detect_titles: $('dt').checked, detect_media: $('dm').checked, detect_scroll: $('ds').checked, distraction_titles: $('titles').value.split('\n').map(x => x.trim()).filter(Boolean) };
-  await I('update_settings', { settings: s }); $('msg').textContent = 'Saved'; setTimeout(() => $('msg').textContent = '', 2000); load();
+  try { await I('update_settings', { settings: s }); $('msg').textContent = 'Saved'; setTimeout(() => $('msg').textContent = '', 2000); load(); }
+  catch (e) { $('msg').textContent = String(e); }
 };
 $('padd').onclick = async () => { try { await I('new_project', { name: $('pname').value || 'Untitled', tier: $('ptier').value, targetWords: null }); } catch (e) { alert(e); } load(); };
 $('tool').onchange = () => ch.setTool($('tool').value);
 // Unlock-all applies immediately (it only changes what is unlocked, not progress)
-$('unlockall').onchange = async () => { await I('update_settings', { settings: { ...data.settings, unlock_all: $('unlockall').checked } }); load(); };
-$('exp').onclick = async () => { try { $('expmsg').textContent = await I('export_journal', { dir: null }); } catch (e) { $('expmsg').textContent = 'Export failed: ' + e; } };
+$('unlockall').onchange = async () => {
+  try { await I('update_settings', { settings: { ...data.settings, unlock_all: $('unlockall').checked } }); }
+  catch (e) { $('msg').textContent = String(e); }
+  load();
+};
+$('exp').onclick = async () => { try { $('expmsg').textContent = await I('export_journal'); } catch (e) { $('expmsg').textContent = 'Export failed: ' + e; } };
 window.onhashchange = () => tab();
 // The backend tells us which tab to show (no '#fragment' in the asset URL; it breaks the Windows bundle)
 window.__TAURI__.event.listen('show-tab', e => tab(e.payload));

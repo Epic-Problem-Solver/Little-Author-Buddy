@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-race-arrived"
+description = "Enables the race_arrived command without any pre-configured scope."
+commands.allow = ["race_arrived"]
+
+[[permission]]
+identifier = "deny-race-arrived"
+description = "Denies the race_arrived command without any pre-configured scope."
+commands.deny = ["race_arrived"]

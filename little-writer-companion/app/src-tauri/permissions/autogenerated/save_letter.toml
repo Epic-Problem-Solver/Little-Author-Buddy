@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-save-letter"
+description = "Enables the save_letter command without any pre-configured scope."
+commands.allow = ["save_letter"]
+
+[[permission]]
+identifier = "deny-save-letter"
+description = "Denies the save_letter command without any pre-configured scope."
+commands.deny = ["save_letter"]

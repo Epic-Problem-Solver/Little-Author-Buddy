@@ -49,14 +49,13 @@ Inspired by publicly described behavior of _Little Writer Desktop Companion_ (
 
 - The desk lives in its own small, always-on-top, frameless **home window** (200×180 CSS px; size fixed). The full-screen click-through overlay is used only for wandering, watching and peeking.
 - Drag anywhere on the home window (except its buttons) to move it. The position is saved and validated against the current monitors on load (the whole window must fit on one monitor, otherwise it resets to the bottom-right of the primary monitor).
-- Top-right buttons: **gear** opens a small menu (Settings…, Snapshot); **X quits the whole app** (saves state first, same path as tray Quit). Closing the window by other means (Alt-F4) also quits. There is no hide-to-tray.
+- Top-right buttons: **gear** opens Settings; **X quits the whole app** (saves state first, same path as tray Quit). Closing the window by other means (Alt-F4) also quits. There is no hide-to-tray.
 - The character is drawn in the home window while typing/asleep/paused and in the overlay while wandering, watching, peeking or racing back.
 - **First launch:** before the first Short Story is created, the home window shows a modal asking for its title. Letters typed meanwhile are kept and credited to it.
 
-### Capture and snapshots — v0.4
+### Capture — v0.4
 
-- No window is ever excluded from screenshots or recordings (`contentProtected: false` everywhere; no display-affinity exclusion; macOS sharing type not none). Windows are titled and are not tool windows, so OBS Window capture can list them. Recommended OBS mode: Display capture (or Window capture of "Little Author — Home", using the Windows 10 capture method). Game capture is not supported for desktop windows.
-- **Snapshot** (tray item and the gear menu on the desk): renders the companion plus desk from its SVG (styles inlined, current frame) with resvg into a transparent 2× PNG in `Pictures/Little Author/little-author-<date>_<time>.png`, then shows a confirmation. It does not depend on screen capture.
+- No window is ever excluded from screen recordings (`contentProtected: false` everywhere; no display-affinity exclusion; macOS sharing type not none). Windows are titled and are not tool windows, so OBS Window capture can list them. Recommended OBS mode: Display capture (or Window capture of "Little Author — Home", using the Windows 10 capture method). Game capture is not supported for desktop windows.
 
 ### Writing tools and progression — v0.4
 
@@ -100,7 +99,7 @@ Tiers (defaults, user-editable):
 
 Decided: a round, flat-vector blob character (see `character-reference.jpg`): circular body, thick dark outline, two small round floating hands, dot eyes, simple smile, two-tone shading on a warm beige palette.
 
-- **Fully customizable colour:** body, shading, hands and outline colours are user-selectable (colour picker plus presets); art is built as layered vector/SVG so colours recolour cleanly.
+- **Customizable body colour:** the body is user-selectable (colour picker plus presets). Shading and hands follow the body. The outline, desk, and writing tools stay their default colours. Art is layered SVG so the body recolours cleanly.
 - **Animated facial expressions:** blinking, happy, focused (typing), sleepy/asleep, curious (peeking at a window), surprised/excited (racing back), proud (project complete). Eyes and mouth animate separately from the body.
 
 Always-on-top, click-through optional when not interacting; tray icon for pause / quit / privacy.

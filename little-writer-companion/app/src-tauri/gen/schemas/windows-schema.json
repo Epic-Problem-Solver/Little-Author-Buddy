@@ -177,6 +177,198 @@
       "description": "Permission identifier",
       "oneOf": [
         {
+          "description": "Enables the default_journal_dir command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-default-journal-dir",
+          "markdownDescription": "Enables the default_journal_dir command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the export_journal command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-export-journal",
+          "markdownDescription": "Enables the export_journal command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the finish_onboarding command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-finish-onboarding",
+          "markdownDescription": "Enables the finish_onboarding command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_data command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-data",
+          "markdownDescription": "Enables the get_data command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_snapshot command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-snapshot",
+          "markdownDescription": "Enables the get_snapshot command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_warnings command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-warnings",
+          "markdownDescription": "Enables the get_warnings command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the initial_tab command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-initial-tab",
+          "markdownDescription": "Enables the initial_tab command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the new_project command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-new-project",
+          "markdownDescription": "Enables the new_project command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the open_settings command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-open-settings",
+          "markdownDescription": "Enables the open_settings command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the quit_app command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-quit-app",
+          "markdownDescription": "Enables the quit_app command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the race_arrived command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-race-arrived",
+          "markdownDescription": "Enables the race_arrived command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the reopen_onboarding command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-reopen-onboarding",
+          "markdownDescription": "Enables the reopen_onboarding command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the save_letter command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-save-letter",
+          "markdownDescription": "Enables the save_letter command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the start_next command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-start-next",
+          "markdownDescription": "Enables the start_next command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the track_window command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-track-window",
+          "markdownDescription": "Enables the track_window command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the update_settings command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-update-settings",
+          "markdownDescription": "Enables the update_settings command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the default_journal_dir command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-default-journal-dir",
+          "markdownDescription": "Denies the default_journal_dir command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the export_journal command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-export-journal",
+          "markdownDescription": "Denies the export_journal command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the finish_onboarding command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-finish-onboarding",
+          "markdownDescription": "Denies the finish_onboarding command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_data command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-data",
+          "markdownDescription": "Denies the get_data command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_snapshot command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-snapshot",
+          "markdownDescription": "Denies the get_snapshot command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_warnings command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-warnings",
+          "markdownDescription": "Denies the get_warnings command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the initial_tab command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-initial-tab",
+          "markdownDescription": "Denies the initial_tab command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the new_project command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-new-project",
+          "markdownDescription": "Denies the new_project command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the open_settings command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-open-settings",
+          "markdownDescription": "Denies the open_settings command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the quit_app command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-quit-app",
+          "markdownDescription": "Denies the quit_app command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the race_arrived command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-race-arrived",
+          "markdownDescription": "Denies the race_arrived command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the reopen_onboarding command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-reopen-onboarding",
+          "markdownDescription": "Denies the reopen_onboarding command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the save_letter command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-save-letter",
+          "markdownDescription": "Denies the save_letter command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the start_next command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-start-next",
+          "markdownDescription": "Denies the start_next command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the track_window command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-track-window",
+          "markdownDescription": "Denies the track_window command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the update_settings command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-update-settings",
+          "markdownDescription": "Denies the update_settings command without any pre-configured scope."
+        },
+        {
           "description": "Default core plugins set.\n#### This default permission set includes:\n\n- `core:path:default`\n- `core:event:default`\n- `core:window:default`\n- `core:webview:default`\n- `core:app:default`\n- `core:image:default`\n- `core:resources:default`\n- `core:menu:default`\n- `core:tray:default`",
           "type": "string",
           "const": "core:default",

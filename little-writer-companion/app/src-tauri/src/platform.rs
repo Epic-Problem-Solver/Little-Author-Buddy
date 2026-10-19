@@ -1,6 +1,12 @@
 //! Foreground window title/rect and media-playing detection. Titles only, never contents.
+/// Foreground window. `title` stays in memory for distraction matching and is never serialized.
 #[derive(Clone, Debug, serde::Serialize)]
-pub struct Fg { pub id: u64, pub title: String, pub x: i32, pub y: i32, pub w: i32, pub h: i32 }
+pub struct Fg {
+    pub id: u64,
+    #[serde(skip)]
+    pub title: String,
+    pub x: i32, pub y: i32, pub w: i32, pub h: i32,
+}
 
 /// Live state of a tracked (hide-target) window.
 #[derive(Clone, Debug, serde::Serialize, PartialEq)]

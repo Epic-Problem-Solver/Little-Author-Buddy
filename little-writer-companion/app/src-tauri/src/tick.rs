@@ -125,9 +125,15 @@ pub fn tick_loop(app: AppHandle, st: AppState, c: Arc<input::Counters>) {
     }
 }
 
+fn remember_fg(fg: &Option<platform::Fg>) {
+    let id = fg.as_ref().map(|f| f.id).filter(|id| *id != 0).unwrap_or(0);
+    signals::LAST_FG.store(id, Ordering::Relaxed);
+}
+
 fn sample_distraction(cfg: &TickCfg, idle: bool, tick: u64, fg: &mut Option<platform::Fg>, media: &mut bool, wheel_hist: &mut VecDeque<(u64, u64)>, now: u64, dw: u64) -> (Option<String>, u64) {
-    if !idle { wheel_hist.clear(); *fg = None; return (None, 0); }
+    if !idle { wheel_hist.clear(); *fg = None; remember_fg(fg); return (None, 0); }
     if tick % 4 == 0 { *fg = platform::foreground().filter(|f| !f.title.contains("Little Author")); }
+    remember_fg(fg);
     if cfg.policy.detect_media && tick % 8 == 0 { *media = platform::media_playing(); }
     wheel_hist.push_back((now, dw));
     while wheel_hist.front().map_or(false, |(t, _)| now - t > cfg.scroll_window_ms) { wheel_hist.pop_front(); }

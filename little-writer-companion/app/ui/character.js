@@ -11,13 +11,14 @@ window.LWCharacter = (() => {
   };
   const TOOLS = ['pen', 'typewriter', 'laptop'];
   const FALLBACK = '<svg class="lw-char" viewBox="0 0 240 220"><circle cx="120" cy="110" r="62" fill="var(--body,#e8cfa9)" stroke="var(--outline,#241414)" stroke-width="8"/><circle cx="100" cy="100" r="6" fill="var(--outline,#241414)"/><circle cx="140" cy="100" r="6" fill="var(--outline,#241414)"/></svg>';
+  const SVG_OK = { 'character.svg': 1, 'desk.svg': 1, 'ui-close.svg': 1, 'ui-gear.svg': 1 };
   const cache = {};
   async function svgText(name, fallback) {
-    if (!(name in cache)) cache[name] = fetch('assets/' + name).then(r => (r.ok ? r.text() : fallback)).catch(() => fallback);
+    if (!Object.hasOwn(SVG_OK, name)) return fallback;
+    if (!Object.hasOwn(cache, name)) cache[name] = fetch('assets/' + name).then(r => (r.ok ? r.text() : fallback)).catch(() => fallback);
     return cache[name];
   }
-  // v0.7: --shade/--hands are derived from --body (CSS relative colour, or Animator's lwApplyColor fallback).
-  // We always use lwApplyColor: same rule, plain hex on every webview, and the snapshot renderer (resvg) needs hex.
+  // v0.7: --shade/--hands are derived from --body. lwApplyColor keeps that as plain hex on every webview.
   function applyColors(el, c) {
     const { shade, hands, ...rest } = c; setVars(el, rest);
     if (c.body && window.lwApplyColor) window.lwApplyColor(el, c.body);

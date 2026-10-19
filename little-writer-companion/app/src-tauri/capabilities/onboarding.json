@@ -1,0 +1,7 @@
+{
+  "identifier": "onboarding",
+  "windows": ["onboarding"],
+  "permissions": [
+    "allow-finish-onboarding"
+  ]
+}

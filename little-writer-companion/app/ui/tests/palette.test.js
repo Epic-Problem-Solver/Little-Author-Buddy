@@ -23,6 +23,7 @@ test('every preset keeps the beige desk and writing tools', () => {
     const c = P.colors(name);
     for (const k of keys) assert.equal(c[k], beige[k], `${name} ${k}`);
     assert.notEqual(c.body, beige.body);
+    assert.equal(c.outline, P.OUTLINE);
     assert.equal(c.desk, '#8a5a35');
     assert.equal(c.tool, '#7d8aa0');
     assert.equal(c.paper, '#f6efe2');
@@ -38,7 +39,7 @@ test('bodies that would invert cannot be chosen; light presets can', () => {
   for (const name of Object.keys(P.PRESETS)) assert.equal(P.bodyAllowed(P.PRESETS[name].body), true, name);
   const fixed = P.normalize({ body: '#1d2a4a', outline: '#abcdef', desk: '#000000', tool: '#111111' });
   assert.equal(fixed.body, P.PRESETS.Beige.body);
-  assert.equal(fixed.outline, '#abcdef');
+  assert.equal(fixed.outline, P.OUTLINE);
   assert.equal(fixed.desk, '#8a5a35');
   assert.equal(fixed.tool, '#7d8aa0');
   assert.equal(fixed.shade, P.derive(fixed.body).shade);

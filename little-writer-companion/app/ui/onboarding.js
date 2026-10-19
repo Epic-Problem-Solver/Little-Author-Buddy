@@ -17,7 +17,6 @@ document.querySelectorAll('[data-c]').forEach(i => {
     if (i.dataset.c === 'body' && !LWPalette.bodyAllowed(i.value)) { i.value = colors.body; return; }
     colors = LWPalette.normalize({
       body: i.dataset.c === 'body' ? i.value : colors.body,
-      outline: i.dataset.c === 'outline' ? i.value : colors.outline,
     });
     sync();
   };

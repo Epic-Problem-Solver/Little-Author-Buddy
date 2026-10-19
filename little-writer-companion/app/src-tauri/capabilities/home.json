@@ -1,0 +1,13 @@
+{
+  "identifier": "home",
+  "windows": ["home"],
+  "permissions": [
+    "core:event:allow-listen",
+    "core:event:allow-unlisten",
+    "core:window:allow-start-dragging",
+    "allow-get-snapshot",
+    "allow-open-settings",
+    "allow-quit-app",
+    "allow-reopen-onboarding"
+  ]
+}

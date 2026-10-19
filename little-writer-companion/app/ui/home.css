@@ -7,9 +7,6 @@ html,body{margin:0;width:200px;height:200px;overflow:hidden;background:transpare
 #modal{display:none;position:absolute;inset:0;background:rgba(243,228,203,.97);border:2px solid #241414;border-radius:12px;box-sizing:border-box;z-index:3;cursor:default}
 #modal.on{display:flex;align-items:center;justify-content:center}
 #modal form{display:flex;flex-direction:column;gap:6px;width:170px}#modal input{font-size:12px;padding:4px}
-#menu{display:none;position:absolute;top:28px;right:4px;z-index:4;background:#fffaf0;border:2px solid #241414;border-radius:8px;padding:3px;flex-direction:column;gap:2px;cursor:default}
-#menu.on{display:flex}#menu button{font-size:11px;text-align:left;background:none;border:0;padding:3px 6px;border-radius:4px;cursor:pointer}#menu button:hover{background:#f3e4cb}
-.lw-snap,.lw-snap *{animation-play-state:paused!important}
 #deskHost{display:none}#deskHost.on{display:block}
 *{-webkit-user-select:none;user-select:none}::selection{background:transparent}
 #deskHost,#charHost{transform-origin:60px 110px}

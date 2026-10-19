@@ -43,14 +43,13 @@ Outputs: `src-tauri/target/release/bundle/{deb,appimage}/`, `src-tauri/target-wi
 - Linux letter detection from the XKB layout (rebuilt on mapping changes), US table fallback. Needs `xwininfo` (x11-utils) for hide tracking on Linux.
 - JS unit tests: `node --test ui/tests/`. Test hooks: `LWC_OPEN=<tab>`, `LWC_FORCE_HIDE=1`.
 
-## Screenshots, recording and capture (v0.4)
+## Recording and capture (v0.4)
 - No window is excluded from capture: `contentProtected: false` in config and `set_content_protected(false)` at runtime on every window (so no `SetWindowDisplayAffinity` WDA_MONITOR/WDA_EXCLUDEFROMCAPTURE on Windows, and `NSWindowSharingType` is not `none` on macOS). The app never calls `SetWindowDisplayAffinity` itself.
 - Window styles (Windows): windows are **not** `WS_EX_TOOLWINDOW`. Taskbar hiding uses `skipTaskbar`, which tao implements with `ITaskbarList::DeleteTab`. Both windows have titles: overlay "Little Author Buddy", desk "Little Author — Home". The overlay is `WS_EX_LAYERED | WS_EX_TRANSPARENT` while click-through (needed for click-through). Layered windows are composed by DWM and included in full-desktop capture (DXGI Desktop Duplication, Windows.Graphics.Capture, GDI BitBlt with CAPTUREBLT). The home window is not click-through, so it is a normal titled top-level window.
 - **Flameshot**: full-desktop grab, so it should include both windows.
 - **OBS (recommended): Display capture.** It shows everything, including the wandering companion.
 - **OBS Window capture**: pick `[little-writer-companion.exe]: Little Author — Home` and set *Capture Method* to **Windows 10 (1903 and up)** (WGC). BitBlt window capture cannot read WebView2/DirectComposition content and shows black or nothing. Window capture only shows the desk window; the wandering companion lives in the full-screen overlay, so use Display capture to record it.
 - **OBS Game capture** hooks DirectX/OpenGL/Vulkan games, not ordinary desktop windows, so it will not capture the companion. Use Display or Window capture.
-- Built-in alternative: **Snapshot** (tray → "Snapshot (save PNG)", or the gear menu on the desk) renders the companion and desk from the SVG with resvg into a transparent PNG at 2× (480×440) in `Pictures/Little Author/little-author-<date>_<time>.png`. It does not use screen capture.
 
 ## v0.5.0 notes
 - **First run:** a 4-step onboarding window (welcome → buddy name → colours with live preview → first story title) replaces the old title prompt. Existing saves are migrated as already onboarded, with the buddy named "Inky". If onboarding is closed early, the desk HUD says "Click here to set up …" and reopens it.
@@ -72,8 +71,6 @@ Outputs: `src-tauri/target/release/bundle/{deb,appimage}/`, `src-tauri/target-wi
 - **While wandering:** the home window shows `desk.svg` with the same tool and side; the inkwell is in the art.
 - **Colours:** there is a single Body picker. Shade and hands are derived with Animator's OKLCH rule: L×0.75 and chroma×1.8, flipping to L+0.18 when L < 0.42. The UI uses `lw-color.js lwApplyColor`; `store.rs derive_body` is a port of the same rule, used for migration and saving. Old saves keep their body colour and get recomputed shade and hands.
 - **Fixes:**
-  - The snapshot viewBox now grows to the drawn bounding box plus 8 px (BUG-21).
   - The home window size is re-read after show and the desk is clamped on screen (BUG-22).
-  - The gear tooltip is removed while its menu is open.
   - The slider preview is taller.
   - The home window has no selection highlight and a transparent background.

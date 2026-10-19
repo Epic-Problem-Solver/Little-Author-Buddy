@@ -183,4 +183,26 @@ mod tests {
         assert!(!block.contains("get_webview_window") && !block.contains("outer_position"), "paint reads state, it does not call windows");
         assert!(!block.contains("journal"));
     }
+
+    #[test]
+    fn watch_snapshot_has_no_window_title() {
+        let secret = "TopSecretWindowTitle";
+        let shared = Shared {
+            data: store::Data::default(), path: PathBuf::new(), dirty: false, snap: None,
+            warnings: vec![], no_save: true, interactive_until: 0,
+        };
+        let frame = Frame {
+            mode: Mode::Watch, paused: false, origin: (0, 0), monitors: vec![],
+            fg: Some(platform::Fg { id: 42, title: secret.into(), x: 10, y: 20, w: 30, h: 40 }),
+            reason: Some("title:YouTube".into()), home: None, home_side: "right",
+            force_hide: false, listener_error: None,
+        };
+        let json = serde_json::to_value(paint(&shared, frame)).unwrap();
+        assert!(json["watch"].get("title").is_none(), "{json}");
+        assert_eq!(json["watch"]["x"], 10);
+        assert_eq!(json["watch"]["w"], 30);
+        assert_eq!(json["fg_id"], 42);
+        assert_eq!(json["distraction_reason"], "title:YouTube");
+        assert!(!json.to_string().contains(secret));
+    }
 }

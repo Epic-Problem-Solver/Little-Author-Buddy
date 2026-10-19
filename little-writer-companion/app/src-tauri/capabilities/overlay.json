@@ -1,0 +1,12 @@
+{
+  "identifier": "overlay",
+  "windows": ["overlay"],
+  "permissions": [
+    "core:event:allow-listen",
+    "core:event:allow-unlisten",
+    "allow-get-snapshot",
+    "allow-race-arrived",
+    "allow-track-window",
+    "allow-save-letter"
+  ]
+}

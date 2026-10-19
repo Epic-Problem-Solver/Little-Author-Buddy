@@ -1,0 +1,17 @@
+{
+  "identifier": "settings",
+  "windows": ["settings"],
+  "permissions": [
+    "core:event:allow-listen",
+    "core:event:allow-unlisten",
+    "allow-get-data",
+    "allow-get-snapshot",
+    "allow-get-warnings",
+    "allow-update-settings",
+    "allow-new-project",
+    "allow-start-next",
+    "allow-export-journal",
+    "allow-default-journal-dir",
+    "allow-initial-tab"
+  ]
+}

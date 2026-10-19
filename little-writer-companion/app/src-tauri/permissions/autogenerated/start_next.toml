@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-start-next"
+description = "Enables the start_next command without any pre-configured scope."
+commands.allow = ["start_next"]
+
+[[permission]]
+identifier = "deny-start-next"
+description = "Denies the start_next command without any pre-configured scope."
+commands.deny = ["start_next"]

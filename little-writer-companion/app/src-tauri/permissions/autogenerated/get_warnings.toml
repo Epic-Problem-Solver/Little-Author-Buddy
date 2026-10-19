@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-get-warnings"
+description = "Enables the get_warnings command without any pre-configured scope."
+commands.allow = ["get_warnings"]
+
+[[permission]]
+identifier = "deny-get-warnings"
+description = "Denies the get_warnings command without any pre-configured scope."
+commands.deny = ["get_warnings"]

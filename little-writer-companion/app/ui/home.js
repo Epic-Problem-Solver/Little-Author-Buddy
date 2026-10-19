@@ -36,26 +36,11 @@ function render(s) {
 function notice(text) { $('hudText').textContent = text; noticeUntil = Date.now() + 6000; }
 
 document.addEventListener('mousedown', e => {
-  if (e.button !== 0 || e.target.closest('.btn, #menu') || (snap && snap.needs_title && e.target.closest('#hud'))) return;
-  menu(false);
+  if (e.button !== 0 || e.target.closest('.btn') || (snap && snap.needs_title && e.target.closest('#hud'))) return;
   T.window.getCurrentWindow().startDragging().catch(() => {});
 });
 $('close').onclick = () => I('quit_app');
-// the gear's tooltip would cover 'Settings…': drop it while the menu is open
-const GEAR_TIP = 'Settings';
-function menu(on) { $('menu').classList.toggle('on', on); $('gear').title = on ? '' : GEAR_TIP; }
-$('gear').onclick = () => menu(!$('menu').classList.contains('on'));
-$('mSettings').onclick = () => { menu(false); I('open_settings', { tab: 'settings' }); };
-$('mSnap').onclick = () => { menu(false); snapshot(); };
-// Snapshot of companion + desk rendered from the SVG (independent of screen capture)
-async function snapshot() {
-  const svg = $('charHost').querySelector('svg');
-  const wasAway = lastAway;
-  if (wasAway) { ch.setState('typing'); $('charHost').style.visibility = 'visible'; } // away: snapshot the buddy at its desk
-  try { const path = await I('save_snapshot', { svg: LWSnapshot.serialize(svg) }); notice('📸 Saved ' + path.split(/[\\/]/).pop()); }
-  catch (e) { notice('Snapshot failed: ' + e); }
-  lastMode = null; lastAway = undefined; if (snap) render(snap);
-}
+$('gear').onclick = () => I('open_settings', { tab: 'settings' });
 for (const id of ['close', 'gear']) $(id).onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') $(id).click(); };
 // first run is handled by the onboarding window; clicking the HUD reopens it if it was closed
 $('hud').onclick = () => { if (snap && snap.needs_title) I('reopen_onboarding'); };
@@ -75,5 +60,4 @@ $('hud').onclick = () => { if (snap && snap.needs_title) I('reopen_onboarding');
   });
   T.event.listen('project-complete', () => { proudUntil = Date.now() + 6000; lastMode = 'proud'; $('deskHost').classList.remove('on'); $('charHost').style.visibility = 'visible'; lastAway = false; ch.setState('proud'); });
   T.event.listen('notice', e => notice(e.payload));
-  T.event.listen('take-snapshot', () => snapshot());
 })();

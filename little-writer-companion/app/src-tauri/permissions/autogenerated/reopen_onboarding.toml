@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-reopen-onboarding"
+description = "Enables the reopen_onboarding command without any pre-configured scope."
+commands.allow = ["reopen_onboarding"]
+
+[[permission]]
+identifier = "deny-reopen-onboarding"
+description = "Denies the reopen_onboarding command without any pre-configured scope."
+commands.deny = ["reopen_onboarding"]

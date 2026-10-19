@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-initial-tab"
+description = "Enables the initial_tab command without any pre-configured scope."
+commands.allow = ["initial_tab"]
+
+[[permission]]
+identifier = "deny-initial-tab"
+description = "Denies the initial_tab command without any pre-configured scope."
+commands.deny = ["initial_tab"]

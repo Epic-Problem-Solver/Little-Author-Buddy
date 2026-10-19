@@ -1,5 +1,5 @@
 // Colour presets shared by Settings and onboarding.
-// Body and outline come from the named preset. Desk, pen, typewriter, laptop, ink, feather,
+// Body comes from the named preset. Outline, desk, pen, typewriter, laptop, ink, feather,
 // and paper always stay on the Beige defaults (same hexes as Colors::default in store.rs).
 var window = typeof window !== 'undefined' ? window : globalThis;
 window.LWPalette = {
@@ -11,23 +11,23 @@ window.LWPalette = {
     screen: '#9fe3ff', ink: '#2f3a66', feather: '#f4f0ea', feather_shade: '#cbbfae',
     paper: '#f6efe2', paper_shade: '#d9cdb8',
   },
+  OUTLINE: '#241414',
   PRESETS: {
-    Beige: { body: '#e8cfa9', outline: '#241414' },
-    Sky: { body: '#cfe6ff', outline: '#1b2340' },
-    Rose: { body: '#ffd0dc', outline: '#3a1424' },
-    Mint: { body: '#d6f0c4', outline: '#1d2b14' },
+    Beige: { body: '#e8cfa9' },
+    Sky: { body: '#cfe6ff' },
+    Rose: { body: '#ffd0dc' },
+    Mint: { body: '#d6f0c4' },
   },
-  /** preset name -> {key: colour}; shade + hands derived from body; furniture always Beige */
+  /** preset name -> {key: colour}; shade + hands derived from body; outline and furniture always Beige */
   colors(name) {
     const p = this.PRESETS[name];
-    return this.normalize({ body: p.body, outline: p.outline });
+    return this.normalize({ body: p.body });
   },
-  /** Keep outline, reject a body that would invert, and pin desk and writing tools to Beige. */
+  /** Reject a body that would invert. Outline, desk, and writing tools stay on the Beige defaults. */
   normalize(raw) {
     const src = raw || {};
     const body = this.bodyAllowed(src.body) ? String(src.body).trim() : this.PRESETS.Beige.body;
-    const outline = /^#?[0-9a-f]{6}$/i.test(String(src.outline || '').trim()) ? String(src.outline).trim() : this.PRESETS.Beige.outline;
-    return Object.assign({ ...this.FURNITURE, body, outline }, this.derive(body) || {});
+    return Object.assign({ ...this.FURNITURE, body, outline: this.OUTLINE }, this.derive(body) || {});
   },
   /** v0.7: shade = hands = Animator's OKLCH rule (assets/lw-color.js lwDeriveShade; mirrored in store.rs derive_body) */
   derive(body) {

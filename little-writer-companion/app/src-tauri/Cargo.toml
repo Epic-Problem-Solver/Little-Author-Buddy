@@ -14,7 +14,6 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = ["tray-icon", "image-png"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-resvg = "0.45"
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 rand = "0.8"
 ctrlc = { version = "3", features = ["termination"] }
