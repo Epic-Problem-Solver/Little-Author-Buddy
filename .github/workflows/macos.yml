@@ -13,7 +13,7 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
@@ -54,7 +54,7 @@ jobs:
       - name: Build DMG
         working-directory: little-writer-companion/app/src-tauri
         run: npx --yes @tauri-apps/cli@2 build --bundles dmg
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: Little-Author-Buddy-macos
           path: little-writer-companion/app/src-tauri/target/release/bundle/dmg/*.dmg
