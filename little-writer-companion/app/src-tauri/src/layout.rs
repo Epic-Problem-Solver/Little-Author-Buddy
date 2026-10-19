@@ -10,14 +10,15 @@ pub const RACE_SAFETY_MS: u64 = 8_000;
 pub const HOME_MAX_SCALE: f64 = 1.3;
 #[allow(dead_code)] pub const DESK_ANCHOR_X: f64 = 40.0;
 #[allow(dead_code)] pub const DESK_ANCHOR_Y: f64 = 30.0;
-#[allow(dead_code)] pub const BODY_CENTER_RIGHT: f64 = 172.0;
-#[allow(dead_code)] pub const BODY_CENTER_LEFT: f64 = 68.0;
+#[allow(dead_code)] pub const BODY_CENTER_RIGHT: f64 = 180.0;
+#[allow(dead_code)] pub const BODY_CENTER_LEFT: f64 = 60.0;
 #[allow(dead_code)] pub const BODY_CENTER_AWAY: f64 = 120.0;
 #[allow(dead_code)] pub const BODY_CENTER_Y: f64 = 110.0;
-/// Desk pose only. The rig is scaled 1.25 about (120, 172) and shifted +52, so the body centre drops to y 94.5.
+/// Desk pose only. The rig is scaled 1.25 about (120, 172) and shifted +60, so the body centre drops to y 94.5.
 #[allow(dead_code)] pub const DESK_BODY_CENTER_Y: f64 = 94.5;
-#[allow(dead_code)] pub const SPRITE_W: f64 = 120.0;
-#[allow(dead_code)] pub const SPRITE_H: f64 = 110.0;
+/// Wander sprite. 1.25× the 120×110 home host so the body matches the desk rig.
+#[allow(dead_code)] pub const SPRITE_W: f64 = 150.0;
+#[allow(dead_code)] pub const SPRITE_H: f64 = 137.5;
 
 #[cfg(test)]
 mod tests {

@@ -9,24 +9,27 @@
     HOME_MAX_SCALE: 1.3,
     DESK_ANCHOR_X: 40,
     DESK_ANCHOR_Y: 30,
-    BODY_CENTER_RIGHT: 172,
-    BODY_CENTER_LEFT: 68,
+    BODY_CENTER_RIGHT: 180,
+    BODY_CENTER_LEFT: 60,
     BODY_CENTER_AWAY: 120,
     BODY_CENTER_Y: 110,
-    // Desk pose scales the rig 1.25 about (120,172) then translates +52. Centre x stays 172 / 68.
+    // Desk pose scales the rig 1.25 about (120,172) then translates +60. Centre x is 180 / 60.
     // Centre y: 172 + (110-172)*1.25 = 94.5. The runner still uses BODY_CENTER_Y.
     DESK_BODY_CENTER_Y: 94.5,
     SCALE_ORIGIN_X: 60,
     SCALE_ORIGIN_Y: 110,
-    SPRITE_W: 120,
-    SPRITE_H: 110,
+    // Wander box is 1.25× the 120×110 home host, so the unscaled body matches the desk rig's 1.25 scale.
+    // 150/240 = 137.5/220 = 0.625. The home host stays 120×110 (svg scale 0.5).
+    SPRITE_W: 150,
+    SPRITE_H: 137.5,
     /**
      * BUG-23: where the race-back runner must stop so its body centre is exactly on the desk buddy's rendered body
      * centre. Mirrors the home window layout: the 120x110 host at (40,30) CSS px, svg 240x220 -> x0.5, scaled by
-     * min(userScale, 1.3) around its bottom-centre (60,110). Desk-scene body centre svg x is 172 (right) or
-     * 68 (left). The 1.25 desk scale drops that centre to svg y DESK_BODY_CENTER_Y. homeCss = home window
+     * min(userScale, 1.3) around its bottom-centre (60,110). Desk-scene body centre svg x is 180 (right) or
+     * 60 (left). The 1.25 desk scale drops that centre to svg y DESK_BODY_CENTER_Y. homeCss = home window
      * top-left in overlay CSS px, f = home CSS px -> overlay CSS px (home scale / overlay DPR), k = the
-     * runner's current sprite scale (its away-pose body centre stays svg (120,110)).
+     * runner's current sprite scale (its away-pose body centre stays svg (120,110), which is the centre of
+     * the SPRITE_W×SPRITE_H box).
      * Returns { body: [x,y], target: top-left for the runner }.
      */
     deskBodyTarget(homeCss, f, side, userScale, k) {
@@ -36,7 +39,7 @@
       const px = M.SCALE_ORIGIN_X + (bx - M.SCALE_ORIGIN_X) * hsc;
       const py = M.SCALE_ORIGIN_Y + (by - M.SCALE_ORIGIN_Y) * hsc;
       const body = [homeCss[0] + (M.DESK_ANCHOR_X + px) * f, homeCss[1] + (M.DESK_ANCHOR_Y + py) * f];
-      return { body, target: [body[0] - (M.BODY_CENTER_AWAY * 0.5) * k, body[1] - (M.BODY_CENTER_Y * 0.5) * k] };
+      return { body, target: [body[0] - (M.SPRITE_W / 2) * k, body[1] - (M.SPRITE_H / 2) * k] };
     },
     /** Top-left of the runner when its body centre meets the desk buddy. */
     raceTarget(homeCss, f, side, userScale, k) { return M.deskBodyTarget(homeCss, f, side, userScale, k).target; },

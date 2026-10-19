@@ -3,6 +3,9 @@ const T = window.__TAURI__;
 const $ = id => document.getElementById(id);
 const comp = $('companion'), bubble = $('bubble'), letterEl = $('letter'), warnEl = $('warn');
 const BW = LWMotion.SPRITE_W, BH = LWMotion.SPRITE_H; // base sprite size in CSS px at the overlay's own scale
+comp.style.width = BW + 'px';
+comp.querySelector('.clip').style.width = BW + 'px';
+comp.querySelector('.clip').style.height = BH + 'px';
 const seenWarn = {};
 let ch, snap = null, pos = null, lastMode = null, bubbleT = 0;
 let goal = null, path = [], wanderGoal = null, hide = null, holdUntil = 0;
@@ -35,7 +38,7 @@ function raceTarget(k = kNow || scaleAt(deskPos())) {
 function deskPos() {
   if (snap && snap.home) {
     const [hx, hy, , , hs] = snap.home, b = homeScale();
-    return toCss(hx + (LWMotion.DESK_ANCHOR_X + LWMotion.SCALE_ORIGIN_X * (1 - b)) * hs, hy + (LWMotion.DESK_ANCHOR_Y + LWMotion.SPRITE_H * (1 - b)) * hs);
+    return toCss(hx + (LWMotion.DESK_ANCHOR_X + LWMotion.SCALE_ORIGIN_X * (1 - b)) * hs, hy + (LWMotion.DESK_ANCHOR_Y + LWMotion.SCALE_ORIGIN_Y * (1 - b)) * hs);
   }
   const m = deskMon(); return [m.x + m.w - BW * m.k - 60, m.y + m.h - BH * m.k - 110];
 }
@@ -141,11 +144,12 @@ function applyClip(k) {
   comp.style.clipPath = (l || r) ? `inset(0 ${r / k}px 0 ${l / k}px)` : '';
   bubble.style.display = (l || r) ? 'none' : '';
 }
-// Speech bubble. index.html pins it with bottom:118px over the 110px sprite (8px gap).
+// Speech bubble. 8px gap above the sprite. index.html's bottom is the same number; this wins once the script runs.
 // The shift is computed from layout size. Measuring getBoundingClientRect after clearing
 // the transform put the bubble back on the seam for a frame, then shoved it off again,
 // so near a monitor edge it jittered instead of sliding.
-const BUBBLE_BOTTOM = 118;
+const BUBBLE_BOTTOM = BH + 8;
+bubble.style.bottom = BUBBLE_BOTTOM + 'px';
 let bubbleHold = null, bubbleSizeKey = '', bubbleNat = null;
 function bubbleNatural() {
   const key = bubble.textContent + '\n' + (bubble.style.fontSize || '');

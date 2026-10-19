@@ -3,11 +3,11 @@
   "home_max_scale": 1.3,
   "desk_anchor_x": 40,
   "desk_anchor_y": 30,
-  "body_center_right": 172,
-  "body_center_left": 68,
+  "body_center_right": 180,
+  "body_center_left": 60,
   "body_center_away": 120,
   "body_center_y": 110,
   "desk_body_center_y": 94.5,
-  "sprite_w": 120,
-  "sprite_h": 110
+  "sprite_w": 150,
+  "sprite_h": 137.5
 }

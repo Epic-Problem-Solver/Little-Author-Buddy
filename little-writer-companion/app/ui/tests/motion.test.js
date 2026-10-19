@@ -68,22 +68,22 @@ test('a bubble box is shifted fully onto one monitor', () => {
 test('race-back target = desk buddy body centre, per side and size (100/130/160 -> capped 1.3)', () => {
   const M = require('../motion.js');
   const home = [1400, 600];
-  const deskY = 47.25; // svg 94.5 * 0.5: rig scale 1.25 about (120,172), then translate(52,0)
+  const deskY = 47.25; // svg 94.5 * 0.5: rig scale 1.25 about (120,172), then translate(60,0)
   const exp = { // body centre computed by hand from the home layout (host 40,30; origin 60,110; svg x0.5)
-    right: { 1: [1400 + 40 + 86, 600 + 30 + deskY], 1.3: [1400 + 40 + 60 + 26 * 1.3, 600 + 30 + 110 + (deskY - 110) * 1.3] },
-    left: { 1: [1400 + 40 + 34, 600 + 30 + deskY], 1.3: [1400 + 40 + 60 - 26 * 1.3, 600 + 30 + 110 + (deskY - 110) * 1.3] },
+    right: { 1: [1400 + 40 + 90, 600 + 30 + deskY], 1.3: [1400 + 40 + 60 + 30 * 1.3, 600 + 30 + 110 + (deskY - 110) * 1.3] },
+    left: { 1: [1400 + 40 + 30, 600 + 30 + deskY], 1.3: [1400 + 40 + 60 - 30 * 1.3, 600 + 30 + 110 + (deskY - 110) * 1.3] },
   };
   for (const side of ['right', 'left']) for (const u of [1, 1.3, 1.6]) {
     const hs = Math.min(u, 1.3), k = M.deskScale(1, u);
     assert.equal(k, hs);
     const { body, target } = M.deskBodyTarget(home, 1, side, u, k);
     assert.ok(Math.abs(body[0] - exp[side][hs][0]) < 1e-9 && Math.abs(body[1] - exp[side][hs][1]) < 1e-9, `${side} ${u}: ${body}`);
-    // runner (away pose, body centre svg 120,110 = 60k,55k from its top-left) lands exactly on the desk body: no snap
-    assert.ok(Math.abs(target[0] + 60 * k - body[0]) < 1e-9 && Math.abs(target[1] + 55 * k - body[1]) < 1e-9);
+    // runner body centre is the middle of the wander box (svg 120,110)
+    assert.ok(Math.abs(target[0] + (M.SPRITE_W / 2) * k - body[0]) < 1e-9 && Math.abs(target[1] + (M.SPRITE_H / 2) * k - body[1]) < 1e-9);
   }
   // HiDPI: home window at 150% seen from a 100% overlay
   const t = M.deskBodyTarget([0, 0], 1.5, 'right', 1, M.deskScale(1.5, 1));
-  assert.deepEqual(t.body, [(40 + 86) * 1.5, (30 + 47.25) * 1.5]);
+  assert.deepEqual(t.body, [(40 + 90) * 1.5, (30 + 47.25) * 1.5]);
 });
 
 test('watch stands on the monitor that holds most of the window', () => {
