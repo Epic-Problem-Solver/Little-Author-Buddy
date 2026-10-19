@@ -4,10 +4,12 @@
 //!   through a fixed Set-1 table of the A-Z key positions (QWERTY rows), so composition keystrokes on letter
 //!   keys still count. No ToUnicodeEx / keyboard-layout lookup is ever done.
 //! - Linux: fixed X11 keycode table (evdev + 8) of the A-Z key positions; no keysym lookup.
+//! - macOS: the current layout's unshifted character, tested as A–Z and then discarded.
 //! The code is only compared against these tables and for auto-repeat; it is never stored or logged.
 //! - Windows: our own WH_KEYBOARD_LL + WH_MOUSE_LL hooks on a dedicated thread with a message loop.
 //!   No ToUnicodeEx / GetKeyboardState / MapVirtualKey calls, so dead keys and IMEs are unaffected.
 //! - Linux: X11 RECORD extension, reading only the event type and keycode byte (no XLookupString).
+//! - macOS: a listen-only session event tap. The character used to classify a key is not stored.
 use std::collections::HashSet;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
@@ -51,16 +53,16 @@ pub fn is_letter(code: u32) -> bool {
     (0x41..=0x5A).contains(&code) || (code >= PROCESSKEY_BASE && scan_is_letter(code - PROCESSKEY_BASE))
 }
 /// Fallback: X11 keycodes (evdev + 8) of the US A-Z key positions: q..p = 24-33, a..l = 38-46, z..m = 52-58.
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
 pub fn fixed_is_letter(code: u32) -> bool { matches!(code, 24..=33 | 38..=46 | 52..=58) }
 
 /// BUG-19: keycode -> "is a letter" table built from the XKB layout (group 0, level 0 keysym in a..z),
 /// rebuilt once per mapping change; None until built (then the fixed US table is used).
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
 static XKB_LETTERS: std::sync::RwLock<Option<[bool; 256]>> = std::sync::RwLock::new(None);
 
 /// Build the table from (keycode, base keysym) pairs. Pure, so it is unit-testable.
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
 pub fn letters_from_keysyms(pairs: impl IntoIterator<Item = (u32, u64)>) -> Option<[bool; 256]> {
     const XK_A_LOWER: u64 = 0x61; const XK_Z_LOWER: u64 = 0x7a;
     let mut t = [false; 256];
@@ -69,9 +71,48 @@ pub fn letters_from_keysyms(pairs: impl IntoIterator<Item = (u32, u64)>) -> Opti
     if n >= 20 { Some(t) } else { None } // implausible layout (e.g. non-Latin group 0) -> keep fallback
 }
 
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
 pub fn is_letter(code: u32) -> bool {
     match &*XKB_LETTERS.read().unwrap() { Some(t) => code < 256 && t[code as usize], None => fixed_is_letter(code) }
+}
+
+/// ANSI virtual keycodes of the US A–Z key positions. Used until the layout table exists,
+/// and when that table has fewer than 20 Latin letters.
+#[cfg(target_os = "macos")]
+const ANSI_LETTERS: &[u32] = &[
+    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
+    0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x1F, 0x20, 0x22,
+    0x23, 0x25, 0x26, 0x28, 0x2D, 0x2E,
+];
+
+#[cfg(target_os = "macos")]
+pub fn fixed_is_letter(code: u32) -> bool { ANSI_LETTERS.contains(&code) }
+
+#[cfg(target_os = "macos")]
+static MAC_LETTERS: std::sync::RwLock<Option<[bool; 256]>> = std::sync::RwLock::new(None);
+
+/// `(keycode, unshifted scalar)` pairs. The scalar is only tested for ASCII A–Z and is not kept.
+#[cfg(target_os = "macos")]
+pub fn letters_from_unshifted(pairs: impl IntoIterator<Item = (u32, u32)>) -> Option<[bool; 256]> {
+    let mut t = [false; 256];
+    let mut n = 0;
+    for (kc, ch) in pairs {
+        if kc < 256 && ch < 128 && (ch as u8).is_ascii_alphabetic() {
+            t[kc as usize] = true;
+            n += 1;
+        }
+    }
+    if n >= 20 { Some(t) } else { None }
+}
+
+#[cfg(target_os = "macos")]
+pub fn install_layout(pairs: impl IntoIterator<Item = (u32, u32)>) {
+    *MAC_LETTERS.write().unwrap() = letters_from_unshifted(pairs);
+}
+
+#[cfg(target_os = "macos")]
+pub fn is_letter(code: u32) -> bool {
+    match &*MAC_LETTERS.read().unwrap() { Some(t) => code < 256 && t[code as usize], None => fixed_is_letter(code) }
 }
 
 pub fn spawn(c: Arc<Counters>) {
@@ -120,7 +161,7 @@ mod platform {
     }
 }
 
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
 mod platform {
     use super::*;
     use std::os::raw::c_char;
@@ -200,21 +241,29 @@ mod platform {
     }
 }
 
+#[cfg(target_os = "macos")]
+#[path = "macos_input.rs"]
+mod platform;
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[cfg(not(windows))]
+    #[cfg(target_os = "linux")]
     const A: u32 = 38; // X keycode of the "A" position
-    #[cfg(not(windows))]
+    #[cfg(target_os = "linux")]
     const OTHERS: &[u32] = &[10, 19, 20, 21, 22, 23, 36, 50, 62, 37, 64, 65, 67, 79, 87, 90, 111, 119, 59, 60, 61, 47, 48, 34, 35, 51];
     #[cfg(windows)]
     const A: u32 = 0x41;
     #[cfg(windows)]
     const OTHERS: &[u32] = &[0x30, 0x39, 0x20, 0x0D, 0x08, 0x09, 0x2E, 0x10, 0xA0, 0x70, 0x26, 0x60, 0x6A, 0xBA, 0xBC];
+    #[cfg(target_os = "macos")]
+    const A: u32 = 0x00; // ANSI A
+    #[cfg(target_os = "macos")]
+    const OTHERS: &[u32] = &[0x12, 0x24, 0x30, 0x31, 0x33, 0x35, 0x36, 0x37, 0x38, 0x3A, 0x3B, 0x7B, 0x7C, 0x7E];
 
     #[test]
     fn letters_only() {
-        #[cfg(not(windows))]
+        #[cfg(any(target_os = "linux", target_os = "macos"))]
         { let n = (0..256).filter(|&c| is_letter(c)).count(); assert_eq!(n, 26); }
         #[cfg(windows)]
         { let n = (0..256).filter(|&c| is_letter(c)).count(); assert_eq!(n, 26); assert!(is_letter(PROCESSKEY_BASE + 0x1E)); assert!(!is_letter(PROCESSKEY_BASE + 0x02)); }
@@ -222,7 +271,7 @@ mod tests {
         for &o in OTHERS { assert!(!is_letter(o), "code {o} must not count"); }
         assert_eq!((0..256).filter(|&s| scan_is_letter(s)).count(), 26);
     }
-    #[cfg(not(windows))]
+    #[cfg(target_os = "linux")]
     #[test]
     fn xkb_azerty_table() {
         // AZERTY: the US "q" position (24) yields 'a', US "a" (38) yields 'q', US "z" (52) yields 'w', US "m" (58) yields ','
@@ -238,6 +287,19 @@ mod tests {
         assert!(t[47] && !t[58] && !t[10] && !t[65]);
         // non-Latin / empty layout -> fallback
         assert!(letters_from_keysyms(vec![(24, 0x6c9)]).is_none());
+    }
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn layout_table_counts_unshifted_letters_only() {
+        let mut pairs = Vec::new();
+        for (i, kc) in ANSI_LETTERS.iter().enumerate() {
+            pairs.push((*kc, b'a' + i as u32));
+        }
+        pairs.push((0x0C, b'a' as u32)); // physical Q produces a, still one letter key
+        let t = letters_from_unshifted(pairs).unwrap();
+        assert_eq!(t.iter().filter(|b| **b).count(), 26);
+        assert!(t[0x0C] && !t[0x31] && !t[0x24]);
+        assert!(letters_from_unshifted(vec![(0x0C, 0x6C9)]).is_none());
     }
     #[test]
     fn counting_and_repeat() {

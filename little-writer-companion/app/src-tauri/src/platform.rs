@@ -54,14 +54,14 @@ pub fn media_playing() -> bool {
     f().unwrap_or(false)
 }
 
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
 fn run(cmd: &str, args: &[&str]) -> Option<String> {
     let o = std::process::Command::new(cmd).args(args).output().ok()?;
     if !o.status.success() { return None; }
     Some(String::from_utf8_lossy(&o.stdout).trim().to_string())
 }
 
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
 pub fn foreground() -> Option<Fg> {
     // X11 via xdotool if installed (optional runtime dependency)
     let id: u64 = run("xdotool", &["getactivewindow"])?.parse().ok()?;
@@ -74,7 +74,7 @@ pub fn foreground() -> Option<Fg> {
 }
 
 /// Parse `xwininfo -id` output (pure; unit-tested).
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
 pub fn parse_xwininfo(out: &str) -> Target {
     let get = |k: &str| out.lines().find_map(|l| l.trim().strip_prefix(k)).and_then(|v| v.trim().parse::<i32>().ok());
     if out.contains("Map State: IsUnMapped") || out.contains("Map State: IsUnviewable") { return Target::Minimized; }
@@ -85,12 +85,12 @@ pub fn parse_xwininfo(out: &str) -> Target {
 }
 
 /// Live rect of a window by id (xwininfo; exits non-zero when the window is gone).
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
 pub fn target_rect(id: u64) -> Target {
     match run("xwininfo", &["-id", &id.to_string()]) { Some(o) => parse_xwininfo(&o), None => Target::Gone }
 }
 
-#[cfg(all(test, not(windows)))]
+#[cfg(all(test, target_os = "linux"))]
 mod tests {
     use super::*;
     #[test]
@@ -102,7 +102,7 @@ mod tests {
     }
 }
 
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
 pub fn media_playing() -> bool {
     // MPRIS via playerctl if installed
     run("playerctl", &["status"]).map(|s| s == "Playing").unwrap_or(false)
@@ -112,7 +112,7 @@ pub fn media_playing() -> bool {
 #[cfg(windows)]
 pub fn has_compositor() -> bool { true } // DWM composition is always on (Win8+)
 
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
 pub fn has_compositor() -> bool {
     use x11::xlib;
     unsafe {
@@ -124,5 +124,39 @@ pub fn has_compositor() -> bool {
         let owner = xlib::XGetSelectionOwner(d, atom);
         xlib::XCloseDisplay(d);
         owner != 0
+    }
+}
+
+/// Cocoa's window position uses a bottom-left origin on the main display.
+/// Quartz and the rest of this app use a top-left origin, y growing downward.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+pub fn cocoa_top(main_h: f64, cocoa_y: f64, height: f64) -> i32 {
+    (main_h - cocoa_y - height).round() as i32
+}
+
+#[cfg(target_os = "macos")]
+#[path = "macos_wm.rs"]
+mod macos_wm;
+
+#[cfg(target_os = "macos")]
+pub fn foreground() -> Option<Fg> { macos_wm::foreground() }
+
+#[cfg(target_os = "macos")]
+pub fn target_rect(id: u64) -> Target { macos_wm::target_rect(id) }
+
+#[cfg(target_os = "macos")]
+pub fn media_playing() -> bool { macos_wm::media_playing() }
+
+#[cfg(target_os = "macos")]
+pub fn has_compositor() -> bool { true }
+
+#[cfg(test)]
+mod cocoa_tests {
+    use super::cocoa_top;
+    #[test]
+    fn cocoa_origin_becomes_top_left() {
+        assert_eq!(cocoa_top(1000.0, 100.0, 200.0), 700);
+        assert_eq!(cocoa_top(900.0, 0.0, 100.0), 800);
+        assert_eq!(cocoa_top(800.0, 800.0, 50.0), -50);
     }
 }

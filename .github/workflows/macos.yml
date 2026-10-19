@@ -1,0 +1,61 @@
+name: macOS
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "little-writer-companion/**"
+      - ".github/workflows/macos.yml"
+
+jobs:
+  dmg:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: little-writer-companion/app/src-tauri -> target
+      - name: Sync assets
+        run: sh little-writer-companion/app/scripts/sync-assets.sh
+      - name: Test
+        working-directory: little-writer-companion/app/src-tauri
+        run: cargo test
+      - name: Make the app icon
+        run: |
+          ICON=little-writer-companion/app/src-tauri/icons
+          SET="$ICON/AppIcon.iconset"
+          mkdir -p "$SET"
+          sips -z 16 16 "$ICON/icon.png" --out "$SET/icon_16x16.png"
+          sips -z 32 32 "$ICON/icon.png" --out "$SET/icon_16x16@2x.png"
+          sips -z 32 32 "$ICON/icon.png" --out "$SET/icon_32x32.png"
+          sips -z 64 64 "$ICON/icon.png" --out "$SET/icon_32x32@2x.png"
+          sips -z 128 128 "$ICON/icon.png" --out "$SET/icon_128x128.png"
+          sips -z 256 256 "$ICON/icon.png" --out "$SET/icon_128x128@2x.png"
+          sips -z 256 256 "$ICON/icon.png" --out "$SET/icon_256x256.png"
+          sips -z 512 512 "$ICON/icon.png" --out "$SET/icon_256x256@2x.png"
+          sips -z 512 512 "$ICON/icon.png" --out "$SET/icon_512x512.png"
+          sips -z 1024 1024 "$ICON/icon.png" --out "$SET/icon_512x512@2x.png"
+          iconutil -c icns "$SET" -o "$ICON/icon.icns"
+          python3 - <<'PY'
+          import json
+          p = "little-writer-companion/app/src-tauri/tauri.conf.json"
+          with open(p) as f:
+              cfg = json.load(f)
+          icons = cfg["bundle"]["icon"]
+          if "icons/icon.icns" not in icons:
+              icons.append("icons/icon.icns")
+          with open(p, "w") as f:
+              json.dump(cfg, f, indent=2)
+              f.write("\n")
+          PY
+      - name: Build DMG
+        working-directory: little-writer-companion/app/src-tauri
+        run: npx --yes @tauri-apps/cli@2 build --bundles dmg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Little-Author-Buddy-macos
+          path: little-writer-companion/app/src-tauri/target/release/bundle/dmg/*.dmg
+          if-no-files-found: error
