@@ -17,10 +17,6 @@
   <a href="LICENSE">MIT License</a>
 </p>
 
-<p align="center">
-  <img src="little-writer-companion/screens/v0.6.1/desk-laptop.png" width="520" alt="Little Author Buddy at a wooden desk, typing on a laptop. The progress line reads Harbor: 24 / 3000.">
-</p>
-
 Little Author Buddy is a writing companion for Windows, macOS, and Linux. It counts your own letter keys toward a project, keeps a quiet desk on screen, and marks a finished story with a fan letter written on your machine. Version 0.6.2 is the public beta.
 
 ## Download
