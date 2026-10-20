@@ -1,0 +1,866 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Little Author Buddy</title>
+<!--
+  Open this file in a browser. It loads ../assets/lw-character.css.
+  character.svg and desk.svg are inlined further down so the art works from disk.
+  On WordPress, little-author-buddy-download.php serves this page and fills the
+  download links from the latest GitHub release. The hrefs below are the
+  /releases/latest/download/ names of the files on the current release.
+-->
+</head>
+<body>
+<!-- lab:start -->
+<link rel="stylesheet" href="../assets/lw-character.css">
+<style>
+  html, body { margin: 0; background: #000; color: #f4f7ff; }
+  .lab {
+    --ink: #f4f7ff;
+    --trim: #153184;
+    background: #000;
+    color: var(--ink);
+    font: 17px/1.5 system-ui, sans-serif;
+    position: relative;
+  }
+  .lab * { box-sizing: border-box; }
+  .lab-wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px 200px; }
+  .lab h1, .lab h2 {
+    font-family: Palatino, "Palatino Linotype", Georgia, serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    color: var(--ink);
+  }
+  .lab h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); margin: 0; }
+  .lab h2 { font-size: 1.35rem; margin: 0 0 8px; }
+  .lab a { color: var(--ink); }
+  .lab-kicker {
+    margin: 0 0 8px;
+    font: 700 12px/1 system-ui, sans-serif;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .lab-lead { max-width: 38rem; margin: 14px 0 0; font-size: 1.05rem; }
+  .lab-shots {
+    display: flex;
+    flex-direction: column;
+    gap: 42px;
+    margin: 48px 0 0;
+    padding: 0;
+  }
+  .lab-shot {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 32px;
+    align-items: center;
+    margin: 0;
+    scroll-margin: 24px;
+  }
+  .lab-shot:nth-child(odd) figcaption { order: 1; }
+  .lab-shot:nth-child(odd) .lab-frame { order: 2; }
+  .lab-shot:nth-child(even) .lab-frame { order: 1; }
+  .lab-shot:nth-child(even) figcaption { order: 2; }
+  .lab-shot figcaption h2 { font-size: 1.45rem; margin: 0 0 8px; }
+  .lab-shot figcaption p { margin: 0; font-size: 1rem; line-height: 1.5; color: var(--ink); }
+  .lab-frame {
+    background: #000;
+    border: 3px solid var(--trim);
+    border-radius: 16px;
+    height: 248px;
+    position: relative;
+    overflow: hidden;
+  }
+  .lab-art svg { width: 100%; height: auto; display: block; }
+  .lab-hud {
+    position: absolute;
+    left: 12px; right: 12px; bottom: 10px;
+    background: rgba(0, 0, 0, 0.82);
+    border: 2px solid var(--trim);
+    border-radius: 6px;
+    padding: 4px 8px 6px;
+    color: var(--ink);
+    font: 600 12px/1.2 system-ui, sans-serif;
+  }
+  .lab-bar { display: block; height: 5px; margin-top: 4px; background: #1c2748; border-radius: 3px; }
+  .lab-bar i { display: block; width: 28%; height: 100%; background: #7aa36b; border-radius: 3px; }
+  .lab-frame-keys {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .lab-frame-keys .lab-art { width: 236px; margin: 0 0 18px; }
+  .lab-window { min-height: 210px; background: #000; position: relative; }
+  .lab-window-bar {
+    background: var(--trim);
+    border-bottom: 3px solid var(--trim);
+    padding: 6px 10px;
+    color: var(--ink);
+    font: 700 12px/1.2 system-ui, sans-serif;
+  }
+  .lab-window-body { position: relative; height: 200px; overflow: hidden; }
+  .lab-scroll {
+    position: absolute;
+    top: 10px;
+    bottom: 10px;
+    left: 118px;
+    right: 12px;
+    overflow: hidden;
+  }
+  .lab-scroll-track { will-change: transform; }
+  .lab-feed { display: flex; flex-direction: column; gap: 8px; padding-bottom: 8px; }
+  .lab-post {
+    border: 2px solid var(--trim);
+    border-radius: 8px;
+    padding: 6px 7px 7px;
+    background: #000;
+  }
+  .lab-post-head { display: flex; align-items: center; gap: 6px; }
+  .lab-avatar {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--trim);
+    flex: none;
+  }
+  .lab-post-who {
+    display: block;
+    width: 46%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--ink);
+  }
+  .lab-post-line {
+    display: block;
+    height: 5px;
+    margin-top: 5px;
+    background: var(--trim);
+  }
+  .lab-who-short { width: 28%; }
+  .lab-who-long { width: 64%; }
+  .lab-w94 { width: 94%; }
+  .lab-w88 { width: 88%; }
+  .lab-w76 { width: 76%; }
+  .lab-w70 { width: 70%; }
+  .lab-w58 { width: 58%; }
+  .lab-w42 { width: 42%; }
+  .lab-video {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 52px;
+    margin-top: 6px;
+    background: #0b1638;
+    border: 2px solid var(--trim);
+  }
+  .lab-play {
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 7px 0 7px 12px;
+    border-color: transparent transparent transparent var(--ink);
+  }
+
+  .lab-art-watch { position: absolute; width: 132px; left: 0; bottom: -18px; z-index: 1; }
+  .lab-frame-mail {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    padding: 16px 8px 8px 14px;
+  }
+  .lab-letter {
+    flex: 1;
+    background: #000;
+    border: 3px solid var(--trim);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: var(--ink);
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .lab-letter b { display: block; margin-bottom: 6px; }
+  .lab-letter p { margin: 0; }
+  .lab-letter i { display: block; margin-top: 8px; }
+  .lab-letter small { display: block; margin-top: 6px; color: var(--ink); }
+  .lab-art-mail { width: 128px; flex: none; }
+  .lab-soon, .lab-free { scroll-margin: 24px; }
+  .lab-soon {
+    margin-top: 48px;
+    padding: 20px 22px 8px;
+    border: 3px dashed var(--trim);
+    border-radius: 16px;
+    background: #000;
+  }
+  .lab-soon p:last-child, .lab-free > p { max-width: 40rem; }
+  .lab-free { margin-top: 28px; }
+  .lab-downloads {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px 22px;
+    justify-content: center;
+    align-items: stretch;
+    margin-top: 16px;
+  }
+  .lab-dl {
+    display: inline-flex;
+    flex-direction: column;
+    min-width: 148px;
+    text-decoration: none;
+    color: var(--ink);
+    background: var(--trim);
+    border: 3px solid var(--trim);
+    border-radius: 14px;
+    align-items: center;
+    text-align: center;
+    padding: 12px 18px 10px;
+    box-shadow: 4px 4px 0 #0b1638;
+  }
+  .lab-dl-os { font-weight: 800; font-size: 1.15rem; }
+  .lab-dl-kind { font-size: 0.78rem; color: var(--ink); }
+  .lab-dl:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 #0b1638; }
+  .lab-dl:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #0b1638; }
+  .lab-dl:focus-visible, .lab-foot a:focus-visible {
+    outline: 3px solid var(--ink);
+    outline-offset: 3px;
+  }
+  .lab-release, .lab-foot { color: var(--ink); font-size: 0.9rem; }
+  .lab-foot { display: flex; gap: 16px; margin-top: 28px; }
+  .lab-desk {
+    position: fixed;
+    right: 16px;
+    bottom: 8px;
+    width: 220px;
+    z-index: 15;
+    pointer-events: none;
+  }
+  .lab-desk svg { width: 100%; height: auto; display: block; }
+  .lab-buddy {
+    position: fixed;
+    z-index: 25;
+    width: 150px;
+    height: 137.5px;
+    pointer-events: none;
+    left: -400px;
+    top: 0;
+  }
+  .lab-buddy-art, .lab-buddy-art svg { width: 100%; height: 100%; display: block; }
+  .lab-bubble {
+    position: absolute;
+    left: 50%;
+    bottom: 86%;
+    transform: translateX(-50%);
+    margin: 0;
+    width: max-content;
+    max-width: 220px;
+    background: #000;
+    color: var(--ink);
+    border: 2px solid var(--trim);
+    border-radius: 10px;
+    padding: 4px 8px;
+    font: 600 13px/1.35 system-ui, sans-serif;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+  }
+  .lab-bubble.is-on { opacity: 1; }
+  .lab-bubble.is-below { bottom: auto; top: 82%; }
+  @media (max-width: 800px) {
+    .lab-shot { grid-template-columns: 1fr; }
+    .lab-shot:nth-child(odd) figcaption,
+    .lab-shot:nth-child(even) figcaption { order: 1; }
+    .lab-shot:nth-child(odd) .lab-frame,
+    .lab-shot:nth-child(even) .lab-frame { order: 2; }
+    .lab-frame-mail { max-width: 420px; }
+  }
+  @media (max-width: 640px), (max-height: 700px) {
+    .lab-desk { width: 150px; }
+    .lab-buddy { width: 112px; height: 102.7px; }
+    .lab-wrap { padding-bottom: 150px; }
+  }
+  @media (max-width: 640px) {
+    .lab-downloads { flex-direction: column; align-items: center; }
+    .lab-dl { width: min(100%, 240px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lab-dl, .lab-bubble { transition: none; }
+  }
+</style>
+<div class="lab">
+  <div class="lab-wrap">
+    <header class="lab-hero">
+      <p class="lab-kicker">A desktop companion for writers</p>
+      <h1>Little Author Buddy</h1>
+      <p class="lab-lead">Keeps you company while you write. Letter keys advance the story. What you typed is never stored.</p>
+    </header>
+
+    <div class="lab-shots">
+      <figure class="lab-shot" id="lab-shot-keys">
+        <div class="lab-frame lab-frame-keys">
+          <div class="lab-art" data-lab-shot="keys"></div>
+          <div class="lab-hud"><span>Harbor · 842 / 3,000</span><span class="lab-bar"><i></i></span></div>
+        </div>
+        <figcaption>
+          <h2>Keystroke tracking</h2>
+          <p>Letter keys add up to words on the active story. The app keeps the count and the timing, never the characters.</p>
+        </figcaption>
+      </figure>
+      <figure class="lab-shot" id="lab-shot-watch">
+        <div class="lab-frame">
+          <div class="lab-window">
+            <div class="lab-window-bar">A feed</div>
+            <div class="lab-window-body">
+              <div class="lab-scroll" aria-hidden="true"><div class="lab-scroll-track"><div class="lab-feed"><article class="lab-post"><div class="lab-post-head"><span class="lab-avatar"></span><span class="lab-post-who lab-who-short"></span></div><span class="lab-post-line lab-w70"></span></article><article class="lab-post"><div class="lab-post-head"><span class="lab-avatar"></span><span class="lab-post-who"></span></div><span class="lab-video"><span class="lab-play"></span></span></article><article class="lab-post"><div class="lab-post-head"><span class="lab-avatar"></span><span class="lab-post-who lab-who-long"></span></div><span class="lab-post-line"></span><span class="lab-post-line lab-w88"></span><span class="lab-post-line lab-w76"></span><span class="lab-post-line lab-w42"></span></article><article class="lab-post"><div class="lab-post-head"><span class="lab-avatar"></span><span class="lab-post-who"></span></div><span class="lab-post-line lab-w94"></span><span class="lab-post-line lab-w58"></span></article></div><div class="lab-feed"><article class="lab-post"><div class="lab-post-head"><span class="lab-avatar"></span><span class="lab-post-who lab-who-short"></span></div><span class="lab-post-line lab-w70"></span></article><article class="lab-post"><div class="lab-post-head"><span class="lab-avatar"></span><span class="lab-post-who"></span></div><span class="lab-video"><span class="lab-play"></span></span></article><article class="lab-post"><div class="lab-post-head"><span class="lab-avatar"></span><span class="lab-post-who lab-who-long"></span></div><span class="lab-post-line"></span><span class="lab-post-line lab-w88"></span><span class="lab-post-line lab-w76"></span><span class="lab-post-line lab-w42"></span></article><article class="lab-post"><div class="lab-post-head"><span class="lab-avatar"></span><span class="lab-post-who"></span></div><span class="lab-post-line lab-w94"></span><span class="lab-post-line lab-w58"></span></article></div></div></div>
+              <div class="lab-art lab-art-watch" data-lab-shot="watch"></div>
+            </div>
+          </div>
+        </div>
+        <figcaption>
+          <h2>Distraction detection</h2>
+          <p>A playing video, a listed site, or a long scroll brings the buddy over to watch. The window title is all it sees.</p>
+        </figcaption>
+      </figure>
+      <figure class="lab-shot" id="lab-shot-mail">
+        <div class="lab-frame lab-frame-mail">
+          <div class="lab-letter">
+            <b>A fan letter (encouragement)</b>
+            <p>I loved Harbor. 3,000 words, and I could hear the rain. Keep going.</p>
+            <i>— A reader</i>
+            <small>Saved to journal</small>
+          </div>
+          <div class="lab-art lab-art-mail" data-lab-shot="mail"></div>
+        </div>
+        <figcaption>
+          <h2>Fan mail</h2>
+          <p>Finishing a project brings a letter. It is saved in the journal on your computer.</p>
+        </figcaption>
+      </figure>
+    </div>
+
+    <section class="lab-soon" id="lab-soon" aria-labelledby="lab-soon-title">
+      <p class="lab-kicker">Supporter version</p>
+      <h2 id="lab-soon-title">Supporter version coming soon</h2>
+      <p>Hats for your buddy, and small games such as chase-the-cursor and click-the-buddy. The writing desk stays free. Paying is a way to support the project, and the source stays open.</p>
+    </section>
+
+    <section class="lab-free" id="lab-free" aria-labelledby="lab-free-title">
+      <h2 id="lab-free-title">Free version</h2>
+      <p>The writing companion for Windows, Mac, and Linux.</p>
+      <div class="lab-downloads" id="lab-downloads">
+        <a class="lab-dl" data-lab-dl="windows" rel="noopener" href="https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/latest/download/Little-Author-Buddy_0.6.2_x64-setup.exe"><span class="lab-dl-os">Windows</span><span class="lab-dl-kind">setup.exe</span></a>
+        <a class="lab-dl" data-lab-dl="mac" rel="noopener" href="https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/latest/download/Little-Author-Buddy_0.6.2_aarch64.dmg"><span class="lab-dl-os">Mac</span><span class="lab-dl-kind">.dmg</span></a>
+        <a class="lab-dl" data-lab-dl="appimage" rel="noopener" href="https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/latest/download/Little-Author-Buddy_0.6.2_amd64.AppImage"><span class="lab-dl-os">Linux</span><span class="lab-dl-kind">AppImage</span></a>
+        <a class="lab-dl" data-lab-dl="deb" rel="noopener" href="https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/latest/download/Little-Author-Buddy_0.6.2_amd64.deb"><span class="lab-dl-os">Debian</span><span class="lab-dl-kind">.deb</span></a>
+      </div>
+      <p class="lab-release">The latest free release from GitHub.</p>
+    </section>
+
+    <footer class="lab-foot">
+      <a rel="noopener" href="https://github.com/Epic-Problem-Solver/Little-Author-Buddy">Source on GitHub</a>
+      <span>MIT License</span>
+    </footer>
+  </div>
+
+  <div class="lab-desk" id="lab-desk" aria-hidden="true"></div>
+  <div class="lab-buddy" id="lab-buddy" aria-hidden="true">
+    <p class="lab-bubble"></p>
+    <div class="lab-buddy-art"></div>
+  </div>
+
+  <template id="lab-tpl-char">
+<svg class="lw-char" data-face="idle" data-body="idle" data-tool="laptop" data-side="right" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" width="240" height="220">
+  <g class="lw-scene">
+  <g class="lw-rig lw-rig-back">
+    <g class="lw-hand lw-hand-l"><g transform="translate(52 112)"><g class="lw-hand-inner">
+      <circle r="19" fill="var(--hands)"/>
+      <path d="M13 -12A19 19 0 0 1 -14 13A22 22 0 0 0 13 -12z" fill="var(--shade)" opacity=".6"/>
+      <circle r="19" fill="none" stroke="var(--outline)" stroke-width="6"/>
+    </g></g></g>
+    <g class="lw-hand lw-hand-r lw-hand-backr"><g transform="translate(184 140)"><g class="lw-hand-inner">
+      <circle r="19" fill="var(--hands)"/>
+      <path d="M13 -12A19 19 0 0 1 -14 13A22 22 0 0 0 13 -12z" fill="var(--shade)" opacity=".6"/>
+      <circle r="19" fill="none" stroke="var(--outline)" stroke-width="6"/>
+    </g></g></g>
+    <g class="lw-body">
+      <circle cx="120" cy="110" r="62" fill="var(--shade)"/>
+      <!-- Offset highlight, cut to the body circle so it cannot sit outside the outline. -->
+      <path d="M149.47 55.45 A58 58 0 1 1 61.59 130.78 A62 62 0 0 1 149.47 55.45 Z" fill="var(--body)"/>
+      <circle cx="120" cy="110" r="62" fill="none" stroke="var(--outline)" stroke-width="7"/>
+    </g>
+    <g class="lw-back">
+      <!-- Back shade, cut to the body circle so the bottom cannot pass the outline. -->
+      <path d="M62 120A58 58 0 0 0 65.2 139A62 62 0 0 0 174.8 139A58 58 0 0 0 178 120A62 50 0 0 1 62 120Z" fill="var(--shade)" opacity=".7"/>
+      <path d="M114 52q4-10 12-8q-6 2-6 8" fill="none" stroke="var(--outline)" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="120" cy="110" r="62" fill="none" stroke="var(--outline)" stroke-width="7"/>
+    </g>
+    <g class="lw-face">
+      <g class="lw-blush"><ellipse cx="80" cy="118" rx="9" ry="5"/><ellipse cx="146" cy="118" rx="9" ry="5"/></g>
+      <g class="lw-eyes">
+        <g class="lw-eye lw-eye-l"><circle class="lw-eye-dot" cx="88" cy="102" r="8"/><path class="lw-eye-closed" d="M80 103q8 5 16 0"/><path class="lw-eye-happy" d="M80 105q8-10 16 0"/></g>
+        <g class="lw-eye lw-eye-r"><circle class="lw-eye-dot" cx="138" cy="102" r="8"/><path class="lw-eye-closed" d="M130 103q8 5 16 0"/><path class="lw-eye-happy" d="M130 105q8-10 16 0"/></g>
+      </g>
+      <g class="lw-mouth">
+        <path class="lw-m lw-m-smile" d="M104 114q9 12 18 0"/>
+        <path class="lw-m lw-m-flat" d="M106 118h14"/>
+        <path class="lw-m lw-m-side" d="M106 119q8 -2 15 -6"/>
+        <ellipse class="lw-m lw-m-o lw-fill" cx="113" cy="120" rx="6" ry="7"/>
+        <ellipse class="lw-m lw-m-tiny lw-fill" cx="113" cy="120" rx="3" ry="2.5"/>
+        <path class="lw-m lw-m-grin lw-fill" d="M100 113h26q-2 16-13 16t-13-16z"/>
+        <path class="lw-m lw-m-wavy" d="M104 119q3-3 6 0t6 0t6 0"/>
+      </g>
+      <g class="lw-zzz"><text x="154" y="62">z</text><text x="166" y="46">z</text><text x="178" y="30">Z</text></g>
+    </g>
+  </g>
+  <g class="lw-station">
+    <g class="lw-rig lw-rig-mid">
+      <g class="lw-hand lw-hand-l lw-hand-mid"><g transform="translate(52 112)"><g class="lw-hand-inner">
+      <circle r="19" fill="var(--hands)"/>
+      <path d="M13 -12A19 19 0 0 1 -14 13A22 22 0 0 0 13 -12z" fill="var(--shade)" opacity=".6"/>
+      <circle r="19" fill="none" stroke="var(--outline)" stroke-width="6"/>
+    </g></g></g>
+      <g class="lw-hand lw-hand-r lw-hand-mid"><g transform="translate(184 140)"><g class="lw-hand-inner">
+      <circle r="19" fill="var(--hands)"/>
+      <path d="M13 -12A19 19 0 0 1 -14 13A22 22 0 0 0 13 -12z" fill="var(--shade)" opacity=".6"/>
+      <circle r="19" fill="none" stroke="var(--outline)" stroke-width="6"/>
+    </g></g></g>
+    </g>
+    <g class="lw-tools">
+      <g class="lw-tool lw-tool-laptop"><g class="lw-flipx">
+        <path class="lw-laptop-glow" d="M82 108L146 108L158 130L94 124z" fill="var(--screen)"/>
+        <path d="M64 94L156 94L172 150L80 142z" fill="var(--tool)" stroke="var(--outline)" stroke-width="6" stroke-linejoin="round"/>
+        <path d="M88 130L164 138L172 150L80 142z" fill="var(--tool-shade)"/>
+        <ellipse cx="118" cy="118" rx="6" ry="5" fill="var(--tool-shade)"/>
+        <path d="M72 144L180 152L186 164L78 156z" fill="var(--tool-shade)" stroke="var(--outline)" stroke-width="6" stroke-linejoin="round"/></g>
+      </g>
+      <g class="lw-tool lw-tool-typewriter"><g class="lw-flipx">
+        <g class="lw-tw-carriage">
+          <path d="M95 95.5L139 97.5V114.5L95 112.5z" fill="var(--paper)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+          <path class="lw-tw-lines" d="M99 101.5l28 1.2M99 106.5l20 .8" stroke="var(--paper-shade)" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M86 113L154 116V124L86 121z" fill="var(--tool-shade)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M78 117h8M154 120h8" stroke="var(--outline)" stroke-width="5" stroke-linecap="round"/>
+        </g>
+        <path d="M92 151L148 154L142 125L98 123z" fill="var(--tool)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+        <path d="M94 144L146 147L148 154L92 151z" fill="var(--tool-shade)"/>
+        <path class="lw-tw-vents" d="M106 132l28 1.2M108 138l24 1" stroke="var(--tool-shade)" stroke-width="3" stroke-linecap="round"/>
+        <path d="M92 151L148 154" stroke="var(--outline)" stroke-width="5" stroke-linecap="round"/></g>
+      </g>
+    </g>
+    <g class="lw-desk"><g class="lw-flipx">
+      <path class="lw-desk-front" d="M22 150H172V217H22z" fill="var(--desk)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+      <path d="M25 205H170V214H25z" fill="var(--desk-shade)"/>
+      <path class="lw-desk-side" d="M172 150L218 162V217H172z" fill="var(--desk-shade)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+      <g class="lw-desk-slab">
+        <path d="M14 144H176V151H14z" fill="var(--desk-shade)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+        <path d="M176 144L226 156V163L176 151z" fill="var(--desk-side-dark)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+      </g>
+    </g></g>
+    <g class="lw-tools">
+      <g class="lw-tool lw-tool-pen">
+        <path class="lw-pen-paper" d="M90 153L150 156L156 145L98 142z" fill="var(--paper)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+        <path class="lw-pen-ink" d="M136 150q-4-4-8 0t-8 0t-8 0t-8 0" fill="none" stroke="var(--ink)" stroke-width="3" stroke-linecap="round" pathLength="100"/>
+        <g class="lw-inkwell">
+          <path d="M62 138h16l3 10q0 4-11 4t-11-4z" fill="var(--inkwell)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M65 134h10v5H65z" fill="var(--inkwell)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M64 143q6 3 13 0" stroke="var(--ink-shine)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        </g>
+        <g class="lw-quill-rest" transform="translate(62 122) rotate(12)">
+          <g class="lw-quill-art">
+          <path d="M8 14L-22 -38" stroke="var(--outline)" stroke-width="3.5" stroke-linecap="round"/>
+          <path d="M-6 -12q-22-8-26-34q-2-12 6-18q12 14 20 52z" fill="var(--feather)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M-9 -18q-12-10-15-30" fill="none" stroke="var(--feather-shade)" stroke-width="4" stroke-linecap="round"/>
+        </g>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g class="lw-rig lw-rig-front">
+    <g class="lw-hand lw-hand-l lw-hand-front"><g transform="translate(52 112)"><g class="lw-hand-inner">
+        <g class="lw-quill-art">
+          <path d="M8 14L-22 -38" stroke="var(--outline)" stroke-width="3.5" stroke-linecap="round"/>
+          <path d="M-6 -12q-22-8-26-34q-2-12 6-18q12 14 20 52z" fill="var(--feather)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M-9 -18q-12-10-15-30" fill="none" stroke="var(--feather-shade)" stroke-width="4" stroke-linecap="round"/>
+        </g>
+      <circle r="19" fill="var(--hands)"/>
+      <path d="M13 -12A19 19 0 0 1 -14 13A22 22 0 0 0 13 -12z" fill="var(--shade)" opacity=".6"/>
+      <circle r="19" fill="none" stroke="var(--outline)" stroke-width="6"/>
+    </g></g></g>
+    <g class="lw-hand lw-hand-r"><g transform="translate(184 140)"><g class="lw-hand-inner">
+      <circle r="19" fill="var(--hands)"/>
+      <path d="M13 -12A19 19 0 0 1 -14 13A22 22 0 0 0 13 -12z" fill="var(--shade)" opacity=".6"/>
+      <circle r="19" fill="none" stroke="var(--outline)" stroke-width="6"/>
+    </g></g></g>
+  </g>
+  </g>
+</svg>
+  </template>
+  <template id="lab-tpl-desk">
+<svg class="lw-char lw-desk-only" data-face="idle" data-body="away-from-desk" data-tool="laptop" data-side="right" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" width="240" height="220">
+  <g class="lw-scene">
+  <g class="lw-rig lw-rig-back">
+    <g class="lw-hand lw-hand-l"><g transform="translate(52 112)"><g class="lw-hand-inner">
+      <circle r="19" fill="var(--hands)"/>
+      <path d="M13 -12A19 19 0 0 1 -14 13A22 22 0 0 0 13 -12z" fill="var(--shade)" opacity=".6"/>
+      <circle r="19" fill="none" stroke="var(--outline)" stroke-width="6"/>
+    </g></g></g>
+    <g class="lw-hand lw-hand-r lw-hand-backr"><g transform="translate(184 140)"><g class="lw-hand-inner">
+      <circle r="19" fill="var(--hands)"/>
+      <path d="M13 -12A19 19 0 0 1 -14 13A22 22 0 0 0 13 -12z" fill="var(--shade)" opacity=".6"/>
+      <circle r="19" fill="none" stroke="var(--outline)" stroke-width="6"/>
+    </g></g></g>
+    <g class="lw-body">
+      <circle cx="120" cy="110" r="62" fill="var(--shade)"/>
+      <!-- Offset highlight, cut to the body circle so it cannot sit outside the outline. -->
+      <path d="M149.47 55.45 A58 58 0 1 1 61.59 130.78 A62 62 0 0 1 149.47 55.45 Z" fill="var(--body)"/>
+      <circle cx="120" cy="110" r="62" fill="none" stroke="var(--outline)" stroke-width="7"/>
+    </g>
+    <g class="lw-back">
+      <!-- Back shade, cut to the body circle so the bottom cannot pass the outline. -->
+      <path d="M62 120A58 58 0 0 0 65.2 139A62 62 0 0 0 174.8 139A58 58 0 0 0 178 120A62 50 0 0 1 62 120Z" fill="var(--shade)" opacity=".7"/>
+      <path d="M114 52q4-10 12-8q-6 2-6 8" fill="none" stroke="var(--outline)" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="120" cy="110" r="62" fill="none" stroke="var(--outline)" stroke-width="7"/>
+    </g>
+    <g class="lw-face">
+      <g class="lw-blush"><ellipse cx="80" cy="118" rx="9" ry="5"/><ellipse cx="146" cy="118" rx="9" ry="5"/></g>
+      <g class="lw-eyes">
+        <g class="lw-eye lw-eye-l"><circle class="lw-eye-dot" cx="88" cy="102" r="8"/><path class="lw-eye-closed" d="M80 103q8 5 16 0"/><path class="lw-eye-happy" d="M80 105q8-10 16 0"/></g>
+        <g class="lw-eye lw-eye-r"><circle class="lw-eye-dot" cx="138" cy="102" r="8"/><path class="lw-eye-closed" d="M130 103q8 5 16 0"/><path class="lw-eye-happy" d="M130 105q8-10 16 0"/></g>
+      </g>
+      <g class="lw-mouth">
+        <path class="lw-m lw-m-smile" d="M104 114q9 12 18 0"/>
+        <path class="lw-m lw-m-flat" d="M106 118h14"/>
+        <path class="lw-m lw-m-side" d="M106 119q8 -2 15 -6"/>
+        <ellipse class="lw-m lw-m-o lw-fill" cx="113" cy="120" rx="6" ry="7"/>
+        <ellipse class="lw-m lw-m-tiny lw-fill" cx="113" cy="120" rx="3" ry="2.5"/>
+        <path class="lw-m lw-m-grin lw-fill" d="M100 113h26q-2 16-13 16t-13-16z"/>
+        <path class="lw-m lw-m-wavy" d="M104 119q3-3 6 0t6 0t6 0"/>
+      </g>
+      <g class="lw-zzz"><text x="154" y="62">z</text><text x="166" y="46">z</text><text x="178" y="30">Z</text></g>
+    </g>
+  </g>
+  <g class="lw-station">
+    <g class="lw-rig lw-rig-mid">
+      <g class="lw-hand lw-hand-l lw-hand-mid"><g transform="translate(52 112)"><g class="lw-hand-inner">
+      <circle r="19" fill="var(--hands)"/>
+      <path d="M13 -12A19 19 0 0 1 -14 13A22 22 0 0 0 13 -12z" fill="var(--shade)" opacity=".6"/>
+      <circle r="19" fill="none" stroke="var(--outline)" stroke-width="6"/>
+    </g></g></g>
+      <g class="lw-hand lw-hand-r lw-hand-mid"><g transform="translate(184 140)"><g class="lw-hand-inner">
+      <circle r="19" fill="var(--hands)"/>
+      <path d="M13 -12A19 19 0 0 1 -14 13A22 22 0 0 0 13 -12z" fill="var(--shade)" opacity=".6"/>
+      <circle r="19" fill="none" stroke="var(--outline)" stroke-width="6"/>
+    </g></g></g>
+    </g>
+    <g class="lw-tools">
+      <g class="lw-tool lw-tool-laptop"><g class="lw-flipx">
+        <path class="lw-laptop-glow" d="M82 108L146 108L158 130L94 124z" fill="var(--screen)"/>
+        <path d="M64 94L156 94L172 150L80 142z" fill="var(--tool)" stroke="var(--outline)" stroke-width="6" stroke-linejoin="round"/>
+        <path d="M88 130L164 138L172 150L80 142z" fill="var(--tool-shade)"/>
+        <ellipse cx="118" cy="118" rx="6" ry="5" fill="var(--tool-shade)"/>
+        <path d="M72 144L180 152L186 164L78 156z" fill="var(--tool-shade)" stroke="var(--outline)" stroke-width="6" stroke-linejoin="round"/></g>
+      </g>
+      <g class="lw-tool lw-tool-typewriter"><g class="lw-flipx">
+        <g class="lw-tw-carriage">
+          <path d="M95 95.5L139 97.5V114.5L95 112.5z" fill="var(--paper)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+          <path class="lw-tw-lines" d="M99 101.5l28 1.2M99 106.5l20 .8" stroke="var(--paper-shade)" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M86 113L154 116V124L86 121z" fill="var(--tool-shade)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M78 117h8M154 120h8" stroke="var(--outline)" stroke-width="5" stroke-linecap="round"/>
+        </g>
+        <path d="M92 151L148 154L142 125L98 123z" fill="var(--tool)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+        <path d="M94 144L146 147L148 154L92 151z" fill="var(--tool-shade)"/>
+        <path class="lw-tw-vents" d="M106 132l28 1.2M108 138l24 1" stroke="var(--tool-shade)" stroke-width="3" stroke-linecap="round"/>
+        <path d="M92 151L148 154" stroke="var(--outline)" stroke-width="5" stroke-linecap="round"/></g>
+      </g>
+    </g>
+    <g class="lw-desk"><g class="lw-flipx">
+      <path class="lw-desk-front" d="M22 150H172V217H22z" fill="var(--desk)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+      <path d="M25 205H170V214H25z" fill="var(--desk-shade)"/>
+      <path class="lw-desk-side" d="M172 150L218 162V217H172z" fill="var(--desk-shade)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+      <g class="lw-desk-slab">
+        <path d="M14 144H176V151H14z" fill="var(--desk-shade)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+        <path d="M176 144L226 156V163L176 151z" fill="var(--desk-side-dark)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+      </g>
+    </g></g>
+    <g class="lw-tools">
+      <g class="lw-tool lw-tool-pen">
+        <path class="lw-pen-paper" d="M90 153L150 156L156 145L98 142z" fill="var(--paper)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+        <path class="lw-pen-ink" d="M136 150q-4-4-8 0t-8 0t-8 0t-8 0" fill="none" stroke="var(--ink)" stroke-width="3" stroke-linecap="round" pathLength="100"/>
+        <g class="lw-inkwell">
+          <path d="M62 138h16l3 10q0 4-11 4t-11-4z" fill="var(--inkwell)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M65 134h10v5H65z" fill="var(--inkwell)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M64 143q6 3 13 0" stroke="var(--ink-shine)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        </g>
+        <g class="lw-quill-rest" transform="translate(62 122) rotate(12)">
+          <g class="lw-quill-art">
+          <path d="M8 14L-22 -38" stroke="var(--outline)" stroke-width="3.5" stroke-linecap="round"/>
+          <path d="M-6 -12q-22-8-26-34q-2-12 6-18q12 14 20 52z" fill="var(--feather)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M-9 -18q-12-10-15-30" fill="none" stroke="var(--feather-shade)" stroke-width="4" stroke-linecap="round"/>
+        </g>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g class="lw-rig lw-rig-front">
+    <g class="lw-hand lw-hand-l lw-hand-front"><g transform="translate(52 112)"><g class="lw-hand-inner">
+        <g class="lw-quill-art">
+          <path d="M8 14L-22 -38" stroke="var(--outline)" stroke-width="3.5" stroke-linecap="round"/>
+          <path d="M-6 -12q-22-8-26-34q-2-12 6-18q12 14 20 52z" fill="var(--feather)" stroke="var(--outline)" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M-9 -18q-12-10-15-30" fill="none" stroke="var(--feather-shade)" stroke-width="4" stroke-linecap="round"/>
+        </g>
+      <circle r="19" fill="var(--hands)"/>
+      <path d="M13 -12A19 19 0 0 1 -14 13A22 22 0 0 0 13 -12z" fill="var(--shade)" opacity=".6"/>
+      <circle r="19" fill="none" stroke="var(--outline)" stroke-width="6"/>
+    </g></g></g>
+    <g class="lw-hand lw-hand-r"><g transform="translate(184 140)"><g class="lw-hand-inner">
+      <circle r="19" fill="var(--hands)"/>
+      <path d="M13 -12A19 19 0 0 1 -14 13A22 22 0 0 0 13 -12z" fill="var(--shade)" opacity=".6"/>
+      <circle r="19" fill="none" stroke="var(--outline)" stroke-width="6"/>
+    </g></g></g>
+  </g>
+  </g>
+</svg>
+  </template>
+</div>
+<script>
+(function () {
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var deskHost = document.getElementById('lab-desk');
+  var buddy = document.getElementById('lab-buddy');
+  var art = buddy.querySelector('.lab-buddy-art');
+  var bubble = buddy.querySelector('.lab-bubble');
+  var walker = null;
+  var x = 0, y = 0, way = 'left';
+
+  function svgFrom(id) {
+    var node = document.getElementById(id).content.querySelector('svg');
+    if (!node) return null;
+    var svg = node.cloneNode(true);
+    svg.removeAttribute('width');
+    svg.removeAttribute('height');
+    svg.setAttribute('aria-hidden', 'true');
+    return svg;
+  }
+  function setAttr(el, name, value) {
+    if (value == null) { if (el.hasAttribute(name)) el.removeAttribute(name); }
+    else if (el.getAttribute(name) !== value) el.setAttribute(name, value);
+  }
+  // data-dir="left" faces left, including watching (that is the pose that was on screen).
+  // Omit data-dir to face right.
+  function paint(svg, body, face, faceWay) {
+    setAttr(svg, 'data-body', body);
+    setAttr(svg, 'data-face', face);
+    setAttr(svg, 'data-dir', faceWay === 'right' ? null : 'left');
+  }
+
+  var deskSvg = svgFrom('lab-tpl-desk');
+  if (deskSvg) deskHost.appendChild(deskSvg);
+  var shots = {
+    keys: { body: 'typing', face: 'focused', tool: 'laptop', side: 'right' },
+    // watching faces left when data-dir="left". Omit data-dir to face right.
+    watch: { body: 'watching', face: 'curious', way: 'right' },
+    mail: { body: 'idle', face: 'proud' }
+  };
+  document.querySelectorAll('[data-lab-shot]').forEach(function (host) {
+    var svg = svgFrom('lab-tpl-char');
+    var pose = shots[host.getAttribute('data-lab-shot')];
+    if (!svg || !pose) return;
+    setAttr(svg, 'data-body', pose.body);
+    setAttr(svg, 'data-face', pose.face);
+    if (pose.tool) setAttr(svg, 'data-tool', pose.tool);
+    if (pose.side) setAttr(svg, 'data-side', pose.side);
+    if (pose.way === 'left') setAttr(svg, 'data-dir', 'left');
+    else if (pose.way === 'right') setAttr(svg, 'data-dir', null);
+    else if (pose.dir) setAttr(svg, 'data-dir', pose.dir);
+    host.appendChild(svg);
+  });
+  walker = svgFrom('lab-tpl-char');
+  if (!walker) return;
+  paint(walker, 'idle', 'curious', 'left');
+  art.appendChild(walker);
+
+  function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+  function size() {
+    return { w: buddy.offsetWidth || 150, h: buddy.offsetHeight || 138 };
+  }
+  function spot(name) {
+    var s = size();
+    var margin = 8;
+    var maxX = Math.max(margin, window.innerWidth - s.w - margin);
+    var maxY = Math.max(margin, window.innerHeight - s.h - margin);
+    if (name === 'desk') {
+      var d = deskHost.getBoundingClientRect();
+      return {
+        x: clamp(d.left - s.w + 56, margin, maxX),
+        y: clamp(d.bottom - s.h - 4, margin, maxY),
+        way: 'left'
+      };
+    }
+    var el = document.querySelector(name);
+    if (!el) return spot('desk');
+    var r = el.getBoundingClientRect();
+    if (name === '#lab-downloads') {
+      return {
+        x: clamp(r.left, margin, maxX),
+        y: clamp(r.top - s.h - 6, margin, maxY),
+        way: 'right'
+      };
+    }
+    var px = r.left - s.w - 6;
+    var py = r.top + Math.min(36, r.height * 0.2);
+    if (px < margin) px = r.right - s.w * 0.45;
+    var face = (px + s.w / 2) < (r.left + r.width / 2) ? 'right' : 'left';
+    return { x: clamp(px, margin, maxX), y: clamp(py, margin, maxY), way: face };
+  }
+  function applyPos() {
+    buddy.style.left = x + 'px';
+    buddy.style.top = y + 'px';
+  }
+  function say(text) {
+    bubble.textContent = text;
+    bubble.classList.toggle('is-below', y < 72);
+    bubble.classList.add('is-on');
+  }
+  function hush() { bubble.classList.remove('is-on'); }
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function onScreen(el) {
+    var r = el.getBoundingClientRect();
+    return r.bottom > 64 && r.top < window.innerHeight - 24;
+  }
+  function walkTo(target, pose) {
+    return new Promise(function (resolve) {
+      var dest = spot(reduce ? 'desk' : target);
+      if (reduce) {
+        x = dest.x; y = dest.y; way = dest.way;
+        applyPos();
+        paint(walker, pose.body, pose.face, way);
+        resolve();
+        return;
+      }
+      var last = performance.now();
+      function frame(now) {
+        dest = spot(target);
+        var dt = Math.min(0.05, (now - last) / 1000);
+        last = now;
+        var dx = dest.x - x, dy = dest.y - y;
+        var dist = Math.hypot(dx, dy);
+        if (dist < 3) {
+          x = dest.x; y = dest.y; way = dest.way;
+          applyPos();
+          paint(walker, pose.body, pose.face, way);
+          resolve();
+          return;
+        }
+        var step = Math.min(1, (96 * dt) / dist);
+        x += dx * step; y += dy * step;
+        if (dx < -1) way = 'left';
+        else if (dx > 1) way = 'right';
+        paint(walker, 'walking', 'idle', way);
+        applyPos();
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    });
+  }
+  var tour = [
+    { at: 'desk', pose: { body: 'idle', face: 'curious' }, say: 'Oh! Hi.', hold: 1700 },
+    { at: 'desk', pose: { body: 'idle', face: 'excited' }, say: "I'm Inky.", hold: 1500 },
+    { at: '#lab-shot-keys', pose: { body: 'idle', face: 'focused' }, say: 'Letter keys fill the story. I keep the count, not the words.', hold: 2800 },
+    { at: '#lab-shot-watch', pose: { body: 'watching', face: 'curious' }, say: 'A video? I come over and watch.', hold: 2600 },
+    { at: '#lab-shot-mail', pose: { body: 'idle', face: 'proud' }, say: 'Finish a story and the fan mail arrives.', hold: 2600 },
+    { at: '#lab-downloads', pose: { body: 'idle', face: 'excited' }, say: 'Free for Windows, Mac, and Linux.', hold: 2400 },
+    { at: 'desk', pose: { body: 'idle', face: 'idle' }, say: "I'll be by the desk.", hold: 2000 }
+  ];
+  var later = [
+    { at: '#lab-shot-keys', pose: { body: 'idle', face: 'focused' }, say: 'Still counting letters, whenever you write.' },
+    { at: '#lab-shot-watch', pose: { body: 'watching', face: 'curious' }, say: 'I notice the long scrolls, too.' },
+    { at: '#lab-shot-mail', pose: { body: 'idle', face: 'proud' }, say: 'The letters stay on your computer.' }
+  ];
+  async function go(stop, scroll) {
+    var at = reduce ? 'desk' : stop.at;
+    hush();
+    if (scroll && at !== 'desk') {
+      var el = document.querySelector(at);
+      if (el && !onScreen(el)) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        await wait(700);
+      }
+    }
+    await walkTo(at, stop.pose);
+    say(stop.say);
+    await wait(reduce ? 2200 : (stop.hold || 2400));
+  }
+  async function run() {
+    var first = spot('desk');
+    x = first.x; y = first.y; way = first.way;
+    applyPos();
+    await wait(400);
+    for (var i = 0; i < tour.length; i++) await go(tour[i], true);
+    hush();
+    var n = 0;
+    while (true) {
+      await wait(reduce ? 3600 : 8000);
+      var stop = later[n % later.length];
+      n++;
+      var el = document.querySelector(stop.at);
+      if (!reduce && el && onScreen(el)) {
+        await go(stop, false);
+        hush();
+        await walkTo('desk', { body: 'idle', face: 'idle' });
+      } else if (reduce) {
+        await go(stop, false);
+      }
+    }
+  }
+  function humanFeed() {
+    var track = document.querySelector('.lab-scroll-track');
+    if (!track || reduce) return;
+    var y = 0;
+    function half() { return track.offsetHeight / 2; }
+    function wrap(n) {
+      var h = half();
+      if (h <= 0) return n;
+      while (n <= -h) n += h;
+      return n;
+    }
+    function apply() { track.style.transform = 'translateY(' + y + 'px)'; }
+    function flick(distance, ms) {
+      return new Promise(function (resolve) {
+        var from = y;
+        var start = performance.now();
+        function frame(now) {
+          var t = Math.min(1, (now - start) / ms);
+          var eased = 1 - Math.pow(1 - t, 3);
+          y = wrap(from - distance * eased);
+          apply();
+          if (t < 1) requestAnimationFrame(frame);
+          else resolve();
+        }
+        requestAnimationFrame(frame);
+      });
+    }
+    function pause(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+    async function loop() {
+      while (true) {
+        var h = half();
+        if (Math.random() < 0.08) {
+          await flick(h * (0.38 + Math.random() * 0.18), 680 + Math.random() * 280);
+        } else {
+          await flick(h * (0.1 + Math.random() * 0.1), 480 + Math.random() * 260);
+          if (Math.random() < 0.12) {
+            await pause(80 + Math.random() * 90);
+            await flick(h * (0.06 + Math.random() * 0.07), 320 + Math.random() * 140);
+          }
+        }
+        await pause(800 + Math.random() * 1200);
+      }
+    }
+    loop();
+  }
+  humanFeed();
+  run();
+})();
+</script>
+<!-- lab:end -->
+</body>
+</html>
