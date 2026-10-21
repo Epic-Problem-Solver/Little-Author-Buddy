@@ -267,8 +267,8 @@ mod platform {
             let detail = *data.data.add(1) as u32;
             if let Some(c) = COUNTERS.get() {
                 match ty {
-                    KEY_PRESS => with_down(|d| c.key_down(detail, d)),
-                    KEY_RELEASE => { with_down(|d| d.remove(&detail)); }
+                    KEY_PRESS => { with_down(|d| c.key_down(detail, d)); }
+                    KEY_RELEASE => { with_down(|d| { d.remove(&detail); }); }
                     BUTTON_PRESS if (4..=7).contains(&detail) => c.wheel_tick(),
                     _ => {}
                 }
