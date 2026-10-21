@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Little Author Buddy Download
- * Description: Download page for Little Author Buddy. Put this folder in wp-content/plugins/ and add [little_author_buddy_download] to a page. Download buttons are filled from the latest GitHub release. The Linux button is the AppImage. The .deb is the text link under it.
+ * Description: Download page for Little Author Buddy. Put this folder in wp-content/plugins/ and add [little_author_buddy_download] to a page. Download buttons are filled from the latest GitHub release. The Linux button is the .deb. The AppImage is the Other Linux link.
  * Version: 1.0.0
  * Author: Epic-Problem-Solver
  *

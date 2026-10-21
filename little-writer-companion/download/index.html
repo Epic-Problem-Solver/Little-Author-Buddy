@@ -198,34 +198,63 @@
   .lab-free { margin-top: 28px; }
   .lab-downloads {
     display: flex;
-    flex-wrap: wrap;
-    gap: 18px 22px;
-    justify-content: center;
-    align-items: stretch;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
     margin-top: 16px;
   }
+  .lab-os { width: min(100%, 36rem); text-align: center; }
+  .lab-downloads.is-set .lab-os { display: none; }
+  .lab-downloads.is-windows .lab-os[data-os="windows"],
+  .lab-downloads.is-mac .lab-os[data-os="mac"],
+  .lab-downloads.is-linux .lab-os[data-os="linux"] { display: block; }
   .lab-dl {
     display: inline-flex;
-    flex-direction: column;
-    min-width: 148px;
+    min-width: min(100%, 280px);
     text-decoration: none;
     color: var(--ink);
     background: var(--trim);
     border: 3px solid var(--trim);
     border-radius: 14px;
     align-items: center;
+    justify-content: center;
     text-align: center;
-    padding: 12px 18px 10px;
+    padding: 14px 22px;
+    font-weight: 800;
+    font-size: 1.15rem;
     box-shadow: 4px 4px 0 #0b1638;
   }
-  .lab-dl-os { font-weight: 800; font-size: 1.15rem; }
-  .lab-dl-kind { font-size: 0.78rem; color: var(--ink); }
   .lab-dl:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 #0b1638; }
   .lab-dl:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #0b1638; }
-  .lab-dl:focus-visible, .lab-foot a:focus-visible {
+  .lab-dl:focus-visible, .lab-foot a:focus-visible, .lab-switch button:focus-visible, .lab-steps summary:focus-visible, .lab-alt a:focus-visible {
     outline: 3px solid var(--ink);
     outline-offset: 3px;
   }
+  .lab-note, .lab-silicon, .lab-alt, .lab-file, .lab-aside, .lab-choose, .lab-computer {
+    margin: 12px auto 0;
+    max-width: 36rem;
+  }
+  .lab-silicon, .lab-alt, .lab-file, .lab-aside { font-size: 0.95rem; }
+  .lab-choose, .lab-computer { display: none; text-align: center; }
+  .lab-downloads.is-unknown .lab-choose, .lab-downloads.is-phone .lab-computer { display: block; }
+  .lab-switch { display: none; justify-content: center; gap: 18px; margin: 16px 0 0; }
+  .lab-downloads.is-set:not(.is-phone) .lab-switch { display: flex; }
+  .lab-switch button {
+    background: none;
+    border: 0;
+    padding: 4px 2px;
+    color: var(--ink);
+    font: 600 15px/1.2 system-ui, sans-serif;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+  .lab-switch button[aria-pressed="true"] { font-weight: 800; text-decoration-thickness: 2px; }
+  .lab-steps { margin: 10px auto 0; max-width: 36rem; text-align: left; }
+  .lab-steps summary { cursor: pointer; font-weight: 700; }
+  .lab-steps ol { margin: 8px 0 0; padding-left: 1.25rem; }
+  .lab-steps li { margin: 6px 0; }
+  .lab-alt a { font-weight: 700; }
   .lab-release, .lab-foot { color: var(--ink); font-size: 0.9rem; }
   .lab-foot { display: flex; gap: 16px; margin-top: 28px; }
   .lab-desk {
@@ -254,7 +283,7 @@
     transform: translateX(-50%);
     margin: 0;
     width: max-content;
-    max-width: 220px;
+    max-width: 260px;
     background: #000;
     color: var(--ink);
     border: 2px solid var(--trim);
@@ -281,8 +310,7 @@
     .lab-wrap { padding-bottom: 150px; }
   }
   @media (max-width: 640px) {
-    .lab-downloads { flex-direction: column; align-items: center; }
-    .lab-dl { width: min(100%, 240px); }
+    .lab-dl { width: min(100%, 280px); }
   }
   @media (prefers-reduced-motion: reduce) {
     .lab-dl, .lab-bubble { transition: none; }
@@ -349,13 +377,81 @@
       <h2 id="lab-free-title">Free version</h2>
       <p>The writing companion for Windows, Mac, and Linux.</p>
       <div class="lab-downloads" id="lab-downloads">
-        <a class="lab-dl" data-lab-dl="windows" rel="noopener" href="https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/latest/download/Little-Author-Buddy_0.6.2_x64-setup.exe"><span class="lab-dl-os">Windows</span><span class="lab-dl-kind">setup.exe</span></a>
-        <a class="lab-dl" data-lab-dl="mac" rel="noopener" href="https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/latest/download/Little-Author-Buddy_0.6.2_aarch64.dmg"><span class="lab-dl-os">Mac</span><span class="lab-dl-kind">.dmg</span></a>
-        <a class="lab-dl" data-lab-dl="appimage" rel="noopener" href="https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/latest/download/Little-Author-Buddy_0.6.2_amd64.AppImage"><span class="lab-dl-os">Linux</span><span class="lab-dl-kind">AppImage</span></a>
-        <a class="lab-dl" data-lab-dl="deb" rel="noopener" href="https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/latest/download/Little-Author-Buddy_0.6.2_amd64.deb"><span class="lab-dl-os">Debian</span><span class="lab-dl-kind">.deb</span></a>
+        <p class="lab-computer" id="lab-computer">Little Author Buddy runs on a computer, not on a phone or tablet.</p>
+        <p class="lab-choose" id="lab-choose">Which computer are you on?</p>
+        <div class="lab-os" data-os="windows">
+          <a class="lab-dl" data-lab-dl="windows" data-coach="Open the setup file that just downloaded." rel="noopener" href="https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/latest/download/Little-Author-Buddy_0.6.2_x64-setup.exe">Download for Windows</a>
+          <p class="lab-note">If Windows says it protected your PC, choose More info, then Run anyway.</p>
+          <details class="lab-steps">
+            <summary>Show the steps</summary>
+            <ol>
+              <li>Open the downloaded setup file.</li>
+              <li>If a blue window says Windows protected your PC, choose More info, then Run anyway.</li>
+              <li>If a WebView2 installer appears, let it finish. Little Author Buddy is then in the Start menu.</li>
+            </ol>
+            <p class="lab-file">The file is named Little-Author-Buddy_0.6.2_x64-setup.exe. That is the official copy.</p>
+          </details>
+        </div>
+        <div class="lab-os" data-os="mac">
+          <a class="lab-dl" data-lab-dl="mac" data-coach="Open the disk image, and drag Little Author Buddy into Applications." rel="noopener" href="https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/latest/download/Little-Author-Buddy_0.6.2_aarch64.dmg">Download for Mac</a>
+          <p class="lab-note">Mac will block the first open. Click Done. Do not move it to the Trash.</p>
+          <p class="lab-silicon">For Macs from 2020 on (M1 or newer). A Mac from before 2020 cannot run this download.</p>
+          <details class="lab-steps">
+            <summary>Show the steps</summary>
+            <ol>
+              <li>Open the downloaded disk image. Drag Little Author Buddy into Applications. Open it from Applications.</li>
+              <li>When Mac says it cannot verify the app, click Done.</li>
+              <li>Apple menu, System Settings, Privacy &amp; Security. Scroll to Security. Click Open Anyway, then confirm. If the button is missing, open the app again and come straight back.</li>
+              <li>On that same page, allow Little Author Buddy under Accessibility, and under Input Monitoring if it is listed. Open the app again.</li>
+            </ol>
+            <p class="lab-aside">On macOS Sonoma or earlier, Control-click the app and choose Open.</p>
+            <p class="lab-file">The file is named Little-Author-Buddy_0.6.2_aarch64.dmg. That is the official copy.</p>
+          </details>
+        </div>
+        <div class="lab-os" data-os="linux">
+          <a class="lab-dl" data-lab-dl="deb" data-coach="Open the download. Ubuntu will offer to install it." rel="noopener" href="https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/latest/download/Little-Author-Buddy_0.6.2_amd64.deb">Download for Ubuntu and Debian</a>
+          <p class="lab-note">Open the download. Ubuntu will offer to install it.</p>
+          <p class="lab-alt"><a data-lab-dl="appimage" data-coach="Make that file executable, then open it." rel="noopener" href="https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/latest/download/Little-Author-Buddy_0.6.2_amd64.AppImage">Other Linux</a>. Make that file executable, then open it. The computer also needs WebKitGTK 4.1.</p>
+          <details class="lab-steps">
+            <summary>Show the steps</summary>
+            <ol>
+              <li>Open the downloaded file.</li>
+              <li>Ubuntu will ask to install it. Confirm. Little Author Buddy then appears with your applications.</li>
+            </ol>
+            <p class="lab-file">The file is named Little-Author-Buddy_0.6.2_amd64.deb. That is the official copy.</p>
+          </details>
+        </div>
+        <div class="lab-switch" role="group" aria-label="Choose a computer">
+          <button type="button" data-pick="windows" aria-pressed="false">Windows</button>
+          <button type="button" data-pick="mac" aria-pressed="false">Mac</button>
+          <button type="button" data-pick="linux" aria-pressed="false">Linux</button>
+        </div>
       </div>
       <p class="lab-release">The latest free release from GitHub.</p>
     </section>
+    <!-- Preview another computer with ?os=windows, mac, linux, phone, or unknown. -->
+    <script>
+    (function () {
+      var q = '';
+      try { q = new URLSearchParams(location.search).get('os') || ''; } catch (e) {}
+      var ua = navigator.userAgent || '';
+      var platform = navigator.platform || '';
+      var os = '';
+      if (q === 'windows' || q === 'mac' || q === 'linux' || q === 'phone') os = q;
+      else if (q === 'unknown') os = '';
+      else if (/iPhone|iPad|iPod|Android/i.test(ua) || (platform === 'MacIntel' && navigator.maxTouchPoints > 1)) os = 'phone';
+      else if (/Win/i.test(platform)) os = 'windows';
+      else if (/Mac/i.test(platform)) os = 'mac';
+      else if (/Linux|X11/i.test(platform)) os = 'linux';
+      var box = document.getElementById('lab-downloads');
+      if (!box) return;
+      box.classList.add('is-set', os ? ('is-' + os) : 'is-unknown');
+      box.setAttribute('data-shown', os);
+      box.querySelectorAll('[data-pick]').forEach(function (b) {
+        b.setAttribute('aria-pressed', b.getAttribute('data-pick') === os ? 'true' : 'false');
+      });
+    })();
+    </script>
 
     <footer class="lab-foot">
       <a rel="noopener" href="https://github.com/Epic-Problem-Solver/Little-Author-Buddy">Source on GitHub</a>
@@ -762,13 +858,60 @@
       requestAnimationFrame(frame);
     });
   }
+  var downloads = document.getElementById('lab-downloads');
+  var shown = downloads ? (downloads.getAttribute('data-shown') || '') : '';
+  function osNote(os) {
+    var note = document.querySelector('.lab-os[data-os="' + os + '"] .lab-note');
+    return note ? note.textContent : '';
+  }
+  var downloadSay = shown === 'phone'
+    ? 'Little Author Buddy runs on a computer.'
+    : (shown ? osNote(shown) : 'Which computer are you on?');
+  var coachOn = false;
+  var coachLine = '';
+  function coach(line) {
+    coachOn = true;
+    coachLine = line;
+  }
+  function showOs(os) {
+    if (!downloads) return;
+    downloads.classList.add('is-set');
+    downloads.classList.remove('is-windows', 'is-mac', 'is-linux', 'is-unknown', 'is-phone');
+    downloads.classList.add(os ? ('is-' + os) : 'is-unknown');
+    downloads.setAttribute('data-shown', os);
+    downloads.querySelectorAll('details').forEach(function (d) { d.open = false; });
+    downloads.querySelectorAll('[data-pick]').forEach(function (b) {
+      b.setAttribute('aria-pressed', b.getAttribute('data-pick') === os ? 'true' : 'false');
+    });
+    downloadSay = os === 'phone'
+      ? 'Little Author Buddy runs on a computer.'
+      : (os ? osNote(os) : 'Which computer are you on?');
+    downloadStop.say = downloadSay;
+  }
+  if (downloads) {
+    downloads.querySelectorAll('[data-pick]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        showOs(b.getAttribute('data-pick') || '');
+        coach(downloadSay);
+      });
+    });
+    downloads.querySelectorAll('[data-coach]').forEach(function (a) {
+      a.addEventListener('click', function () {
+        var os = a.closest('.lab-os');
+        var details = os && a.classList.contains('lab-dl') ? os.querySelector('details') : null;
+        if (details) details.open = true;
+        coach(a.getAttribute('data-coach') || downloadSay);
+      });
+    });
+  }
+  var downloadStop = { at: '#lab-downloads', pose: { body: 'idle', face: 'excited' }, say: downloadSay, hold: 2400 };
   var tour = [
     { at: 'desk', pose: { body: 'idle', face: 'curious' }, say: 'Oh! Hi.', hold: 1700 },
     { at: 'desk', pose: { body: 'idle', face: 'excited' }, say: "I'm Inky.", hold: 1500 },
     { at: '#lab-shot-keys', pose: { body: 'idle', face: 'focused' }, say: 'Letter keys fill the story. I keep the count, not the words.', hold: 2800 },
     { at: '#lab-shot-watch', pose: { body: 'watching', face: 'curious' }, say: 'A video? I come over and watch.', hold: 2600 },
     { at: '#lab-shot-mail', pose: { body: 'idle', face: 'proud' }, say: 'Finish a story and the fan mail arrives.', hold: 2600 },
-    { at: '#lab-downloads', pose: { body: 'idle', face: 'excited' }, say: 'Free for Windows, Mac, and Linux.', hold: 2400 },
+    downloadStop,
     { at: 'desk', pose: { body: 'idle', face: 'idle' }, say: "I'll be by the desk.", hold: 2000 }
   ];
   var later = [
@@ -787,18 +930,42 @@
       }
     }
     await walkTo(at, stop.pose);
+    if (coachOn && stop.say !== coachLine) {
+      say(coachLine);
+      return;
+    }
     say(stop.say);
-    await wait(reduce ? 2200 : (stop.hold || 2400));
+    var left = reduce ? 2200 : (stop.hold || 2400);
+    while (left > 0) {
+      if (coachOn && stop.say !== coachLine) {
+        say(coachLine);
+        return;
+      }
+      var slice = Math.min(200, left);
+      await wait(slice);
+      left -= slice;
+    }
   }
   async function run() {
     var first = spot('desk');
     x = first.x; y = first.y; way = first.way;
     applyPos();
     await wait(400);
-    for (var i = 0; i < tour.length; i++) await go(tour[i], true);
-    hush();
+    for (var i = 0; i < tour.length; i++) {
+      if (coachOn) break;
+      await go(tour[i], true);
+    }
     var n = 0;
+    var quiet = false;
     while (true) {
+      if (coachOn) {
+        quiet = false;
+        var line = coachLine;
+        await go({ at: '#lab-downloads', pose: { body: 'idle', face: 'excited' }, say: line, hold: 4000 }, true);
+        while (coachOn && coachLine === line) await wait(300);
+        continue;
+      }
+      if (!quiet) { hush(); quiet = true; }
       await wait(reduce ? 3600 : 8000);
       var stop = later[n % later.length];
       n++;
