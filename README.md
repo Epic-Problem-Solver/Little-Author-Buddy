@@ -26,17 +26,17 @@ The [download page](https://epic-problem-solver.github.io/Little-Author-Buddy/li
 | System | v0.6.2 |
 | --- | --- |
 | Windows 10 and 11 (x64) | [Setup](https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/download/v0.6.2/Little-Author-Buddy_0.6.2_x64-setup.exe) · [Portable](https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/download/v0.6.2/Little-Author-Buddy-0.6.2-portable.exe) |
-| macOS (Apple silicon) | [Disk image](https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/download/v0.6.2/Little-Author-Buddy_0.6.2_aarch64.dmg) |
+| macOS (Intel and Apple silicon) | [Disk image](https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/download/v0.6.2/Little-Author-Buddy_0.6.2_universal.dmg) |
 | Linux (x64) | [AppImage](https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/download/v0.6.2/Little-Author-Buddy_0.6.2_amd64.AppImage) · [Debian package](https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/download/v0.6.2/Little-Author-Buddy_0.6.2_amd64.deb) |
 
 - Windows uses WebView2, which is part of Windows 10 and 11. The setup installer can fetch it if it is missing. The portable build expects it to be present.
-- The macOS disk image is an unsigned Apple silicon build. [Opening the Mac app](#opening-the-mac-app) has the steps and Apple’s links.
+- The macOS disk image is an unsigned universal build for Intel and Apple silicon. [Opening the Mac app](#opening-the-mac-app) has the steps and Apple’s links.
 - Make the AppImage executable with `chmod +x`. It uses WebKitGTK 4.1 and GTK 3 from the host. The Debian package uses the distro's WebKitGTK 4.1.
 - On Linux, key counting listens through X11.
 
 ## Opening the Mac app
 
-The v0.6.2 disk image is built for Apple silicon and is not signed or notarized. Gatekeeper stops the first launch and shows a warning that the developer cannot be verified, or that Apple cannot check the app for malicious software. Approve that one copy, then grant the privacy permissions the companion uses to count keys and see the front window.
+The v0.6.2 disk image runs on Intel and Apple silicon Macs. It is not signed or notarized. Gatekeeper stops the first launch and shows a warning that the developer cannot be verified, or that Apple cannot check the app for malicious software. Approve that one copy, then grant the privacy permissions the companion uses to count keys and see the front window.
 
 Apple’s pages for this:
 
@@ -137,7 +137,7 @@ cargo tauri build --bundles deb,appimage
 
 `sync-assets.sh` copies `../assets` and `../content` into `ui/`. Run it again after art or copy changes.
 
-Windows setup packages are described in the app README. GitHub Actions builds Linux packages in [linux.yml](.github/workflows/linux.yml) and the unsigned Apple silicon disk image in [macos.yml](.github/workflows/macos.yml). Opening that disk image is covered in [Opening the Mac app](#opening-the-mac-app).
+Windows setup packages are described in the app README. GitHub Actions builds Linux packages in [linux.yml](.github/workflows/linux.yml) and the unsigned universal disk image in [macos.yml](.github/workflows/macos.yml). Opening that disk image is covered in [Opening the Mac app](#opening-the-mac-app).
 
 JavaScript tests, from `little-writer-companion/app`:
 

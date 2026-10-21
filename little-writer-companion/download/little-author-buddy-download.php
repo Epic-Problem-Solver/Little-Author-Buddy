@@ -74,7 +74,7 @@ function lab_dl_latest() {
         } elseif (preg_match('/\.deb$/i', $name)) {
             $best['deb'] = lab_dl_prefer($best['deb'], $name, $url, '/amd64|x86_64/i');
         } elseif (preg_match('/\.dmg$/i', $name)) {
-            $best['mac'] = lab_dl_prefer($best['mac'], $name, $url, '/aarch64|arm64/i');
+            $best['mac'] = lab_dl_prefer($best['mac'], $name, $url, '/universal/i');
         } elseif (preg_match('/-setup\.exe$/i', $name)) {
             $best['windows'] = lab_dl_prefer($best['windows'], $name, $url, '/x64|amd64/i');
         }
@@ -165,7 +165,7 @@ function lab_dl_shortcode() {
     $latest = lab_dl_latest();
     $stable = array(
         'windows' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_0.6.2_x64-setup.exe',
-        'mac' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_0.6.2_aarch64.dmg',
+        'mac' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_0.6.2_universal.dmg',
         'appimage' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_0.6.2_amd64.AppImage',
         'deb' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_0.6.2_amd64.deb',
     );

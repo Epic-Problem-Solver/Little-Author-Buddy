@@ -14,7 +14,7 @@ Layout: `ui/` (static frontend, no bundler; `character.js` = character component
     cargo tauri build --bundles deb,appimage                     # Linux
     CARGO_TARGET_DIR=target-win cargo tauri build --runner cargo-xwin \
         --target x86_64-pc-windows-msvc --bundles nsis           # Windows (cross from Linux)
-    # macOS: `.github/workflows/macos.yml` builds the dmg on GitHub (Apple silicon).
+    # macOS: `.github/workflows/macos.yml` builds a universal dmg on GitHub (Intel and Apple silicon).
 
 Outputs: `src-tauri/target/release/bundle/{deb,appimage}/`, `src-tauri/target-win/x86_64-pc-windows-msvc/release/little-writer-companion.exe` (portable, needs WebView2 — built into Win10/11) and `.../bundle/nsis/*-setup.exe`. An `.msi` needs WiX, i.e. building on Windows.
 
