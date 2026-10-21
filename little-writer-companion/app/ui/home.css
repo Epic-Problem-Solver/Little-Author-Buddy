@@ -12,11 +12,9 @@ html,body{margin:0;width:200px;height:200px;overflow:hidden;background:transpare
 *{-webkit-user-select:none;user-select:none}::selection{background:transparent}
 #speech{display:none;position:absolute;left:8px;right:58px;top:28px;z-index:4;background:#fff;border:2px solid #241414;border-radius:8px;padding:3px 6px;font:11px/1.25 system-ui,sans-serif;text-align:center}
 #speech.on{display:block}
-#focus{position:absolute;left:14px;top:79px;width:68px;height:26px;z-index:3;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;gap:1px;padding:1px 2px;background:#f6efe2;border:1px solid #241414;border-radius:2px;cursor:default}
-#focusRow,#focusGames{display:flex;gap:2px;width:100%;align-items:center}
-#focusGames{display:none}
-#focus.ready #focusGames{display:flex}
-#focusTime{flex:1;font:700 10px/11px ui-monospace,Consolas,monospace;text-align:center;color:#241414}
-#focus button{flex:1;min-width:0;height:11px;margin:0;padding:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:700 8px/10px system-ui,sans-serif;color:#241414;background:#fff;border:1px solid #241414;border-radius:2px;cursor:pointer}
-#focusMinus,#focusPlus{flex:none;width:14px}
+#focus{position:absolute;left:14px;top:79px;width:68px;height:auto;z-index:3;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;gap:1px;padding:1px 2px;background:#f6efe2;border:1px solid #241414;border-radius:2px;cursor:default}
+#focusRow{display:flex;gap:2px;width:100%;align-items:center}
+#focusTime{font:700 10px/11px ui-monospace,Consolas,monospace;text-align:center;color:#241414}
+#focus button{flex:1;min-width:0;height:12px;margin:0;padding:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:700 8px/11px system-ui,sans-serif;color:#241414;background:#fff;border:1px solid #241414;border-radius:2px;cursor:pointer}
 #focus button.on{background:#e8cfa9}
+#focus button:disabled{cursor:default;opacity:.55}

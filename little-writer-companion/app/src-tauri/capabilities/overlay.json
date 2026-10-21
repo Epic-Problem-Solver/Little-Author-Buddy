@@ -8,6 +8,7 @@
     "allow-list-hats",
     "allow-list-games",
     "allow-focus-finish",
+    "allow-focus-back",
     "allow-place-tag-hit",
     "allow-race-arrived",
     "allow-track-window",

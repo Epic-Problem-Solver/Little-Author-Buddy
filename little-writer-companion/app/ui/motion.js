@@ -117,8 +117,11 @@
      * Monitor that actually holds the window (x0,y0)-(x1,y1). Largest overlap wins.
      * An equal overlap goes to the monitor that contains the window centre, then to
      * whichever of those is nearest that centre. A window on no monitor uses monitorAt.
+     * `prefer`, when still under the window, stays chosen until another monitor leads
+     * by 48px of the window's shorter side. A rect that jitters on the seam cannot
+     * send him back and forth.
      */
-    monitorForWindow(x0, y0, x1, y1, ms) {
+    monitorForWindow(x0, y0, x1, y1, ms, prefer) {
       const area = (m) => {
         const w = Math.min(x1, m.x + m.w) - Math.max(x0, m.x);
         const h = Math.min(y1, m.y + m.h) - Math.max(y0, m.y);
@@ -131,10 +134,20 @@
         else if (a > 0 && Math.abs(a - bestA) <= 0.5) tied.push(m);
       }
       const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
-      if (!tied.length) return M.monitorAt([cx, cy], ms);
-      if (tied.length === 1) return tied[0];
-      const holds = tied.filter(m => cx >= m.x && cx <= m.x + m.w && cy >= m.y && cy <= m.y + m.h);
-      return M.monitorAt([cx, cy], holds.length ? holds : tied);
+      const fresh = () => {
+        if (!tied.length) return M.monitorAt([cx, cy], ms);
+        if (tied.length === 1) return tied[0];
+        const holds = tied.filter(m => cx >= m.x && cx <= m.x + m.w && cy >= m.y && cy <= m.y + m.h);
+        return M.monitorAt([cx, cy], holds.length ? holds : tied);
+      };
+      const best = fresh();
+      if (!prefer) return best;
+      const near = (a, b) => Math.abs(a.x - b.x) < 2 && Math.abs(a.y - b.y) < 2 && Math.abs(a.w - b.w) < 2 && Math.abs(a.h - b.h) < 2;
+      const pref = ms.find(m => near(m, prefer));
+      if (!pref || area(pref) <= 0) return best;
+      const span = Math.max(1, Math.min(Math.abs(x1 - x0), Math.abs(y1 - y0)));
+      if (best.i !== pref.i && area(best) - area(pref) >= 48 * span) return best;
+      return pref;
     },
     /**
      * Top-left where the sprite stands to watch the window, fully on `m`.

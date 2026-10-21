@@ -10,9 +10,11 @@
   const RACE_HOLD_MS = 1000;
 
   function atHome(mode) { return HOME_MODES.includes(mode); }
-  // Invite and explain come from whichever window is showing Buddy. Play moves him onto the overlay.
+  // Ask, explain, the walk back, and play speak on the overlay. The desk speaks while he is home and idle.
   function focusAtDesk(s) {
-    if (!s || s.focus_phase === 'play') return false;
+    if (!s) return false;
+    const phase = s.focus_phase;
+    if (phase === 'ask' || phase === 'explain' || phase === 'play' || phase === 'back') return false;
     return atHome(s.paused ? 'paused' : s.mode);
   }
   function realLevel(completed) {

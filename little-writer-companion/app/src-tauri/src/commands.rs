@@ -3,10 +3,12 @@
 use crate::focus::{self, Phase};
 use crate::games;
 use crate::packs;
+use crate::platform;
 use crate::signals;
 use crate::state::{self, AppState};
 use crate::store::{self, Tier};
 use crate::windows;
+use rand::Rng;
 use std::path::{Component, Path, PathBuf};
 use std::sync::atomic::Ordering;
 use tauri::{AppHandle, Emitter, Manager, State};
@@ -21,7 +23,7 @@ pub fn list_hats(st: State<AppState>) -> Vec<packs::HatInfo> {
     packs::list(&dir)
 }
 
-/// Installed supporter games. Lines only. The app runs chase and tag. Pack scripts are not loaded.
+/// Installed supporter games. Lines only. The app runs the known engines. Pack scripts are not loaded.
 #[tauri::command]
 pub fn list_games(st: State<AppState>) -> Vec<games::GameInfo> {
     let dir = { let s = st.lock().unwrap(); packs::packs_dir(&s.path) };
@@ -29,9 +31,54 @@ pub fn list_games(st: State<AppState>) -> Vec<games::GameInfo> {
 }
 
 fn publish(st: &mut state::Shared, spoken: Option<focus::Spoken>) -> (Option<state::Snapshot>, Option<games::FocusSay>) {
+    signals::FOCUS_ASK.store(st.focus.phase == Phase::Ask, Ordering::Relaxed);
     if let Some(snap) = st.snap.as_mut() { state::write_focus(snap, &st.focus, st.data.settings.focus_minutes); }
     let say = spoken.map(|sp| games::say_event(sp.kind, &sp.game, &st.data.settings.buddy_name, &packs::packs_dir(&st.path)));
     (st.snap.clone(), say)
+}
+
+fn chrome(s: &state::Shared) -> (bool, bool) {
+    let play = s.focus.phase == Phase::Play;
+    let hit = s.focus.phase == Phase::Explain || (play && games::wants_hit(&s.focus.game));
+    (play, hit)
+}
+
+/// An invite becomes one random installed game. No pack means he stays at the desk.
+pub(crate) fn settle_spoken(st: &AppState, spoken: Option<focus::Spoken>) -> Option<focus::Spoken> {
+    match spoken {
+        Some(sp) if sp.kind == focus::Kind::Invite => offer_random(st),
+        other => other,
+    }
+}
+
+fn offer_random(st: &AppState) -> Option<focus::Spoken> {
+    let ids = {
+        let s = st.lock().unwrap();
+        games::list(&packs::packs_dir(&s.path)).into_iter().map(|g| g.id).collect::<Vec<_>>()
+    };
+    let Some(id) = focus::choose_id(&ids, rand::thread_rng().gen()) else { return None };
+    let anchor = platform::foreground()
+        .filter(|f| !f.title.contains("Little Author"))
+        .map(|f| (f.x, f.y, f.w, f.h));
+    let mut s = st.lock().unwrap();
+    let spoken = s.focus.begin_ask(&id, anchor);
+    signals::FOCUS_ASK.store(s.focus.phase == Phase::Ask, Ordering::Relaxed);
+    let minutes = s.data.settings.focus_minutes;
+    let focus = s.focus.clone();
+    if let Some(snap) = s.snap.as_mut() { state::write_focus(snap, &focus, minutes); }
+    spoken
+}
+
+fn emit_settled(app: &AppHandle, st: &AppState, spoken: Option<focus::Spoken>) {
+    let spoken = settle_spoken(st, spoken);
+    let (snap, say, play, hit) = {
+        let s = st.lock().unwrap();
+        let say = spoken.map(|sp| games::say_event(sp.kind, &sp.game, &s.data.settings.buddy_name, &packs::packs_dir(&s.path)));
+        let (play, hit) = chrome(&s);
+        (s.snap.clone(), say, play, hit)
+    };
+    windows::sync_game_chrome(app, play, hit);
+    emit_focus(app, snap, say);
 }
 
 fn emit_focus(app: &AppHandle, snap: Option<state::Snapshot>, say: Option<games::FocusSay>) {
@@ -39,21 +86,26 @@ fn emit_focus(app: &AppHandle, snap: Option<state::Snapshot>, say: Option<games:
     if let Some(say) = say { let _ = app.emit("focus-say", &say); }
 }
 
-/// Desk game button. The first click explains. The next click on that same game starts it.
+/// Desk Start. Begins a session, resumes Pause, or starts a finished one over.
 #[tauri::command]
-pub fn focus_press(app: AppHandle, st: State<AppState>, game: String) {
-    let game = game.trim().to_string();
-    let (snap, say, shared_play) = {
+pub fn focus_start(app: AppHandle, st: State<AppState>) {
+    let snap = {
         let mut s = st.lock().unwrap();
-        if !games::known(&packs::packs_dir(&s.path), &game) { return; }
-        let spoken = s.focus.press(&game);
-        let published = publish(&mut s, spoken);
-        let play = s.focus.phase == Phase::Play;
-        let tag = play && s.focus.game == "tag";
-        (published.0, published.1, (play, tag))
+        if s.data.settings.focus_minutes == 0 || !s.focus.start() { return; }
+        publish(&mut s, None).0
     };
-    windows::sync_game_chrome(&app, shared_play.0, shared_play.1);
-    emit_focus(&app, snap, say);
+    emit_focus(&app, snap, None);
+}
+
+/// Desk Pause. Freezes a running timer until Start.
+#[tauri::command]
+pub fn focus_pause(app: AppHandle, st: State<AppState>) {
+    let snap = {
+        let mut s = st.lock().unwrap();
+        if !s.focus.pause() { return; }
+        publish(&mut s, None).0
+    };
+    emit_focus(&app, snap, None);
 }
 
 /// The overlay reports a catch, a tag, or that the celebration is over.
@@ -68,40 +120,68 @@ pub fn focus_finish(app: AppHandle, st: State<AppState>) {
     emit_focus(&app, snap, None);
 }
 
-/// The tag catcher was clicked. The overlay celebrates, then calls `focus_finish`.
+/// The click catcher. During the explanation it starts play. During a click game it counts the click.
 #[tauri::command]
 pub fn focus_tag(app: AppHandle, st: State<AppState>) {
-    let ok = {
-        let s = st.lock().unwrap();
-        s.focus.phase == Phase::Play && s.focus.game == "tag"
+    enum Hit { Start(Option<state::Snapshot>, bool, bool), Tag }
+    let hit = {
+        let mut s = st.lock().unwrap();
+        if s.focus.phase == Phase::Explain && s.focus.ready_click() {
+            let snap = publish(&mut s, None).0;
+            let (play, tag) = chrome(&s);
+            Hit::Start(snap, play, tag)
+        } else if s.focus.phase == Phase::Play && games::wants_hit(&s.focus.game) {
+            Hit::Tag
+        } else {
+            return;
+        }
     };
-    if ok { let _ = app.emit("tag-click", ()); }
+    match hit {
+        Hit::Tag => { let _ = app.emit("tag-click", ()); }
+        Hit::Start(snap, play, tag) => {
+            windows::sync_game_chrome(&app, play, tag);
+            emit_focus(&app, snap, None);
+        }
+    }
 }
 
-/// Move the tag catcher over Buddy. Physical pixels. Ignored unless tag is playing.
+/// Move the click catcher over Buddy. Physical pixels. Used for the ready click and for a click game.
 #[tauri::command]
 pub fn place_tag_hit(app: AppHandle, st: State<AppState>, x: i32, y: i32, w: u32, h: u32) {
     let ok = {
         let s = st.lock().unwrap();
-        s.focus.phase == Phase::Play && s.focus.game == "tag"
+        s.focus.phase == Phase::Explain || (s.focus.phase == Phase::Play && games::wants_hit(&s.focus.game))
     };
     if ok { windows::place_tag_window(&app, x, y, w, h); }
 }
 
-/// Desk − / + and any caller that sets the quiet-minute goal directly.
+/// Settings, or any caller, sets the writing-minute goal directly.
 #[tauri::command]
 pub fn set_focus_minutes(app: AppHandle, st: State<AppState>, minutes: u32) {
     let minutes = store::clamp_focus_minutes(minutes);
-    let (snap, say) = {
+    let spoken = {
         let mut s = st.lock().unwrap();
         if s.data.settings.focus_minutes == minutes { return; }
         s.data.settings.focus_minutes = minutes;
         let spoken = s.focus.limit(focus::limit_ms(minutes));
         s.save();
-        publish(&mut s, spoken)
+        publish(&mut s, None);
+        spoken
     };
-    emit_focus(&app, snap, say);
+    emit_settled(&app, st.inner(), spoken);
     let _ = app.emit_to("settings", "settings-changed", ());
+}
+
+/// He reached the desk after declining the game.
+#[tauri::command]
+pub fn focus_back(app: AppHandle, st: State<AppState>) {
+    let snap = {
+        let mut s = st.lock().unwrap();
+        if !s.focus.back_arrived() { return; }
+        publish(&mut s, None).0
+    };
+    windows::sync_game_chrome(&app, false, false);
+    emit_focus(&app, snap, None);
 }
 
 /// Settings document: projects, queue, journal, and the form. The overlay uses `get_snapshot` instead.
@@ -162,12 +242,9 @@ pub fn update_settings(app: AppHandle, st: State<AppState>, settings: store::Set
     let minutes = s.data.settings.focus_minutes;
     let spoken = if focus_changed { s.focus.limit(focus::limit_ms(minutes)) } else { None };
     s.save();
-    let published = publish(&mut s, spoken);
-    let play = s.focus.phase == Phase::Play;
-    let tag = play && s.focus.game == "tag";
+    publish(&mut s, None);
     drop(s);
-    windows::sync_game_chrome(&app, play, tag);
-    emit_focus(&app, published.0, published.1);
+    emit_settled(&app, st.inner(), spoken);
     Ok(())
 }
 

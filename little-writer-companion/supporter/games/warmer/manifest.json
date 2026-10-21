@@ -1,0 +1,9 @@
+{
+  "id": "warmer",
+  "kind": "game",
+  "name": "Warm",
+  "minAppVersion": "0.7.0",
+  "engine": "warmer",
+  "order": 5,
+  "files": ["game.json"]
+}

@@ -217,7 +217,7 @@ pub fn place_tag_window(app: &AppHandle, x: i32, y: i32, w: u32, h: u32) {
     });
 }
 
-/// Sample the cursor only during play, and keep the tag catcher in step with the session.
+/// Sample the cursor only during play. The click catcher is up for the ready click and during a click game.
 pub fn sync_game_chrome(app: &AppHandle, play: bool, tag: bool) {
     signals::GAME_CURSOR.store(play, Ordering::Relaxed);
     if signals::TAG_HIT.swap(tag, Ordering::Relaxed) != tag { set_tag_window(app, tag); }

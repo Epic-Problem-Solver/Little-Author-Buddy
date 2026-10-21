@@ -9,7 +9,8 @@ comp.querySelector('.clip').style.height = BH + 'px';
 const seenWarn = {};
 let ch, snap = null, hatsApi = null, pos = null, lastMode = null, bubbleT = 0;
 let goal = null, path = [], wanderGoal = null, hide = null, holdUntil = 0;
-let games = [], gameCursor = null, celebrating = false, hitSent = '';
+let games = [], gameCursor = null, celebrating = false, hitSent = '', gameMem = null, gameClick = false;
+let watchMon = null;
 
 // ---- geometry -------------------------------------------------------------------------
 // The overlay is one webview: physical -> CSS is (p - origin) / overlay DPR everywhere.
@@ -19,7 +20,7 @@ const dpr = () => window.devicePixelRatio || 1;
 // Home window desk buddy is scaled by Buddy size too, capped so it fits the fixed 200 px window (bottom-centre origin).
 const homeScale = () => Math.min((snap && snap.buddy_scale) || 1, LWMotion.HOME_MAX_SCALE);
 // while racing back, converge on the home window's size so the hand-off matches
-const userScale = () => (snap && snap.mode === 'race_back') ? homeScale() : ((snap && snap.buddy_scale) || 1);
+const userScale = () => (snap && (snap.mode === 'race_back' || snap.focus_phase === 'back')) ? homeScale() : ((snap && snap.buddy_scale) || 1);
 const toCss = (x, y) => { const o = snap ? snap.origin : [0, 0]; return [(x - o[0]) / dpr(), (y - o[1]) / dpr()]; };
 function monitorsCss() {
   const ms = (snap && snap.monitors.length) ? snap.monitors : [{ x: 0, y: 0, w: innerWidth * dpr(), h: innerHeight * dpr(), scale: dpr() }];
@@ -35,6 +36,18 @@ function raceTarget(k = kNow || scaleAt(deskPos())) {
   if (!(snap && snap.home)) return deskPos();
   const [hx, hy, , , hs] = snap.home;
   return LWMotion.raceTarget(toCss(hx, hy), hs / dpr(), snap.home_side, (snap && snap.buddy_scale) || 1, k);
+}
+function focusCenter() {
+  const ms = monitorsCss();
+  const a = snap && snap.focus_anchor;
+  let m = null;
+  if (a && a[2] > 0 && a[3] > 0) {
+    const [x0, y0] = toCss(a[0], a[1]);
+    m = LWMotion.monitorForWindow(x0, y0, x0 + a[2] / dpr(), y0 + a[3] / dpr(), ms);
+  }
+  if (!m) m = deskMon();
+  const k = m.k || 1;
+  return [m.x + m.w / 2 - LWGames.BODY_X * k, m.y + m.h / 2 - LWGames.BODY_Y * k];
 }
 function deskPos() {
   if (snap && snap.home) {
@@ -79,7 +92,7 @@ function watchBox(w) {
 function faceWatch() {
   if (!snap || !snap.watch || !pos) return;
   const [x0, y0, x1, y1] = watchBox(snap.watch);
-  const m = LWMotion.monitorForWindow(x0, y0, x1, y1, monitorsCss());
+  const m = LWMotion.monitorForWindow(x0, y0, x1, y1, monitorsCss(), watchMon);
   const k = kNow || m.k || 1;
   const spanL = Math.max(x0, m.x), spanR = Math.min(x1, m.x + m.w);
   const look = LWMotion.lookToward(pos[0] + BW * k / 2, (spanL + spanR) / 2, m.x + m.w / 2, 24) || visualLook();
@@ -196,7 +209,7 @@ function placeBubble(k) {
 }
 
 // ---- state ------------------------------------------------------------------------------
-let raceHoldUntil = 0, rushing = false, arrivedSent = false, handedOff = false, settling = false;
+let raceHoldUntil = 0, rushing = false, arrivedSent = false, handedOff = false, settling = false, focusBackSent = false, explainPlaces = 0;
 function say(key, text, ms) {
   const t = text || LWContent.line(key, { buddy: (snap && snap.buddy) || 'Buddy' }); if (!t) return;
   bubble.textContent = t; bubble.classList.add('on'); clearTimeout(bubbleT); bubbleT = setTimeout(() => bubble.classList.remove('on'), ms || 5000);
@@ -230,31 +243,109 @@ function beginCheer() {
   ch.setBody('idle');
   const id = snap.focus_game;
   const g = games.find(x => x.id === id);
-  const raw = (g && g.cheer) || (id === 'tag' ? 'You got {buddy}!' : '{buddy} caught it!');
+  const fallback = { tag: 'You got {buddy}!', redlight: 'You made it!', highfive: 'High five!', warmer: 'You found {buddy}!' };
+  const raw = (g && g.cheer) || fallback[id] || '{buddy} caught it!';
   say(null, raw.replaceAll('{buddy}', snap.buddy || 'Buddy'), 4000);
   setTimeout(() => { celebrating = false; if (T) T.core.invoke('focus_finish').catch(() => {}); }, 1200);
 }
+function bodyCenter(k) { return [pos[0] + LWGames.BODY_X * k, pos[1] + LWGames.BODY_Y * k]; }
+function setCenter(c, k) { pos = [c[0] - LWGames.BODY_X * k, c[1] - LWGames.BODY_Y * k]; }
+function lookOf(center) { return gameCursor && gameCursor[0] < center[0] ? 'left' : 'right'; }
+function freshMem(id) {
+  if (!gameMem || gameMem.id !== id) {
+    gameMem = {
+      id, phase: 'green', left: LWGames.REDLIGHT_GREEN, from: null, moved: false, pushed: false,
+      happy: true, hits: 0, placed: false, look: 'right', dist: null, word: '',
+    };
+  }
+  return gameMem;
+}
+function warmerSpot(k) {
+  const ms = monitorsCss();
+  const r = snap && snap.fg_rect;
+  if (r && r[2] > 40 && r[3] > 40) {
+    const [x0, y0] = toCss(r[0], r[1]);
+    const x1 = x0 + r[2] / dpr(), y1 = y0 + r[3] / dpr();
+    const m = LWMotion.monitorForWindow(x0, y0, x1, y1, ms);
+    const spot = LWMotion.watchGoal(x0, y0, x1, y1, m, BW, BH, k);
+    const look = LWMotion.lookToward(spot[0] + BW * k / 2, (x0 + x1) / 2, m.x + m.w / 2) || 'right';
+    return { pos: spot, look };
+  }
+  const m = monitorAt(pos, ms);
+  return { pos: [m.x + 24, m.y + m.h - BH * k - 24], look: 'right' };
+}
 function stepGame(dt) {
-  if (!snap || snap.focus_phase !== 'play' || celebrating || !gameCursor || !pos) return;
-  const k = kNow || 1;
-  const center = [pos[0] + LWGames.BODY_X * k, pos[1] + LWGames.BODY_Y * k];
-  const speed = ((snap.walk_speed) || 96) * k * (snap.focus_game === 'tag' ? 1.45 : 2.2);
+  if (!snap || snap.focus_phase !== 'play' || celebrating || !pos) return;
+  const id = snap.focus_game;
+  const k = kNow || scaleAt(pos);
+  const mem = freshMem(id);
+  if (id === 'warmer') {
+    if (!mem.placed) {
+      const spot = warmerSpot(k);
+      mem.placed = true;
+      mem.look = spot.look;
+      setGoal(spot.pos);
+      ch.setFace('curious');
+      ch.setBody('walking');
+    }
+    if (path.length) return;
+    applyLook('peeking', mem.look);
+    ch.setFace('curious');
+    if (gameCursor) {
+      const center = bodyCenter(k);
+      const dist = Math.hypot(gameCursor[0] - center[0], gameCursor[1] - center[1]);
+      const word = LWGames.warmerWord(dist, mem.dist);
+      mem.dist = dist;
+      if (word && word !== mem.word) {
+        mem.word = word;
+        say(null, word === 'warmer' ? 'Warmer.' : 'Colder.', 1400);
+      }
+    }
+    placeTag(k);
+    return;
+  }
   path = [];
-  if (snap.focus_game === 'tag') {
+  if (!gameCursor) return;
+  const center = bodyCenter(k);
+  if (id === 'tag') {
+    const speed = ((snap.walk_speed) || 96) * k * 1.45;
     const next = LWGames.tag(center, gameCursor, dt, speed, playBox(center));
     const dx = next[0] - center[0];
-    pos = [next[0] - LWGames.BODY_X * k, next[1] - LWGames.BODY_Y * k];
+    setCenter(next, k);
     if (Math.abs(dx) > 0.4) ch.setWalkDir(dx < 0 ? 'left' : 'right');
     placeTag(k);
-  } else {
-    const n = LWGames.chase(center, gameCursor, dt, speed, LWGames.CATCH_R * k);
-    const dx = n.pos[0] - center[0];
-    pos = [n.pos[0] - LWGames.BODY_X * k, n.pos[1] - LWGames.BODY_Y * k];
-    if (Math.abs(dx) > 0.4) ch.setWalkDir(dx < 0 ? 'left' : 'right');
-    if (n.caught) beginCheer();
+    return;
   }
+  if (id === 'redlight') {
+    const n = LWGames.redlight(center, gameCursor, dt, LWGames.CATCH_R * k, playBox(center), mem);
+    setCenter(n.anchor, k);
+    const toward = lookOf(n.anchor);
+    if (n.phase === 'green') applyLook('watching', toward === 'left' ? 'right' : 'left');
+    else { ch.setFace('curious'); applyLook('idle', toward); }
+    if (n.caught) beginCheer();
+    return;
+  }
+  if (id === 'highfive') {
+    const clicked = gameClick;
+    gameClick = false;
+    const n = LWGames.highfive(mem, dt, clicked);
+    ch.setBody('idle');
+    ch.setFace(n.happy ? 'excited' : 'focused');
+    applyLook('idle', 'right');
+    placeTag(k);
+    if (n.caught) beginCheer();
+    else if (clicked && n.hits > 0 && n.hits < LWGames.HIGHFIVE_GOAL) say(null, n.hits === 1 ? 'One!' : 'Two!', 900);
+    return;
+  }
+  const speed = ((snap.walk_speed) || 96) * k * 2.2;
+  const n = LWGames.chase(center, gameCursor, dt, speed, LWGames.CATCH_R * k);
+  const dx = n.pos[0] - center[0];
+  setCenter(n.pos, k);
+  if (Math.abs(dx) > 0.4) ch.setWalkDir(dx < 0 ? 'left' : 'right');
+  if (n.caught) beginCheer();
 }
 function syncPose(s, mode) {
+  if (mode !== 'watch') watchMon = null;
   if (mode === lastMode) return;
   handedOff = false; arrivedSent = false; settling = false;
   if (mode === 'race_back') { raceHoldUntil = Date.now() + LWDomain.RACE_HOLD_MS; ch.setFace('excited'); ch.setBody('idle'); rushing = false; }
@@ -277,8 +368,9 @@ function syncPath(s, mode) {
     }
     setGoal(hide ? hide.pos : wanderGoal, hide ? 8 : 2);
   } else if (mode === 'watch' && s.watch) {
-    const [x0, y0, x1, y1] = watchBox(s.watch), m = LWMotion.monitorForWindow(x0, y0, x1, y1, monitorsCss());
-    setGoal(LWMotion.watchGoal(x0, y0, x1, y1, m, BW, BH, m.k), 16);
+    const [x0, y0, x1, y1] = watchBox(s.watch);
+    watchMon = LWMotion.monitorForWindow(x0, y0, x1, y1, monitorsCss(), watchMon);
+    setGoal(LWMotion.watchGoal(x0, y0, x1, y1, watchMon, BW, BH, watchMon.k), 16);
     if (atGoal()) faceWatch(); else ensureWatchWalk();
   } else if (atHome(mode)) { pos = deskPos(); path = []; goal = pos.slice(); }
   else if (mode !== 'watch') setGoal(mode === 'race_back' ? raceTarget() : deskPos());
@@ -292,23 +384,60 @@ function syncHud(s, mode) {
   warnEl.textContent = ws.join('\n'); warnEl.style.display = ws.length ? 'block' : 'none';
   if (ws.length) { const m = deskMon(); warnEl.style.left = m.x + 20 + 'px'; warnEl.style.top = m.y + 20 + 'px'; }
 }
+function focusOut(s) {
+  const phase = s && s.focus_phase;
+  return phase === 'ask' || phase === 'explain' || phase === 'play' || phase === 'back';
+}
+function showFocus(s) {
+  const phase = s.focus_phase;
+  const modeName = phase === 'play' ? 'game' : 'focus_' + phase;
+  const entering = lastMode !== modeName;
+  if (entering) {
+    endHide();
+    handedOff = false;
+    settling = false;
+    arrivedSent = false;
+    if (phase === 'play') { hitSent = ''; gameMem = null; gameClick = false; path = []; goal = pos ? pos.slice() : goal; }
+    if (phase === 'back') { focusBackSent = false; rushing = true; }
+    if (phase === 'ask' || phase === 'explain') rushing = false;
+    if (phase === 'explain') { hitSent = ''; explainPlaces = 45; }
+  }
+  lastMode = modeName;
+  ch.setColors(s.colors);
+  ch.setTool(s.tool);
+  bubble.style.fontSize = ((s.bubble_px || 12)) + 'px';
+  comp.style.visibility = 'visible';
+  if (phase === 'ask' || phase === 'explain') {
+    setGoal(focusCenter(), 16);
+    if (!path.length) {
+      ch.setFace('curious');
+      applyLook('idle', visualLook());
+    } else if (ch.el.getAttribute('data-body') !== 'walking') {
+      ch.setFace('curious');
+      applyLook('walking', visualLook());
+    }
+  } else if (phase === 'back') {
+    if (entering) {
+      ch.setFace('excited');
+      ch.setState('race_back');
+      const t = raceTarget();
+      ch.setWalkDir(t[0] < pos[0] ? 'left' : 'right');
+      setGoal(t);
+    }
+  } else if (!celebrating && (s.focus_game === 'chase' || s.focus_game === 'tag') && ch.el.getAttribute('data-body') !== 'rushing') {
+    ch.setFace('excited');
+    ch.setBody('rushing');
+  }
+  if (hatsApi) hatsApi.apply(s);
+}
 function onState(s) {
   snap = s;
   if (!pos) pos = deskPos();
   const mode = s.paused ? 'paused' : s.mode;
-  if (s.focus_phase === 'play') {
-    if (lastMode !== 'game') { hitSent = ''; endHide(); }
-    lastMode = 'game';
-    path = [];
-    ch.setColors(s.colors);
-    ch.setTool(s.tool);
-    bubble.style.fontSize = ((s.bubble_px || 12)) + 'px';
-    comp.style.visibility = 'visible';
-    if (!celebrating && ch.el.getAttribute('data-body') !== 'rushing') { ch.setFace('excited'); ch.setBody('rushing'); }
-    if (hatsApi) hatsApi.apply(s);
-    return;
-  }
+  if (focusOut(s)) { showFocus(s); return; }
   if (celebrating) celebrating = false;
+  gameMem = null;
+  gameClick = false;
   syncPose(s, mode);
   syncPath(s, mode);
   syncHud(s, mode);
@@ -325,7 +454,10 @@ function frame(t) {
     stepGame(dt);
     if (path.length) {
       const walk = (snap && snap.walk_speed) || 96;
-      const vmax = LWMotion.modeSpeed(lastMode === 'wander' || lastMode === 'watch' || lastMode === 'race_back' ? lastMode : 'home', walk);
+      const speedMode = lastMode === 'focus_back' ? 'race_back'
+        : (lastMode === 'focus_ask' || lastMode === 'focus_explain') ? 'wander'
+        : (lastMode === 'wander' || lastMode === 'watch' || lastMode === 'race_back' ? lastMode : 'home');
+      const vmax = LWMotion.modeSpeed(speedMode, walk);
       const to = path[0], dx = to[0] - pos[0];
       const n = LWMotion.step(pos, to, vel, vmax, dt, kNow);
       pos = n.pos; vel = path.length > 1 && n.arrived ? n.v || vel : n.v; // keep momentum through seam waypoints
@@ -336,6 +468,24 @@ function frame(t) {
       if (path.length && Math.abs(dx) > 1 && !(hide && hide.since) && travel) ch.setWalkDir(dx < 0 ? 'left' : 'right');
     } else vel = 0;
     if (lastMode === 'watch' && snap && snap.watch) { if (path.length) ensureWatchWalk(); else faceWatch(); }
+    if ((lastMode === 'focus_ask' || lastMode === 'focus_explain') && !path.length) {
+      ch.setFace('curious');
+      applyLook('idle', visualLook());
+    }
+    if (snap && snap.focus_phase === 'explain') {
+      if (explainPlaces > 0) { explainPlaces--; hitSent = ''; }
+      placeTag(kNow);
+    }
+    if (lastMode === 'focus_back' && !focusBackSent) {
+      const t = raceTarget(kNow);
+      if (path.length) path[path.length - 1] = t; else if (Math.hypot(t[0] - pos[0], t[1] - pos[1]) > 0.5) setGoal(t);
+      const left = Math.hypot(t[0] - pos[0], t[1] - pos[1]);
+      if (left < 24 * kNow && !settling) { settling = true; ch.setBody('idle'); }
+      if (left <= 2) {
+        focusBackSent = true;
+        if (T) T.core.invoke('focus_back').catch(() => {});
+      }
+    }
     comp.style.left = pos[0] + 'px'; comp.style.top = pos[1] + 'px'; comp.style.transform = Math.abs(kNow - 1) > 1e-3 ? `scale(${kNow})` : '';
     applyClip(kNow);
     placeBubble(kNow);
@@ -381,12 +531,16 @@ async function showLetter(p) {
   T.event.listen('project-complete', e => showLetter(e.payload));
   T.event.listen('target-rect', e => onTarget(e.payload));
   T.event.listen('game-cursor', e => { if (snap) gameCursor = toCss(e.payload.x, e.payload.y); });
-  T.event.listen('tag-click', () => beginCheer());
+  T.event.listen('tag-click', () => {
+    if (!snap || celebrating || snap.focus_phase !== 'play') return;
+    if (snap.focus_game === 'highfive') { gameClick = true; return; }
+    beginCheer();
+  });
   T.event.listen('focus-say', e => {
     const p = e.payload || {};
     if (LWDomain.focusAtDesk(snap)) return;
     const buddy = (snap && snap.buddy) || 'Buddy';
     const text = p.text || (p.kind === 'invite' ? LWContent.line('focusBreak', { buddy }) : '');
-    if (text) say(null, text, p.kind === 'explain' || p.kind === 'invite' ? 8000 : 5000);
+    if (text) say(null, text, p.kind === 'ask' || p.kind === 'explain' || p.kind === 'decline' ? 9000 : 5000);
   });
 })();

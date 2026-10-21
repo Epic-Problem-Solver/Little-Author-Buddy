@@ -90,7 +90,7 @@ Supporter hats are not part of the free installer. `app/scripts/sync-assets.sh` 
 Fills use `var(--hat)` and `var(--hat-shade)`. The outline is `var(--outline)`. An optional piece uses class `lw-hat-extra` and shows when `data-hat-extra="on"`. The backward cap swaps `.lw-cap-brim-rear`, `.lw-cap-brim-away`, and `.lw-cap-strap` from `lw-character.css`.
 
 ## Games
-Supporter games live in `supporter/games/<id>/` with `manifest.json` and `game.json`. `sync-assets.sh` does not copy them. The installed copy is `packs/<id>/` beside `state.json`. Chase and tag are the engines the app runs. `game.json` holds the lines Buddy speaks (`explain`, `cheer`, `away`). Pack scripts are not executed.
+Supporter games live in `supporter/games/<id>/` with `manifest.json` and `game.json`. `sync-assets.sh` does not copy them. The installed copy is `packs/<id>/` beside `state.json`. Chase, tag, red light, high five, and warmer are the engines the app runs. `game.json` holds the lines Buddy speaks (`explain`, `cheer`, `away`). Pack scripts are not executed.
 
 ## Changelog
 **v0.4**: taller desk (viewBox still 240×220); three writing tools behind `data-tool`; UI close/gear buttons.

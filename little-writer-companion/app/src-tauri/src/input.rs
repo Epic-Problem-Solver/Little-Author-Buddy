@@ -6,6 +6,8 @@
 //! - Linux: fixed X11 keycode table (evdev + 8) of the A-Z key positions; no keysym lookup.
 //! - macOS: the current layout's unshifted character, tested as A–Z and then discarded.
 //! The code is only compared against these tables and for auto-repeat; it is never stored or logged.
+//! While Buddy is asking about a game, Y and N are noted as yes or no and then discarded.
+//! On Windows those two key-downs and key-ups are not passed on. They are not saved or logged.
 //! - Windows: our own WH_KEYBOARD_LL + WH_MOUSE_LL hooks on a dedicated thread with a message loop.
 //!   No ToUnicodeEx / GetKeyboardState / MapVirtualKey calls, so dead keys and IMEs are unaffected.
 //! - Linux: X11 RECORD extension, reading only the event type and keycode byte (no XLookupString).
@@ -23,11 +25,15 @@ pub struct Counters {
 }
 
 impl Counters {
-    fn key_down(&self, code: u32, down: &mut HashSet<u32>) {
+    /// Returns true when this key-down is the Y or N answer and must not reach the document.
+    fn key_down(&self, code: u32, down: &mut HashSet<u32>) -> bool {
+        let fresh = down.insert(code);
+        if note_answer(code) { return true; }
         // auto-repeat: repeated key-down without key-up
-        if down.insert(code) && !self.paused.load(Ordering::Relaxed) && is_letter(code) {
+        if fresh && !self.paused.load(Ordering::Relaxed) && is_letter(code) {
             self.keys.fetch_add(1, Ordering::Relaxed);
         }
+        false
     }
     fn wheel_tick(&self) { if !self.paused.load(Ordering::Relaxed) { self.wheel.fetch_add(1, Ordering::Relaxed); } }
     fn fail(&self, msg: String) { eprintln!("{msg}"); *self.listener_error.lock().unwrap() = Some(msg); }
@@ -76,6 +82,31 @@ pub fn is_letter(code: u32) -> bool {
     match &*XKB_LETTERS.read().unwrap() { Some(t) => code < 256 && t[code as usize], None => fixed_is_letter(code) }
 }
 
+/// Keycode -> 1 for y, 2 for n. Filled when the letter table is rebuilt. The character is not kept.
+#[cfg(target_os = "linux")]
+static XKB_YN: std::sync::RwLock<[u8; 256]> = std::sync::RwLock::new([0; 256]);
+
+#[cfg(target_os = "linux")]
+pub fn yn_from_keysyms(pairs: impl IntoIterator<Item = (u32, u64)>) -> [u8; 256] {
+    let mut t = [0u8; 256];
+    for (kc, sym) in pairs {
+        if kc < 256 {
+            if sym == 0x79 { t[kc as usize] = 1; }
+            else if sym == 0x6e { t[kc as usize] = 2; }
+        }
+    }
+    t
+}
+
+/// US fallback positions: y = 29, n = 57. Used until the XKB table exists.
+#[cfg(target_os = "linux")]
+pub fn yn_code(code: u32) -> u8 {
+    match &*XKB_LETTERS.read().unwrap() {
+        Some(_) => if code < 256 { XKB_YN.read().unwrap()[code as usize] } else { 0 },
+        None => if code == 29 { 1 } else if code == 57 { 2 } else { 0 },
+    }
+}
+
 /// ANSI virtual keycodes of the US A–Z key positions. Used until the layout table exists,
 /// and when that table has fewer than 20 Latin letters.
 #[cfg(target_os = "macos")]
@@ -105,14 +136,65 @@ pub fn letters_from_unshifted(pairs: impl IntoIterator<Item = (u32, u32)>) -> Op
     if n >= 20 { Some(t) } else { None }
 }
 
+/// Keycode -> 1 for Y/y, 2 for N/n. The character used to classify the key is not kept.
+#[cfg(target_os = "macos")]
+static MAC_YN: std::sync::RwLock<[u8; 256]> = std::sync::RwLock::new([0; 256]);
+
+#[cfg(target_os = "macos")]
+pub fn yn_from_unshifted(pairs: impl IntoIterator<Item = (u32, u32)>) -> [u8; 256] {
+    let mut t = [0u8; 256];
+    for (kc, ch) in pairs {
+        if kc < 256 {
+            if ch == b'Y' as u32 || ch == b'y' as u32 { t[kc as usize] = 1; }
+            else if ch == b'N' as u32 || ch == b'n' as u32 { t[kc as usize] = 2; }
+        }
+    }
+    t
+}
+
 #[cfg(target_os = "macos")]
 pub fn install_layout(pairs: impl IntoIterator<Item = (u32, u32)>) {
+    let pairs: Vec<(u32, u32)> = pairs.into_iter().collect();
+    *MAC_YN.write().unwrap() = yn_from_unshifted(pairs.iter().copied());
     *MAC_LETTERS.write().unwrap() = letters_from_unshifted(pairs);
 }
 
 #[cfg(target_os = "macos")]
 pub fn is_letter(code: u32) -> bool {
     match &*MAC_LETTERS.read().unwrap() { Some(t) => code < 256 && t[code as usize], None => fixed_is_letter(code) }
+}
+
+/// ANSI fallback: Y = 0x10, N = 0x2D. Used until the layout table exists.
+#[cfg(target_os = "macos")]
+pub fn yn_code(code: u32) -> u8 {
+    match &*MAC_LETTERS.read().unwrap() {
+        Some(_) => if code < 256 { MAC_YN.read().unwrap()[code as usize] } else { 0 },
+        None => if code == 0x10 { 1 } else if code == 0x2D { 2 } else { 0 },
+    }
+}
+
+/// 1 = Y, 2 = N, 0 = anything else. The code is compared and not stored.
+pub fn answer_code(code: u32) -> u8 {
+    #[cfg(windows)]
+    { return if code == 0x59 { 1 } else if code == 0x4E { 2 } else { 0 }; }
+    #[cfg(any(target_os = "linux", target_os = "macos"))]
+    { return yn_code(code); }
+    #[cfg(not(any(windows, target_os = "linux", target_os = "macos")))]
+    { let _ = code; 0 }
+}
+
+/// While Buddy is asking, note the first Y or N and report true. The key is not counted as writing.
+pub fn note_answer(code: u32) -> bool {
+    if !crate::signals::FOCUS_ASK.load(Ordering::Relaxed) { return false; }
+    let answer = answer_code(code);
+    if answer == 0 { return false; }
+    let _ = crate::signals::FOCUS_ANSWER.compare_exchange(0, answer, Ordering::Relaxed, Ordering::Relaxed);
+    true
+}
+
+/// True when a key-up of Y or N should be kept out of the document.
+pub fn swallow_answer_up(code: u32) -> bool {
+    crate::signals::FOCUS_ASK.load(Ordering::Relaxed) && answer_code(code) != 0
 }
 
 pub fn spawn(c: Arc<Counters>) {
@@ -135,10 +217,13 @@ mod platform {
             let k = &*(l.0 as *const KBDLLHOOKSTRUCT);
             // VK_PROCESSKEY (IME composing): use the hardware scan code position instead of a translation
             let vk = if k.vkCode == 0xE5 { PROCESSKEY_BASE + k.scanCode } else { k.vkCode };
-            match w.0 as u32 {
-                WM_KEYDOWN | WM_SYSKEYDOWN => { if let Some(c) = COUNTERS.get() { with_down(|d| c.key_down(vk, d)); } }
-                WM_KEYUP | WM_SYSKEYUP => { with_down(|d| d.remove(&vk)); }
-                _ => {}
+            let msg = w.0 as u32;
+            if msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN {
+                let swallow = if let Some(c) = COUNTERS.get() { with_down(|d| c.key_down(vk, d)) } else { false };
+                if swallow { return LRESULT(1); }
+            } else if msg == WM_KEYUP || msg == WM_SYSKEYUP {
+                with_down(|d| { d.remove(&vk); });
+                if swallow_answer_up(vk) { return LRESULT(1); }
             }
         }
         CallNextHookEx(None, code, w, l)
@@ -177,6 +262,7 @@ mod platform {
         let data = &*d;
         if data.category == XRecordFromServer && !data.data.is_null() && data.data_len >= 1 {
             // xEvent header: byte 0 = type, byte 1 = detail (keycode / button). Nothing else is read.
+            // X RECORD cannot swallow a key. Y and N are noted while he is asking, and the event still arrives.
             let ty = *data.data & 0x7f;
             let detail = *data.data.add(1) as u32;
             if let Some(c) = COUNTERS.get() {
@@ -195,7 +281,8 @@ mod platform {
         let (mut lo, mut hi) = (0, 0);
         xlib::XDisplayKeycodes(d, &mut lo, &mut hi);
         let pairs: Vec<(u32, u64)> = (lo.max(0)..=hi.min(255)).map(|kc| (kc as u32, xlib::XkbKeycodeToKeysym(d, kc as u8, 0, 0) as u64)).collect();
-        let t = letters_from_keysyms(pairs);
+        let t = letters_from_keysyms(pairs.iter().copied());
+        *XKB_YN.write().unwrap() = yn_from_keysyms(pairs.iter().copied());
         eprintln!("keymap: {} letter keycodes from XKB{}", t.map_or(0, |t| t.iter().filter(|b| **b).count()), if t.is_none() { " (using US fallback)" } else { "" });
         *XKB_LETTERS.write().unwrap() = t;
     }
@@ -309,5 +396,64 @@ mod tests {
         c.key_down(A, &mut d); c.key_down(A, &mut d); // auto-repeat
         d.remove(&A); c.key_down(A, &mut d);
         assert_eq!(c.keys.load(Ordering::Relaxed), 2);
+    }
+
+    #[cfg(windows)]
+    const Y: u32 = 0x59;
+    #[cfg(windows)]
+    const N: u32 = 0x4E;
+    #[cfg(target_os = "linux")]
+    const Y: u32 = 29;
+    #[cfg(target_os = "linux")]
+    const N: u32 = 57;
+    #[cfg(target_os = "macos")]
+    const Y: u32 = 0x10;
+    #[cfg(target_os = "macos")]
+    const N: u32 = 0x2D;
+
+    #[test]
+    fn asking_notes_y_or_n_and_does_not_count_them() {
+        assert_eq!(answer_code(Y), 1);
+        assert_eq!(answer_code(N), 2);
+        assert_eq!(answer_code(A), 0);
+        crate::signals::FOCUS_ASK.store(false, Ordering::Relaxed);
+        crate::signals::FOCUS_ANSWER.store(0, Ordering::Relaxed);
+        assert!(!note_answer(Y));
+        assert_eq!(crate::signals::FOCUS_ANSWER.load(Ordering::Relaxed), 0);
+        crate::signals::FOCUS_ASK.store(true, Ordering::Relaxed);
+        let c = Counters::default();
+        let mut d = HashSet::new();
+        assert!(c.key_down(Y, &mut d));
+        assert!(c.key_down(Y, &mut d)); // repeat still swallowed, still one answer
+        assert_eq!(crate::signals::FOCUS_ANSWER.load(Ordering::Relaxed), 1);
+        assert_eq!(c.keys.load(Ordering::Relaxed), 0);
+        assert!(swallow_answer_up(N));
+        assert!(!c.key_down(A, &mut d));
+        assert_eq!(c.keys.load(Ordering::Relaxed), 1);
+        crate::signals::FOCUS_ASK.store(false, Ordering::Relaxed);
+        crate::signals::FOCUS_ANSWER.store(0, Ordering::Relaxed);
+        d.remove(&Y);
+        assert!(!c.key_down(Y, &mut d));
+        assert_eq!(c.keys.load(Ordering::Relaxed), 2);
+        assert!(!swallow_answer_up(Y));
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn yn_table_records_y_and_n_positions() {
+        let t = yn_from_keysyms([(40u32, 0x79u64), (41, 0x6e), (38, 0x61), (65, 0x20)]);
+        assert_eq!(t[40], 1);
+        assert_eq!(t[41], 2);
+        assert_eq!(t[38], 0);
+        assert_eq!(t[65], 0);
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn yn_table_records_unshifted_y_and_n() {
+        let t = yn_from_unshifted([(0x10u32, b'Y' as u32), (0x2D, b'n' as u32), (0x00, b'A' as u32)]);
+        assert_eq!(t[0x10], 1);
+        assert_eq!(t[0x2D], 2);
+        assert_eq!(t[0x00], 0);
     }
 }

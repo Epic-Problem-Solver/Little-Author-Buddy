@@ -11,6 +11,7 @@ use crate::layout::{RACE_HOLD_MS, RACE_SAFETY_MS};
 use crate::platform;
 use crate::signals;
 use crate::state::{self, AppState, Frame};
+use crate::commands;
 use crate::windows;
 use rand::Rng;
 use serde::Serialize;
@@ -80,6 +81,7 @@ pub fn tick_loop(app: AppHandle, st: AppState, c: Arc<input::Counters>) {
     let mut last_save = state::now_ms();
     let mut home_db = state::Debounce::new(st.lock().unwrap().data.settings.home_pos);
     let mut focus_at = state::now_ms();
+    let mut scroll_latched = false;
     loop {
         std::thread::sleep(Duration::from_millis(250));
         tick += 1;
@@ -100,7 +102,9 @@ pub fn tick_loop(app: AppHandle, st: AppState, c: Arc<input::Counters>) {
         if cfg.interactive_until != 0 && now > cfg.interactive_until { windows::set_interactive(&app, &st, false); }
         let idle = now.saturating_sub(machine.last_key) >= cfg.idle_ms;
         let (title, scrolls) = sample_distraction(&cfg, idle, tick, &mut fg, &mut media, &mut wheel_hist, now, dw);
-        let reason = if idle { distraction::reason(&cfg.policy, title.as_deref(), media, scrolls) } else { None };
+        scroll_latched = idle && cfg.policy.detect_scroll && distraction::scroll_active(scroll_latched, scrolls, cfg.policy.scroll_events_threshold);
+        let scrolls_for_reason = if scroll_latched { cfg.policy.scroll_events_threshold as u64 } else { 0 };
+        let reason = if idle { distraction::reason(&cfg.policy, title.as_deref(), media, scrolls_for_reason) } else { None };
 
         let mode = machine.step(
             &Inputs { now, new_keys: dk, distracted: reason.is_some(), arrived: signals::RACE_ARRIVED.swap(false, Ordering::Relaxed) },
@@ -119,7 +123,12 @@ pub fn tick_loop(app: AppHandle, st: AppState, c: Arc<input::Counters>) {
             if credit.completed.is_some() { s.save(); last_save = now; }
             let limit_ms = focus::limit_ms(s.data.settings.focus_minutes);
             let paused = c.paused.load(Ordering::Relaxed);
-            let spoken = s.focus.tick(focus::TickIn { dt_ms: dt, mode, paused, keys: dk, limit_ms });
+            let ans = signals::FOCUS_ANSWER.swap(0, Ordering::Relaxed);
+            let mut spoken = s.focus.tick(focus::TickIn { dt_ms: dt, mode, paused, keys: dk, limit_ms });
+            if ans != 0 {
+                if let Some(sp) = s.focus.answer(ans == 1) { spoken = Some(sp); }
+            }
+            signals::FOCUS_ASK.store(s.focus.phase == Phase::Ask, Ordering::Relaxed);
             let listener_error = c.listener_error.lock().unwrap().clone();
             let view = state::paint(&s, Frame {
                 mode, paused, origin, monitors: monitors.clone(),
@@ -132,8 +141,12 @@ pub fn tick_loop(app: AppHandle, st: AppState, c: Arc<input::Counters>) {
             let packs = crate::packs::packs_dir(&s.path);
             (view, credit, spoken, buddy, packs)
         };
+        let spoken = commands::settle_spoken(&st, spoken);
+        let view = st.lock().unwrap().snap.clone().unwrap_or(view);
         let say = spoken.map(|sp| games::say_event(sp.kind, &sp.game, &buddy, &packs));
-        windows::sync_game_chrome(&app, view.focus_phase == Phase::Play, view.focus_phase == Phase::Play && view.focus_game == "tag");
+        let play = view.focus_phase == Phase::Play;
+        let hit = view.focus_phase == Phase::Explain || (play && games::wants_hit(&view.focus_game));
+        windows::sync_game_chrome(&app, play, hit);
         let _ = app.emit("companion-state", &view);
         if let Some(say) = say { let _ = app.emit("focus-say", &say); }
         if let Some(n) = credit.notice { let _ = app.emit("notice", n); }

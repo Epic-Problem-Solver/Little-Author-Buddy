@@ -111,6 +111,21 @@ test('watch stands on the monitor that holds most of the window', () => {
   assert.deepEqual(M.watchGoal(2000, 200, 2600, 900, only, 120, 110, 1), [2240, 780]);
 });
 
+test('a window jittering on the seam stays on the monitor he already chose', () => {
+  const ms = [
+    { i: 0, x: 0, y: 0, w: 1920, h: 1080, k: 1 },
+    { i: 1, x: 1920, y: 0, w: 1920, h: 1080, k: 1 },
+  ];
+  const left = ms[0];
+  // Almost even. One pixel of jitter would flip a fresh choice, but not a held one.
+  assert.equal(M.monitorForWindow(960, 100, 2881, 900, ms, left).i, 0);
+  assert.equal(M.monitorForWindow(959, 100, 2880, 900, ms, left).i, 0);
+  // Clearly moved onto the right monitor: follow it.
+  assert.equal(M.monitorForWindow(1800, 100, 3600, 900, ms, left).i, 1);
+  // The held monitor no longer touches the window.
+  assert.equal(M.monitorForWindow(2000, 100, 2800, 900, ms, left).i, 1);
+});
+
 test('a tied window overlap prefers the monitor that contains its centre', () => {
   const ms = [
     { i: 0, x: 0, y: 0, w: 1000, h: 600, k: 1 },

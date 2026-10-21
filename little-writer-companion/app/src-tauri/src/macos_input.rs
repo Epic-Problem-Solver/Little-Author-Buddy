@@ -1,5 +1,6 @@
 //! Listen-only key and scroll tap. Keycodes are classified as letters and discarded.
 //! The unshifted character used for that test is never stored or logged.
+//! Y and N are noted while Buddy is asking. This tap cannot swallow them.
 
 use super::{install_layout, with_down, COUNTERS};
 use core_foundation::base::{CFTypeRef, TCFType};
@@ -139,8 +140,9 @@ unsafe extern "C" fn tap_cb(_proxy: *mut c_void, ty: u32, event: *mut c_void, _u
         let code = CGEventGetIntegerValueField(event, KEYCODE_FIELD);
         if (0..=255).contains(&code) {
             let code = code as u32;
+            // Listen-only: the event is always returned. An active tap could stall the keyboard.
             match ty {
-                KEY_DOWN => { if let Some(c) = COUNTERS.get() { with_down(|d| c.key_down(code, d)); } }
+                KEY_DOWN => { if let Some(c) = COUNTERS.get() { with_down(|d| { let _ = c.key_down(code, d); }); } }
                 KEY_UP => { with_down(|d| { d.remove(&code); }); }
                 _ => {}
             }

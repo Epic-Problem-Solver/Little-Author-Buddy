@@ -43,9 +43,15 @@
   <label><input type="checkbox" id="ds"> Scrolling without typing</label>
   <label>Titles (one per line, case-insensitive substring of the focused window)<br><textarea id="titles" rows="5"></textarea></label></fieldset>
  <fieldset><legend>Focus timer</legend>
-  <label>Quiet minutes before a game <input type="number" id="focus" min="0" max="180" step="1"></label>
-  <p class="info">Counts while Buddy is writing, thinking, or wandering. A distraction resets it. 0 turns the invitation off. The timer and its buttons sit on the front of the desk.</p></fieldset>
+  <label>Writing minutes before a game <input type="number" id="focus" min="0" max="180" step="1"></label>
+  <p class="info">Counts only while Buddy is writing and the timer is running. Start begins it. Pause holds it. Thinking, wandering, and watching wait and keep the time. 0 turns it off. When it finishes, Buddy walks to the monitor with the active window and asks. Y explains the game, then a click starts it. N sends him back to the desk. Set the length here.</p></fieldset>
  <fieldset><legend>Letter journal folder</legend><input id="jdir"></fieldset>
+ <fieldset><legend>Updates</legend>
+  <p class="info">Asks GitHub for the latest release number. Nothing you wrote is sent, and the app does not download the update.</p>
+  <button type="button" id="checkUpdate">Check for update</button>
+  <button type="button" id="openUpdate" hidden>Open the download page</button>
+  <span id="upmsg"></span>
+ </fieldset>
  <button id="save">Save</button><span id="msg"></span>
 </section>
 <section id="projects"><div id="await"></div><div id="cur"></div><div id="queue"></div>
@@ -57,13 +63,13 @@
 <section id="privacy">
  <h3>Privacy</h3>
  <ul>
-  <li>Everything stays on this computer. The app itself makes no network requests. On Windows, the WebView2 runtime it uses may contact Microsoft for runtime updates, independently of this app.</li>
-  <li>Only keystroke <b>counts</b> are kept. The key's position code is checked in memory (letter key or not) and then discarded; the text you type is never recorded.</li>
+  <li>Writing, projects, and the save stay on this computer. The app contacts GitHub only when Check for update is pressed, to read the latest release number, and sends none of that data. It does not download the update. On Windows, the WebView2 runtime it uses may contact Microsoft for runtime updates, independently of this app.</li>
+  <li>Only keystroke <b>counts</b> are kept. The key's position code is checked in memory (letter key or not) and then discarded. The text you type is never recorded. While Buddy is asking about a game, Y and N are noted as yes or no and then discarded. On Windows those two keys stay out of the document. They are never saved or logged.</li>
   <li>No per-key timestamps are stored, only a total per day.</li>
-  <li>Window titles are read only to spot distractions and are never saved or logged.</li>
+  <li>Window titles are read only to spot distractions and to ignore this app's own windows when a game is offered. They are never saved or logged.</li>
   <li>Media detection reads only playing/paused. Scroll detection counts wheel ticks only.</li>
   <li>“Pause listening” in the tray stops all counting.</li>
-  <li>A focus game reads the cursor position only while it is playing. Tag also receives a click on Buddy. Neither is saved.</li>
+  <li>When the timer finishes, the active window's rectangle is kept in memory so Buddy can walk to that monitor. A focus game reads the cursor only while it is playing. The ready click and a tag click land on Buddy. None of this is saved.</li>
   <li>Data: <code id="dpath">state.json</code> in the app data folder; fan letters as .md files in your journal folder. Supporter hats and games are read from a packs folder next to state.json. The app does not download them. Uninstalling keeps your data unless you tick “delete application data”.</li>
  </ul>
 </section>

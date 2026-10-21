@@ -76,12 +76,16 @@ pub struct Snapshot {
     pub hat: String,
     pub hat_color: String,
     pub hat_extra: bool,
-    /// Quiet time counted toward the focus game, and the limit. `focus_limit_ms` 0 is off.
+    /// Writing time counted toward the focus game, and the limit. `focus_limit_ms` 0 is off.
     pub focus_ms: u64,
     pub focus_limit_ms: u64,
     pub focus_ready: bool,
+    pub focus_running: bool,
+    pub focus_held: bool,
     pub focus_phase: Phase,
     pub focus_game: String,
+    /// Active-window rectangle for the walk. Physical pixels. No title.
+    pub focus_anchor: Option<(i32, i32, i32, i32)>,
 }
 
 /// Samples the tick already collected. `paint` does not call into windows.
@@ -175,8 +179,11 @@ pub fn paint(shared: &Shared, frame: Frame) -> Snapshot {
         focus_ms: shared.focus.elapsed_ms,
         focus_limit_ms: focus::limit_ms(data.settings.focus_minutes),
         focus_ready: shared.focus.ready,
+        focus_running: shared.focus.running,
+        focus_held: shared.focus.held,
         focus_phase: shared.focus.phase,
         focus_game: shared.focus.game.clone(),
+        focus_anchor: shared.focus.anchor,
     };
     snap
 }
@@ -185,8 +192,11 @@ pub fn write_focus(snap: &mut Snapshot, focus: &focus::Session, minutes: u32) {
     snap.focus_ms = focus.elapsed_ms;
     snap.focus_limit_ms = focus::limit_ms(minutes);
     snap.focus_ready = focus.ready;
+    snap.focus_running = focus.running;
+    snap.focus_held = focus.held;
     snap.focus_phase = focus.phase;
     snap.focus_game = focus.game.clone();
+    snap.focus_anchor = focus.anchor;
 }
 
 #[cfg(test)]
@@ -232,5 +242,24 @@ mod tests {
         assert_eq!(json["fg_id"], 42);
         assert_eq!(json["distraction_reason"], "title:YouTube");
         assert!(!json.to_string().contains(secret));
+    }
+
+    #[test]
+    fn focus_anchor_is_a_rectangle_without_a_title() {
+        let mut shared = Shared {
+            data: store::Data::default(), path: PathBuf::new(), dirty: false, snap: None,
+            warnings: vec![], no_save: true, interactive_until: 0, focus: focus::Session::default(),
+        };
+        shared.focus.phase = Phase::Ask;
+        shared.focus.anchor = Some((4, 5, 6, 7));
+        let frame = Frame {
+            mode: Mode::Typing, paused: false, origin: (0, 0), monitors: vec![],
+            fg: None, reason: None, home: None, home_side: "right",
+            force_hide: false, listener_error: None,
+        };
+        let json = serde_json::to_value(paint(&shared, frame)).unwrap();
+        assert_eq!(json["focus_phase"], "ask");
+        assert_eq!(json["focus_anchor"], serde_json::json!([4, 5, 6, 7]));
+        assert!(json["focus_anchor"].get("title").is_none());
     }
 }

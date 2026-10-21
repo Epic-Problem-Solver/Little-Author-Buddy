@@ -23,6 +23,14 @@ pub fn reason(policy: &Policy, title: Option<&str>, media: bool, scrolls: u64) -
     None
 }
 
+/// Enter at `threshold` wheel events. Once on, stay on until the count falls below half of that.
+/// A count that chatters around the enter line does not turn the distraction on and off.
+pub fn scroll_active(latched: bool, scrolls: u64, threshold: u32) -> bool {
+    let enter = threshold.max(1) as u64;
+    let leave = (enter / 2).max(1);
+    if latched { scrolls >= leave } else { scrolls >= enter }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -41,5 +49,14 @@ mod tests {
         assert_eq!(reason(&p, Some("Notes"), true, 40).as_deref(), Some("media"));
         assert_eq!(reason(&p, Some("Notes"), false, 40).as_deref(), Some("scroll"));
         assert!(reason(&p, Some("Notes"), false, 11).is_none());
+    }
+
+    #[test]
+    fn scroll_holds_through_a_dip() {
+        assert!(!scroll_active(false, 11, 12));
+        assert!(scroll_active(false, 12, 12));
+        assert!(scroll_active(true, 11, 12));
+        assert!(scroll_active(true, 6, 12));
+        assert!(!scroll_active(true, 5, 12));
     }
 }

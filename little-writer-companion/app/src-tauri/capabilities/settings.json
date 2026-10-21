@@ -13,6 +13,8 @@
     "allow-start-next",
     "allow-export-journal",
     "allow-default-journal-dir",
-    "allow-initial-tab"
+    "allow-initial-tab",
+    "allow-check-update",
+    "allow-open-download-page"
   ]
 }

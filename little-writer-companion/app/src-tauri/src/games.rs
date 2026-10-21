@@ -1,5 +1,5 @@
 //! Supporter mini-games. The pack is a manifest plus `game.json` (the lines Buddy speaks).
-//! Chase and tag run inside the app. Pack scripts are never executed.
+//! Chase, tag, red light, high five, and warmer run inside the app. Pack scripts are never executed.
 
 use crate::packs;
 use serde::{Deserialize, Serialize};
@@ -51,16 +51,27 @@ fn line(raw: &str, required: bool) -> Option<String> {
     if t.is_empty() { if required { None } else { Some(String::new()) } } else { Some(t) }
 }
 
+fn engine_ok(id: &str) -> bool {
+    matches!(id, "chase" | "tag" | "redlight" | "highfive" | "warmer")
+}
+
+/// Tag, high five, and warmer need a click on Buddy. The overlay stays click-through.
+pub fn wants_hit(id: &str) -> bool {
+    matches!(id, "tag" | "highfive" | "warmer")
+}
+
 fn builtin(id: &str) -> (&'static str, &'static str, &'static str) {
-    if id == "tag" {
-        ("Ooh! {buddy} runs from the cursor. Click {buddy}.", "You got {buddy}!", "Ooh! {buddy} got away.")
-    } else {
-        ("Ooh! {buddy} chases the cursor. A catch gets a cheer.", "{buddy} caught it!", "Ooh! Too quick for {buddy}.")
+    match id {
+        "tag" => ("Ooh! {buddy} runs from the cursor. Click {buddy}.", "You got {buddy}!", "Ooh! {buddy} got away."),
+        "redlight" => ("Ooh! Sneak closer while {buddy} faces away. Hold still when {buddy} looks.", "You made it!", "Ooh! {buddy} is still looking."),
+        "highfive" => ("Ooh! Click {buddy} while the happy face shows. Three in a row.", "High five!", "Ooh! {buddy} put the hand down."),
+        "warmer" => ("Ooh! Find {buddy} by the window. Warmer, then colder, then a click.", "You found {buddy}!", "Ooh! {buddy} stayed hidden."),
+        _ => ("Ooh! {buddy} chases the cursor. A catch gets a cheer.", "{buddy} caught it!", "Ooh! Too quick for {buddy}."),
     }
 }
 
 fn accept(dir: &Path, id: &str) -> Option<GameInfo> {
-    if id != "chase" && id != "tag" { return None; }
+    if !engine_ok(id) { return None; }
     let raw = packs::read_regular(&dir.join("manifest.json"), 8 * 1024)?;
     let m: Manifest = serde_json::from_str(&raw).ok()?;
     if m.id != id || m.kind != "game" || m.engine != id { return None; }
@@ -97,23 +108,26 @@ pub fn list(dir: &Path) -> Vec<GameInfo> {
     found
 }
 
-pub fn known(dir: &Path, id: &str) -> bool { list(dir).iter().any(|g| g.id == id) }
-
 fn fill_buddy(raw: &str, buddy: &str) -> String {
     let name = buddy.trim();
     let name = if name.is_empty() { crate::store::DEFAULT_BUDDY } else { name };
     raw.replace("{buddy}", name)
 }
 
-/// Invite text stays empty so the window can pick a focus-break line. Explain and away come from the pack.
+/// Ask and the decline are fixed here so a missing flavour line cannot drop them.
+/// Explain is the pack line plus the click instruction. Away comes from the pack.
 pub fn say_event(kind: crate::focus::Kind, game: &str, buddy: &str, dir: &Path) -> FocusSay {
     let text = match kind {
         crate::focus::Kind::Invite => String::new(),
+        crate::focus::Kind::Ask => fill_buddy("Ooh! Want to play a game? Press Y for yes, or N for no.", buddy),
         crate::focus::Kind::Explain => {
             let raw = list(dir).into_iter().find(|g| g.id == game).map(|g| g.explain)
                 .unwrap_or_else(|| builtin(game).0.to_string());
-            fill_buddy(&raw, buddy)
+            let mut text = fill_buddy(&raw, buddy);
+            text.push_str(" Click when you're ready.");
+            text
         }
+        crate::focus::Kind::Decline => fill_buddy("Okay. {buddy} understands. Back to the writing.", buddy),
         crate::focus::Kind::Away => {
             let raw = list(dir).into_iter().find(|g| g.id == game).map(|g| g.away).filter(|s| !s.is_empty())
                 .unwrap_or_else(|| builtin(game).2.to_string());
@@ -146,9 +160,26 @@ mod tests {
         let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../supporter/games");
         let games = list(&dir);
         let ids: Vec<_> = games.iter().map(|g| g.id.as_str()).collect();
-        assert_eq!(ids, ["chase", "tag"]);
+        assert_eq!(ids, ["chase", "tag", "redlight", "highfive", "warmer"]);
         assert!(games.iter().all(|g| g.explain.contains("Ooh!") && g.explain.contains("{buddy}") && !g.cheer.is_empty()));
         assert!(crate::packs::list(&dir).is_empty(), "a game folder is not a hat");
+        for roll in 0..20u64 {
+            let id = crate::focus::choose_id(&games.iter().map(|g| g.id.clone()).collect::<Vec<_>>(), roll).unwrap();
+            assert!(ids.contains(&id.as_str()));
+        }
+    }
+
+    #[test]
+    fn ask_and_decline_are_fixed_and_explain_asks_for_a_click() {
+        let dir = scratch("say");
+        let ask = say_event(crate::focus::Kind::Ask, "chase", "Buddy", &dir);
+        assert!(ask.text.contains("Press Y for yes") && ask.text.contains("N for no"));
+        let no = say_event(crate::focus::Kind::Decline, "chase", "Ada", &dir);
+        assert_eq!(no.text, "Okay. Ada understands. Back to the writing.");
+        let ex = say_event(crate::focus::Kind::Explain, "chase", "Buddy", &dir);
+        assert!(ex.text.contains("Buddy"));
+        assert!(ex.text.ends_with("Click when you're ready."));
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

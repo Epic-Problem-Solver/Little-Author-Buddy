@@ -1,0 +1,9 @@
+{
+  "id": "highfive",
+  "kind": "game",
+  "name": "Five",
+  "minAppVersion": "0.7.0",
+  "engine": "highfive",
+  "order": 4,
+  "files": ["game.json"]
+}

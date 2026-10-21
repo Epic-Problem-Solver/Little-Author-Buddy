@@ -178,6 +178,30 @@ $('unlockall').onchange = async () => {
   load();
 };
 $('exp').onclick = async () => { try { $('expmsg').textContent = await I('export_journal'); } catch (e) { $('expmsg').textContent = 'Export failed: ' + e; } };
+$('checkUpdate').onclick = async () => {
+  const btn = $('checkUpdate');
+  btn.disabled = true;
+  const old = btn.textContent;
+  btn.textContent = 'Checking…';
+  $('openUpdate').hidden = true;
+  $('upmsg').textContent = '';
+  try {
+    const r = await I('check_update');
+    if (r.state === 'newer') {
+      $('upmsg').textContent = r.latest + ' is available. This build is ' + r.current + '.';
+      $('openUpdate').hidden = false;
+    } else if (r.state === 'ahead') {
+      $('upmsg').textContent = 'This build (' + r.current + ') is newer than the latest release (' + r.latest + ').';
+    } else {
+      $('upmsg').textContent = "You're up to date (" + r.current + ").";
+    }
+  } catch (e) {
+    $('upmsg').textContent = (e && e.message) ? e.message : String(e);
+  }
+  btn.disabled = false;
+  btn.textContent = old;
+};
+$('openUpdate').onclick = () => I('open_download_page').catch(() => {});
 window.onhashchange = () => tab();
 // The backend tells us which tab to show (no '#fragment' in the asset URL; it breaks the Windows bundle)
 window.__TAURI__.event.listen('show-tab', e => tab(e.payload));

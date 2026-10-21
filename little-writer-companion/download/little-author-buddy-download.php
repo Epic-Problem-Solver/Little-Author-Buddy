@@ -164,10 +164,10 @@ function lab_dl_shortcode() {
 
     $latest = lab_dl_latest();
     $stable = array(
-        'windows' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_0.7.0_x64-setup.exe',
-        'mac' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_0.7.0_universal.dmg',
-        'appimage' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_0.7.0_amd64.AppImage',
-        'deb' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_0.7.0_amd64.deb',
+        'windows' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_0.8.0_x64-setup.exe',
+        'mac' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_0.8.0_universal.dmg',
+        'appimage' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_0.8.0_amd64.AppImage',
+        'deb' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_0.8.0_amd64.deb',
     );
     foreach ($stable as $key => $from) {
         if (!empty($latest[$key])) {

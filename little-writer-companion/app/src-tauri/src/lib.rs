@@ -12,6 +12,7 @@ mod signals;
 mod state;
 mod store;
 mod tick;
+mod update;
 mod windows;
 
 use std::sync::Arc;
@@ -22,12 +23,13 @@ pub fn run() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             commands::race_arrived, commands::get_snapshot, commands::list_hats, commands::list_games,
-            commands::focus_press, commands::focus_finish, commands::focus_tag, commands::set_focus_minutes, commands::place_tag_hit,
+            commands::focus_start, commands::focus_pause, commands::focus_back, commands::focus_finish, commands::focus_tag, commands::set_focus_minutes, commands::place_tag_hit,
             commands::get_data, commands::get_warnings,
             commands::new_project, commands::start_next, commands::update_settings,
             commands::save_letter, commands::export_journal, commands::default_journal_dir, commands::open_settings,
             commands::quit_app, commands::track_window, commands::initial_tab,
-            commands::finish_onboarding, commands::reopen_onboarding
+            commands::finish_onboarding, commands::reopen_onboarding,
+            update::check_update, update::open_download_page
         ])
         .setup(|app| {
             let path = app.path().app_data_dir()?.join("state.json");

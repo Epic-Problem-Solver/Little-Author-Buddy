@@ -82,7 +82,7 @@ pub struct Settings {
     pub hat_color: String,
     /// Shows the pack's optional extra piece. Forced off when that pack has none.
     pub hat_extra: bool,
-    /// Quiet minutes before Buddy offers a game. 0 turns the invitation off. Clamped to 0–180.
+    /// Writing minutes before Buddy offers a game. 0 turns the offer off. Clamped to 0–180.
     pub focus_minutes: u32,
 }
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -544,7 +544,7 @@ impl Data {
 /// Keystrokes-per-word slider range is 1..=5 (v0.3); older files may hold larger values.
 pub fn clamp_kpw(v: u64) -> u64 { v.clamp(1, 5) }
 
-/// Quiet minutes before a game. 0 is off. The desk steps by five; settings may use any minute in range.
+/// Writing minutes before a game. 0 is off. Settings may use any minute from 0 to 180.
 pub const MAX_FOCUS_MINUTES: u32 = 180;
 pub fn clamp_focus_minutes(v: u32) -> u32 { v.min(MAX_FOCUS_MINUTES) }
 

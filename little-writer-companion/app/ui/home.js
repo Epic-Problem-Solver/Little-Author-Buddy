@@ -1,7 +1,7 @@
 // Home (desk) window: draggable, fixed size. X quits the whole app (saves first); gear opens Settings.
 const T = window.__TAURI__, I = (c, a) => T.core.invoke(c, a), $ = id => document.getElementById(id);
 let handedOff = false;
-let ch, desk, snap, hatsApi, proudUntil = 0, lastMode, lastAway, noticeUntil = 0, games = [], speechT = 0;
+let ch, desk, snap, hatsApi, proudUntil = 0, lastMode, lastAway, noticeUntil = 0, speechT = 0;
 const atHome = LWDomain.atHome;
 
 function render(s) {
@@ -9,8 +9,8 @@ function render(s) {
   const mode = s.paused ? 'paused' : s.mode;
   // v0.6: while the buddy is away the desk + tool stay on the home window (desk-only; pen -> inkwell)
   if (mode !== 'race_back') handedOff = false;
-  const playing = s.focus_phase === 'play';
-  const away = playing || (!atHome(mode) && Date.now() >= proudUntil && !(mode === 'race_back' && handedOff)); // runner already handed off
+  const focusAway = s.focus_phase === 'ask' || s.focus_phase === 'explain' || s.focus_phase === 'play' || s.focus_phase === 'back';
+  const away = focusAway || (!atHome(mode) && Date.now() >= proudUntil && !(mode === 'race_back' && handedOff)); // runner already handed off
   ch.setTool(s.tool);
   // Buddy size also scales the desk buddy (same cap + bottom-centre origin as the overlay's race-back target)
   const hsc = Math.min(s.buddy_scale || 1, LWMotion.HOME_MAX_SCALE);
@@ -45,15 +45,17 @@ function fmtRemain(ms) {
 function paintFocus(s) {
   const el = $('focus');
   const limit = s.focus_limit_ms || 0;
-  const playing = s.focus_phase === 'play';
-  el.classList.toggle('ready', !!(s.focus_ready && !playing && games.length && limit > 0));
+  const phase = s.focus_phase;
+  const out = phase === 'ask' || phase === 'explain' || phase === 'play' || phase === 'back';
   el.style.left = s.home_side === 'left' ? '38px' : '14px';
-  $('focusTime').textContent = playing ? 'Play' : limit === 0 ? 'Off' : fmtRemain(Math.max(0, limit - (s.focus_ms || 0)));
-  for (const b of $('focusGames').querySelectorAll('button')) {
-    const on = s.focus_phase === 'explain' && b.dataset.id === s.focus_game;
-    b.classList.toggle('on', on);
-    b.title = on ? 'Click again to play' : 'Let ' + (s.buddy || 'Buddy') + ' explain';
-  }
+  $('focusTime').textContent = limit === 0 ? 'Off' : phase === 'play' ? 'Play' : fmtRemain(Math.max(0, limit - (s.focus_ms || 0)));
+  const start = $('focusStart'), pause = $('focusPause');
+  const running = !!s.focus_running && !s.focus_held;
+  start.disabled = out || limit === 0 || running;
+  pause.disabled = out || !s.focus_running;
+  start.classList.toggle('on', running);
+  pause.classList.toggle('on', !!s.focus_held);
+  start.title = s.focus_held ? 'Resume' : 'Start';
 }
 function showSpeech(text) {
   const el = $('speech');
@@ -63,29 +65,13 @@ function showSpeech(text) {
   clearTimeout(speechT);
   speechT = setTimeout(() => el.classList.remove('on'), 8000);
 }
-function focusMinutes() { return Math.round(((snap && snap.focus_limit_ms) || 0) / 60000); }
-async function loadGames() {
-  try { games = await I('list_games') || []; } catch (_) { games = []; }
-  const box = $('focusGames');
-  box.replaceChildren();
-  for (const g of games) {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.dataset.id = g.id;
-    b.textContent = g.name;
-    b.onclick = e => { e.stopPropagation(); I('focus_press', { game: g.id }).catch(() => {}); };
-    box.appendChild(b);
-  }
-  if (snap) paintFocus(snap);
-}
-
 document.addEventListener('mousedown', e => {
   if (e.button !== 0 || e.target.closest('.btn') || e.target.closest('#focus') || e.target.closest('#speech') || (snap && snap.needs_title && e.target.closest('#hud'))) return;
   T.window.getCurrentWindow().startDragging().catch(() => {});
 });
 $('focus').addEventListener('mousedown', e => e.stopPropagation());
-$('focusMinus').onclick = e => { e.stopPropagation(); I('set_focus_minutes', { minutes: Math.max(0, focusMinutes() - 5) }).catch(() => {}); };
-$('focusPlus').onclick = e => { e.stopPropagation(); I('set_focus_minutes', { minutes: Math.min(180, focusMinutes() + 5) }).catch(() => {}); };
+$('focusStart').onclick = e => { e.stopPropagation(); I('focus_start').catch(() => {}); };
+$('focusPause').onclick = e => { e.stopPropagation(); I('focus_pause').catch(() => {}); };
 $('close').onclick = () => I('quit_app');
 $('gear').onclick = () => I('open_settings', { tab: 'settings' });
 for (const id of ['close', 'gear']) $(id).onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') $(id).click(); };
@@ -99,7 +85,6 @@ $('hud').onclick = () => { if (snap && snap.needs_title) I('reopen_onboarding');
   desk = await LWCharacter.mount($('deskHost'), 'desk.svg');
   const g = await LWCharacter.button($('gear'), 'ui-gear.svg', '⚙'); g.classList.add('lw-ui', 'lw-ui-gear');
   const x = await LWCharacter.button($('close'), 'ui-close.svg', '×'); x.classList.add('lw-ui', 'lw-ui-close');
-  await loadGames();
   const s = await I('get_snapshot'); if (s) render(s);
   T.event.listen('companion-state', e => render(e.payload));
   T.event.listen('focus-say', e => {

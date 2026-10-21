@@ -177,6 +177,12 @@
       "description": "Permission identifier",
       "oneOf": [
         {
+          "description": "Enables the check_update command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-check-update",
+          "markdownDescription": "Enables the check_update command without any pre-configured scope."
+        },
+        {
           "description": "Enables the default_journal_dir command without any pre-configured scope.",
           "type": "string",
           "const": "allow-default-journal-dir",
@@ -195,16 +201,28 @@
           "markdownDescription": "Enables the finish_onboarding command without any pre-configured scope."
         },
         {
+          "description": "Enables the focus_back command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-focus-back",
+          "markdownDescription": "Enables the focus_back command without any pre-configured scope."
+        },
+        {
           "description": "Enables the focus_finish command without any pre-configured scope.",
           "type": "string",
           "const": "allow-focus-finish",
           "markdownDescription": "Enables the focus_finish command without any pre-configured scope."
         },
         {
-          "description": "Enables the focus_press command without any pre-configured scope.",
+          "description": "Enables the focus_pause command without any pre-configured scope.",
           "type": "string",
-          "const": "allow-focus-press",
-          "markdownDescription": "Enables the focus_press command without any pre-configured scope."
+          "const": "allow-focus-pause",
+          "markdownDescription": "Enables the focus_pause command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the focus_start command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-focus-start",
+          "markdownDescription": "Enables the focus_start command without any pre-configured scope."
         },
         {
           "description": "Enables the focus_tag command without any pre-configured scope.",
@@ -253,6 +271,12 @@
           "type": "string",
           "const": "allow-new-project",
           "markdownDescription": "Enables the new_project command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the open_download_page command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-open-download-page",
+          "markdownDescription": "Enables the open_download_page command without any pre-configured scope."
         },
         {
           "description": "Enables the open_settings command without any pre-configured scope.",
@@ -315,6 +339,12 @@
           "markdownDescription": "Enables the update_settings command without any pre-configured scope."
         },
         {
+          "description": "Denies the check_update command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-check-update",
+          "markdownDescription": "Denies the check_update command without any pre-configured scope."
+        },
+        {
           "description": "Denies the default_journal_dir command without any pre-configured scope.",
           "type": "string",
           "const": "deny-default-journal-dir",
@@ -333,16 +363,28 @@
           "markdownDescription": "Denies the finish_onboarding command without any pre-configured scope."
         },
         {
+          "description": "Denies the focus_back command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-focus-back",
+          "markdownDescription": "Denies the focus_back command without any pre-configured scope."
+        },
+        {
           "description": "Denies the focus_finish command without any pre-configured scope.",
           "type": "string",
           "const": "deny-focus-finish",
           "markdownDescription": "Denies the focus_finish command without any pre-configured scope."
         },
         {
-          "description": "Denies the focus_press command without any pre-configured scope.",
+          "description": "Denies the focus_pause command without any pre-configured scope.",
           "type": "string",
-          "const": "deny-focus-press",
-          "markdownDescription": "Denies the focus_press command without any pre-configured scope."
+          "const": "deny-focus-pause",
+          "markdownDescription": "Denies the focus_pause command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the focus_start command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-focus-start",
+          "markdownDescription": "Denies the focus_start command without any pre-configured scope."
         },
         {
           "description": "Denies the focus_tag command without any pre-configured scope.",
@@ -391,6 +433,12 @@
           "type": "string",
           "const": "deny-new-project",
           "markdownDescription": "Denies the new_project command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the open_download_page command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-open-download-page",
+          "markdownDescription": "Denies the open_download_page command without any pre-configured scope."
         },
         {
           "description": "Denies the open_settings command without any pre-configured scope.",

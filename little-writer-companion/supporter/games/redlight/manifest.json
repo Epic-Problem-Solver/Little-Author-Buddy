@@ -1,0 +1,9 @@
+{
+  "id": "redlight",
+  "kind": "game",
+  "name": "Red",
+  "minAppVersion": "0.7.0",
+  "engine": "redlight",
+  "order": 3,
+  "files": ["game.json"]
+}

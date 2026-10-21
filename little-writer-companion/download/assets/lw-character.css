@@ -92,7 +92,7 @@
    Layout for data-side="right" (default): desk at the right of the monitor, angled to face the middle (left);
    tool on the top-left of the desk, buddy BEHIND the desk to the right of the tool.
    data-side="left" mirrors the whole scene (tool on the right, buddy on the left). */
-/* Laptop and typewriter are the .lw-tools group drawn before .lw-desk. The pen stays in the group after the desk. */
+/* Laptop, typewriter, the pen's paper, the inkwell, and the resting quill are drawn before .lw-desk. */
 .lw-char:is([data-body=typing],[data-body=sleeping],[data-body=away-from-desk]) :is(.lw-desk,.lw-tools){display:inline}
 .lw-char[data-side=left]:is([data-body=typing],[data-body=sleeping],[data-body=away-from-desk]) .lw-scene{transform:scaleX(-1)}
 /* tool selector: laptop is the default when absent/unknown; pen alias quill */
@@ -107,7 +107,7 @@
 .lw-laptop-glow{opacity:0}
 
 /* hand layering at the desk: back-layer left hand and front-layer right hand are never used;
-   .lw-hand-mid (drawn BEHIND desk + tool) are used instead; only exception: pen typing uses .lw-hand-front (holds the quill) */
+   .lw-hand-mid (drawn BEHIND desk + tool) are used instead; pen typing uses .lw-hand-front, drawn before the desk */
 .lw-char:is([data-body=typing],[data-body=sleeping]) .lw-hand-mid{display:inline}
 .lw-char:is([data-body=typing],[data-body=sleeping],[data-body=away-from-desk]) :is(.lw-rig-back .lw-hand-l,.lw-rig-front .lw-hand-r){display:none}
 .lw-char[data-body=typing]:is([data-tool=pen],[data-tool=quill]) .lw-hand-mid.lw-hand-l{display:none}
@@ -129,7 +129,7 @@
 /* typewriter (back to viewer): carriage + paper step one way, then return (direction reversed in v0.7) */
 .lw-char[data-body=typing][data-tool=typewriter] .lw-tw-carriage{animation:lw-carriage 3s steps(12,end) infinite}
 @keyframes lw-carriage{0%{transform:translateX(-4px)}96%{transform:translateX(4px)}100%{transform:translateX(-4px)}} /* steps left→right on screen (as in v0.7/v0.7.3) */
-/* pen: left hand (front) holds the quill; stroke runs RIGHT→LEFT (mirrored in v0.7); right hand rests behind the desk */
+/* pen: the writing hand is drawn before the desk and stays on .lw-rig so it keeps the desk scale. The right hand rests behind the desk. */
 .lw-char[data-body=typing]:is([data-tool=pen],[data-tool=quill]) .lw-hand-front{transform:translate(24px,24px)}
 .lw-char[data-body=typing]:is([data-tool=pen],[data-tool=quill]) .lw-hand-front .lw-hand-inner{animation:lw-scribble 1.6s ease-in-out infinite}
 .lw-char[data-body=typing]:is([data-tool=pen],[data-tool=quill]) .lw-hand-mid.lw-hand-r{transform:translate(-46px,32px)}
