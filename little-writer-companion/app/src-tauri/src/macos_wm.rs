@@ -34,11 +34,6 @@ extern "C" {
     fn CGEventGetLocation(event: *mut c_void) -> CGPoint;
 }
 
-#[link(name = "CoreFoundation", kind = "framework")]
-extern "C" {
-    fn CFRelease(cf: *const c_void);
-}
-
 /// Quartz global display coordinates, origin at the top-left.
 pub fn cursor_pos() -> Option<(i32, i32)> {
     unsafe {
