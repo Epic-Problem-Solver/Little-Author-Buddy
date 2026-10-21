@@ -8,10 +8,13 @@ on:
       - "little-writer-companion/**"
       - ".github/workflows/linux.yml"
 
+permissions:
+  contents: write
+
 jobs:
   packages:
     runs-on: ubuntu-22.04
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
@@ -35,10 +38,25 @@ jobs:
         env:
           APPIMAGE_EXTRACT_AND_RUN: "1"
         run: npx --yes @tauri-apps/cli@2 build --bundles deb,appimage
+      - name: Name the packages
+        working-directory: little-writer-companion/app/src-tauri
+        run: |
+          ver=$(python3 -c 'import json; print(json.load(open("tauri.conf.json"))["version"])')
+          mkdir -p dist
+          cp target/release/bundle/deb/*.deb "dist/Little-Author-Buddy_${ver}_amd64.deb"
+          cp target/release/bundle/appimage/*.AppImage "dist/Little-Author-Buddy_${ver}_amd64.AppImage"
+          ls -l dist
       - uses: actions/upload-artifact@v7
         with:
           name: Little-Author-Buddy-linux
           if-no-files-found: error
-          path: |
-            little-writer-companion/app/src-tauri/target/release/bundle/deb/*.deb
-            little-writer-companion/app/src-tauri/target/release/bundle/appimage/*.AppImage
+          path: little-writer-companion/app/src-tauri/dist/*
+      - name: Publish the packages
+        working-directory: little-writer-companion/app/src-tauri
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ver=$(python3 -c 'import json; print(json.load(open("tauri.conf.json"))["version"])')
+          tag="v$ver"
+          gh release view "$tag" --repo Epic-Problem-Solver/Little-Author-Buddy >/dev/null 2>&1 || gh release create "$tag" --repo Epic-Problem-Solver/Little-Author-Buddy --title "Little Author Buddy $ver" --notes "Release $ver."
+          gh release upload "$tag" dist/Little-Author-Buddy_*.deb dist/Little-Author-Buddy_*.AppImage --clobber --repo Epic-Problem-Solver/Little-Author-Buddy

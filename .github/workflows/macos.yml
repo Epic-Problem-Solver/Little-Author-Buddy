@@ -78,8 +78,12 @@ jobs:
           name: Little-Author-Buddy-macos
           path: little-writer-companion/app/src-tauri/dist/*.dmg
           if-no-files-found: error
-      - name: Publish the disk image on the v0.6.2 release
+      - name: Publish the disk image
         working-directory: little-writer-companion/app/src-tauri
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload v0.6.2 dist/Little-Author-Buddy_*.dmg --clobber --repo Epic-Problem-Solver/Little-Author-Buddy
+        run: |
+          ver=$(python3 -c 'import json; print(json.load(open("tauri.conf.json"))["version"])')
+          tag="v$ver"
+          gh release view "$tag" --repo Epic-Problem-Solver/Little-Author-Buddy >/dev/null 2>&1 || gh release create "$tag" --repo Epic-Problem-Solver/Little-Author-Buddy --title "Little Author Buddy $ver" --notes "Release $ver."
+          gh release upload "$tag" dist/Little-Author-Buddy_*.dmg --clobber --repo Epic-Problem-Solver/Little-Author-Buddy
