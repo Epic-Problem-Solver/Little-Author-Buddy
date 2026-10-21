@@ -275,10 +275,10 @@ mod tests {
 
     #[test]
     fn old_save_has_no_hat() {
-        let d: crate::store::Data = serde_json::from_str(r#"{"settings":{"buddy_name":"Inky"}}"#).unwrap();
+        let d: crate::store::Data = serde_json::from_str(r#"{"settings":{"buddy_name":"Buddy"}}"#).unwrap();
         assert_eq!(d.settings.hat, "");
         assert_eq!(d.settings.hat_color, "");
         assert!(!d.settings.hat_extra);
-        assert_eq!(d.settings.buddy_name, "Inky");
+        assert_eq!(d.settings.buddy_name, "Buddy");
     }
 }

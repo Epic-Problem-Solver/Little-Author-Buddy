@@ -907,7 +907,7 @@
   var downloadStop = { at: '#lab-downloads', pose: { body: 'idle', face: 'excited' }, say: downloadSay, hold: 2400 };
   var tour = [
     { at: 'desk', pose: { body: 'idle', face: 'curious' }, say: 'Oh! Hi.', hold: 1700 },
-    { at: 'desk', pose: { body: 'idle', face: 'excited' }, say: "I'm Inky.", hold: 1500 },
+    { at: 'desk', pose: { body: 'idle', face: 'excited' }, say: "I'm Buddy.", hold: 1500 },
     { at: '#lab-shot-keys', pose: { body: 'idle', face: 'focused' }, say: 'Letter keys fill the story. I keep the count, not the words.', hold: 2800 },
     { at: '#lab-shot-watch', pose: { body: 'watching', face: 'curious' }, say: 'A video? I come over and watch.', hold: 2600 },
     { at: '#lab-shot-mail', pose: { body: 'idle', face: 'proud' }, say: 'Finish a story and the fan mail arrives.', hold: 2600 },
@@ -919,16 +919,9 @@
     { at: '#lab-shot-watch', pose: { body: 'watching', face: 'curious' }, say: 'I notice the long scrolls, too.' },
     { at: '#lab-shot-mail', pose: { body: 'idle', face: 'proud' }, say: 'The letters stay on your computer.' }
   ];
-  async function go(stop, scroll) {
+  async function go(stop) {
     var at = reduce ? 'desk' : stop.at;
     hush();
-    if (scroll && at !== 'desk') {
-      var el = document.querySelector(at);
-      if (el && !onScreen(el)) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        await wait(700);
-      }
-    }
     await walkTo(at, stop.pose);
     if (coachOn && stop.say !== coachLine) {
       say(coachLine);
@@ -953,7 +946,7 @@
     await wait(400);
     for (var i = 0; i < tour.length; i++) {
       if (coachOn) break;
-      await go(tour[i], true);
+      await go(tour[i]);
     }
     var n = 0;
     var quiet = false;
@@ -961,7 +954,7 @@
       if (coachOn) {
         quiet = false;
         var line = coachLine;
-        await go({ at: '#lab-downloads', pose: { body: 'idle', face: 'excited' }, say: line, hold: 4000 }, true);
+        await go({ at: '#lab-downloads', pose: { body: 'idle', face: 'excited' }, say: line, hold: 4000 });
         while (coachOn && coachLine === line) await wait(300);
         continue;
       }
@@ -971,11 +964,11 @@
       n++;
       var el = document.querySelector(stop.at);
       if (!reduce && el && onScreen(el)) {
-        await go(stop, false);
+        await go(stop);
         hush();
         await walkTo('desk', { body: 'idle', face: 'idle' });
       } else if (reduce) {
-        await go(stop, false);
+        await go(stop);
       }
     }
   }

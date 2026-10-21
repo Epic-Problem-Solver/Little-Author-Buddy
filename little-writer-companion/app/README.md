@@ -53,7 +53,7 @@ Outputs: `src-tauri/target/release/bundle/{deb,appimage}/`, `src-tauri/target-wi
 - **OBS Game capture** hooks DirectX/OpenGL/Vulkan games, not ordinary desktop windows, so it will not capture the companion. Use Display or Window capture.
 
 ## v0.5.0 notes
-- **First run:** a 4-step onboarding window (welcome → buddy name → colours with live preview → first story title) replaces the old title prompt. Existing saves are migrated as already onboarded, with the buddy named "Inky". If onboarding is closed early, the desk HUD says "Click here to set up …" and reopens it.
+- **First run:** a 4-step onboarding window (welcome → buddy name → colours with live preview → first story title) replaces the old title prompt. Existing saves are migrated as already onboarded, with the buddy named "Buddy". If onboarding is closed early, the desk HUD says "Click here to set up …" and reopens it.
 - **{buddy} placeholder:** bubble lines and letters in `ui/content/*.json` may use `{buddy}`, alongside `{projectTitle}`, `{tier}` and `{wordCount}`.
 - **Motion:** buddy size, walk speed and bubble text size are in Settings, with a live preview. They are also scaled by each monitor's scale factor and re-scale smoothly when moving between monitors. Movement is time-based (logical px/s) with easing, a speed cap and a 50 ms dt clamp.
 - **Watching state:** when you are on a distraction, the buddy shows `data-body="watching"` (back turned), falling back to `peeking` with older art. The home desk sets `data-side="left|right"` from the half of the monitor it sits on.

@@ -286,7 +286,7 @@ mod tests {
 
     #[test]
     fn old_save_defaults_focus_to_thirty_minutes() {
-        let d: crate::store::Data = serde_json::from_str(r#"{"settings":{"buddy_name":"Inky"}}"#).unwrap();
+        let d: crate::store::Data = serde_json::from_str(r#"{"settings":{"buddy_name":"Buddy"}}"#).unwrap();
         assert_eq!(d.settings.focus_minutes, 30);
     }
 }

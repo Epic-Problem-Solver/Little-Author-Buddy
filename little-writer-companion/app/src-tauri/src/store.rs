@@ -253,7 +253,7 @@ pub struct Data {
     pub onboarded: Option<bool>,
 }
 
-pub const DEFAULT_BUDDY: &str = "Inky";
+pub const DEFAULT_BUDDY: &str = "Buddy";
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct DayStat { pub day: String, pub keystrokes: u64 }

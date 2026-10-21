@@ -81,7 +81,7 @@ If the app is missing from a list, click the add button and choose it in Applica
 - **Fan letters.** Finishing a project opens a letter — encouragement, a quote, or a joke — filled in from local templates, then asks for the next project. Each letter can be kept in a journal of Markdown files.
 - **The desk.** A small window stays above your other windows. Drag it to move it. The gear opens Settings, and the close button quits. The tray pauses listening and opens projects, settings, the journal, and privacy.
 
-The buddy's name starts as Inky. Settings also cover body colour, size, walk speed, idle time, tier targets, and which monitor holds the desk.
+The buddy's name starts as Buddy. Settings also cover body colour, size, walk speed, idle time, tier targets, and which monitor holds the desk.
 
 ## Projects and tools
 

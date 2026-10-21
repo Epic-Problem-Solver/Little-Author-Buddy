@@ -105,7 +105,7 @@ $('hud').onclick = () => { if (snap && snap.needs_title) I('reopen_onboarding');
   T.event.listen('focus-say', e => {
     const p = e.payload || {};
     if (!LWDomain.focusAtDesk(snap)) return;
-    const buddy = (snap && snap.buddy) || 'Inky';
+    const buddy = (snap && snap.buddy) || 'Buddy';
     const text = p.text || (p.kind === 'invite' ? LWContent.line('focusBreak', { buddy }) : '');
     showSpeech(text);
   });

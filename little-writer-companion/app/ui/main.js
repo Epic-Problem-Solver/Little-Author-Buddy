@@ -198,7 +198,7 @@ function placeBubble(k) {
 // ---- state ------------------------------------------------------------------------------
 let raceHoldUntil = 0, rushing = false, arrivedSent = false, handedOff = false, settling = false;
 function say(key, text, ms) {
-  const t = text || LWContent.line(key, { buddy: (snap && snap.buddy) || 'Inky' }); if (!t) return;
+  const t = text || LWContent.line(key, { buddy: (snap && snap.buddy) || 'Buddy' }); if (!t) return;
   bubble.textContent = t; bubble.classList.add('on'); clearTimeout(bubbleT); bubbleT = setTimeout(() => bubble.classList.remove('on'), ms || 5000);
 }
 function playBox(center) {
@@ -231,7 +231,7 @@ function beginCheer() {
   const id = snap.focus_game;
   const g = games.find(x => x.id === id);
   const raw = (g && g.cheer) || (id === 'tag' ? 'You got {buddy}!' : '{buddy} caught it!');
-  say(null, raw.replaceAll('{buddy}', snap.buddy || 'Inky'), 4000);
+  say(null, raw.replaceAll('{buddy}', snap.buddy || 'Buddy'), 4000);
   setTimeout(() => { celebrating = false; if (T) T.core.invoke('focus_finish').catch(() => {}); }, 1200);
 }
 function stepGame(dt) {
@@ -357,7 +357,7 @@ function frame(t) {
 }
 
 async function showLetter(p) {
-  const L = LWContent.letter({ buddy: (snap && snap.buddy) || 'Inky', projectTitle: p.name, tier: p.tier.replace('_', ' '), wordCount: p.target_words.toLocaleString() },
+  const L = LWContent.letter({ buddy: (snap && snap.buddy) || 'Buddy', projectTitle: p.name, tier: p.tier.replace('_', ' '), wordCount: p.target_words.toLocaleString() },
     (snap ? snap.completed_count : 1) - 1, p.name + ':' + p.completed_at);
   letterEl.innerHTML = '<b></b><p></p><i></i><small></small>';
   letterEl.querySelector('b').textContent = `A fan letter (${L.category})`;
@@ -385,7 +385,7 @@ async function showLetter(p) {
   T.event.listen('focus-say', e => {
     const p = e.payload || {};
     if (LWDomain.focusAtDesk(snap)) return;
-    const buddy = (snap && snap.buddy) || 'Inky';
+    const buddy = (snap && snap.buddy) || 'Buddy';
     const text = p.text || (p.kind === 'invite' ? LWContent.line('focusBreak', { buddy }) : '');
     if (text) say(null, text, p.kind === 'explain' || p.kind === 'invite' ? 8000 : 5000);
   });

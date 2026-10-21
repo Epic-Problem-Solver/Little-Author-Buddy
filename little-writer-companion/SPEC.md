@@ -160,7 +160,7 @@ One public repository and one `main` branch hold the app and the supporter conte
 
 ## v0.5.0 additions
 - Onboarding (4 steps). `Data.onboarded: Option<bool>`: None on an old save → migrated to `!needs_title()`. Missing or corrupt file → `Some(false)`.
-- Settings: `buddy_name` (default "Inky", max 40 chars), `buddy_scale` 0.6–1.6, `walk_speed` 40–300 logical px/s, `bubble_px` 9–20. Colours: `paper`, `paper_shade`.
+- Settings: `buddy_name` (default "Buddy", max 40 chars), `buddy_scale` 0.6–1.6, `walk_speed` 40–300 logical px/s, `bubble_px` 9–20. Colours: `paper`, `paper_shade`.
 - Content placeholder `{buddy}`.
 - Watching: `data-body="watching"` (alias away) with a peeking fallback. Home desk: `data-side`.
 - Concurrency rules:

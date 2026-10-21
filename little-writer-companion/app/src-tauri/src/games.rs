@@ -101,7 +101,7 @@ pub fn known(dir: &Path, id: &str) -> bool { list(dir).iter().any(|g| g.id == id
 
 fn fill_buddy(raw: &str, buddy: &str) -> String {
     let name = buddy.trim();
-    let name = if name.is_empty() { "Inky" } else { name };
+    let name = if name.is_empty() { crate::store::DEFAULT_BUDDY } else { name };
     raw.replace("{buddy}", name)
 }
 
