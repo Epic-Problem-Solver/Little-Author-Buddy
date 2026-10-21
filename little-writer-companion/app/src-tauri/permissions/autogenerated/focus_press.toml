@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-focus-press"
+description = "Enables the focus_press command without any pre-configured scope."
+commands.allow = ["focus_press"]
+
+[[permission]]
+identifier = "deny-focus-press"
+description = "Denies the focus_press command without any pre-configured scope."
+commands.deny = ["focus_press"]

@@ -11,6 +11,8 @@
       <path d="M13 -12A19 19 0 0 1 -14 13A22 22 0 0 0 13 -12z" fill="var(--shade)" opacity=".6"/>
       <circle r="19" fill="none" stroke="var(--outline)" stroke-width="6"/>
     </g></g></g>
+    <!-- Hat anchors. Packs fill these. Crown stays at y>=40 so the desk scale does not clip it. -->
+    <g class="lw-hat-back"></g>
     <g class="lw-body">
       <circle cx="120" cy="110" r="62" fill="var(--shade)"/>
       <!-- Offset highlight, cut to the body circle so it cannot sit outside the outline. -->
@@ -23,6 +25,7 @@
       <path d="M114 52q4-10 12-8q-6 2-6 8" fill="none" stroke="var(--outline)" stroke-width="4" stroke-linecap="round"/>
       <circle cx="120" cy="110" r="62" fill="none" stroke="var(--outline)" stroke-width="7"/>
     </g>
+    <g class="lw-hat"></g>
     <g class="lw-face">
       <g class="lw-blush"><ellipse cx="80" cy="118" rx="9" ry="5"/><ellipse cx="146" cy="118" rx="9" ry="5"/></g>
       <g class="lw-eyes">
@@ -39,6 +42,7 @@
         <path class="lw-m lw-m-wavy" d="M104 119q3-3 6 0t6 0t6 0"/>
       </g>
       <g class="lw-zzz"><text x="154" y="62">z</text><text x="166" y="46">z</text><text x="178" y="30">Z</text></g>
+      <g class="lw-hat-face"></g>
     </g>
   </g>
   <g class="lw-station">

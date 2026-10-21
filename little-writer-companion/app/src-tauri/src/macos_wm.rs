@@ -30,6 +30,24 @@ extern "C" {
     fn CGWindowListCopyWindowInfo(option: u32, relative: u32) -> *const c_void;
     fn CGMainDisplayID() -> u32;
     fn CGDisplayBounds(display: u32) -> CGRect;
+    fn CGEventCreate(source: *mut c_void) -> *mut c_void;
+    fn CGEventGetLocation(event: *mut c_void) -> CGPoint;
+}
+
+#[link(name = "CoreFoundation", kind = "framework")]
+extern "C" {
+    fn CFRelease(cf: *const c_void);
+}
+
+/// Quartz global display coordinates, origin at the top-left.
+pub fn cursor_pos() -> Option<(i32, i32)> {
+    unsafe {
+        let event = CGEventCreate(std::ptr::null_mut());
+        if event.is_null() { return None; }
+        let p = CGEventGetLocation(event);
+        CFRelease(event as *const c_void);
+        Some((p.x.round() as i32, p.y.round() as i32))
+    }
 }
 
 #[link(name = "ApplicationServices", kind = "framework")]

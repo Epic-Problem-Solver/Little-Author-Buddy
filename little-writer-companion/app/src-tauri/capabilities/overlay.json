@@ -5,6 +5,10 @@
     "core:event:allow-listen",
     "core:event:allow-unlisten",
     "allow-get-snapshot",
+    "allow-list-hats",
+    "allow-list-games",
+    "allow-focus-finish",
+    "allow-place-tag-hit",
     "allow-race-arrived",
     "allow-track-window",
     "allow-save-letter"

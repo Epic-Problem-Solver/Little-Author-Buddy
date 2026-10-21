@@ -7,8 +7,9 @@ comp.style.width = BW + 'px';
 comp.querySelector('.clip').style.width = BW + 'px';
 comp.querySelector('.clip').style.height = BH + 'px';
 const seenWarn = {};
-let ch, snap = null, pos = null, lastMode = null, bubbleT = 0;
+let ch, snap = null, hatsApi = null, pos = null, lastMode = null, bubbleT = 0;
 let goal = null, path = [], wanderGoal = null, hide = null, holdUntil = 0;
+let games = [], gameCursor = null, celebrating = false, hitSent = '';
 
 // ---- geometry -------------------------------------------------------------------------
 // The overlay is one webview: physical -> CSS is (p - origin) / overlay DPR everywhere.
@@ -196,9 +197,62 @@ function placeBubble(k) {
 
 // ---- state ------------------------------------------------------------------------------
 let raceHoldUntil = 0, rushing = false, arrivedSent = false, handedOff = false, settling = false;
-function say(key, text) {
+function say(key, text, ms) {
   const t = text || LWContent.line(key, { buddy: (snap && snap.buddy) || 'Inky' }); if (!t) return;
-  bubble.textContent = t; bubble.classList.add('on'); clearTimeout(bubbleT); bubbleT = setTimeout(() => bubble.classList.remove('on'), 5000);
+  bubble.textContent = t; bubble.classList.add('on'); clearTimeout(bubbleT); bubbleT = setTimeout(() => bubble.classList.remove('on'), ms || 5000);
+}
+function playBox(center) {
+  const ms = roamMonitors();
+  const m = monitorAt(center, ms);
+  const pad = 48;
+  let x0 = m.x + pad, y0 = m.y + pad, x1 = m.x + m.w - pad, y1 = m.y + m.h - pad;
+  if (x1 < x0) { const c = m.x + m.w / 2; x0 = c; x1 = c; }
+  if (y1 < y0) { const c = m.y + m.h / 2; y0 = c; y1 = c; }
+  return { x0, y0, x1, y1 };
+}
+function placeTag(k) {
+  if (!T || !snap || !pos) return;
+  const dprNow = window.devicePixelRatio || 1;
+  const r = LWGames.CATCH_R * k;
+  const cx = pos[0] + LWGames.BODY_X * k, cy = pos[1] + LWGames.BODY_Y * k;
+  const x = Math.round(snap.origin[0] + (cx - r) * dprNow);
+  const y = Math.round(snap.origin[1] + (cy - r) * dprNow);
+  const w = Math.max(8, Math.round(2 * r * dprNow));
+  const key = x + ',' + y + ',' + w;
+  if (key === hitSent) return;
+  hitSent = key;
+  T.core.invoke('place_tag_hit', { x, y, w, h: w }).catch(() => {});
+}
+function beginCheer() {
+  if (celebrating || !snap) return;
+  celebrating = true;
+  ch.setFace('proud');
+  ch.setBody('idle');
+  const id = snap.focus_game;
+  const g = games.find(x => x.id === id);
+  const raw = (g && g.cheer) || (id === 'tag' ? 'You got {buddy}!' : '{buddy} caught it!');
+  say(null, raw.replaceAll('{buddy}', snap.buddy || 'Inky'), 4000);
+  setTimeout(() => { celebrating = false; if (T) T.core.invoke('focus_finish').catch(() => {}); }, 1200);
+}
+function stepGame(dt) {
+  if (!snap || snap.focus_phase !== 'play' || celebrating || !gameCursor || !pos) return;
+  const k = kNow || 1;
+  const center = [pos[0] + LWGames.BODY_X * k, pos[1] + LWGames.BODY_Y * k];
+  const speed = ((snap.walk_speed) || 96) * k * (snap.focus_game === 'tag' ? 1.45 : 2.2);
+  path = [];
+  if (snap.focus_game === 'tag') {
+    const next = LWGames.tag(center, gameCursor, dt, speed, playBox(center));
+    const dx = next[0] - center[0];
+    pos = [next[0] - LWGames.BODY_X * k, next[1] - LWGames.BODY_Y * k];
+    if (Math.abs(dx) > 0.4) ch.setWalkDir(dx < 0 ? 'left' : 'right');
+    placeTag(k);
+  } else {
+    const n = LWGames.chase(center, gameCursor, dt, speed, LWGames.CATCH_R * k);
+    const dx = n.pos[0] - center[0];
+    pos = [n.pos[0] - LWGames.BODY_X * k, n.pos[1] - LWGames.BODY_Y * k];
+    if (Math.abs(dx) > 0.4) ch.setWalkDir(dx < 0 ? 'left' : 'right');
+    if (n.caught) beginCheer();
+  }
 }
 function syncPose(s, mode) {
   if (mode === lastMode) return;
@@ -242,9 +296,23 @@ function onState(s) {
   snap = s;
   if (!pos) pos = deskPos();
   const mode = s.paused ? 'paused' : s.mode;
+  if (s.focus_phase === 'play') {
+    if (lastMode !== 'game') { hitSent = ''; endHide(); }
+    lastMode = 'game';
+    path = [];
+    ch.setColors(s.colors);
+    ch.setTool(s.tool);
+    bubble.style.fontSize = ((s.bubble_px || 12)) + 'px';
+    comp.style.visibility = 'visible';
+    if (!celebrating && ch.el.getAttribute('data-body') !== 'rushing') { ch.setFace('excited'); ch.setBody('rushing'); }
+    if (hatsApi) hatsApi.apply(s);
+    return;
+  }
+  if (celebrating) celebrating = false;
   syncPose(s, mode);
   syncPath(s, mode);
   syncHud(s, mode);
+  if (hatsApi) hatsApi.apply(s);
 }
 
 // Time-based, eased movement (logical px/s via LWMotion), smooth re-scale when crossing monitors.
@@ -254,6 +322,7 @@ function frame(t) {
   if (pos) {
     const kTarget = scaleAt(pos);
     kNow = kNow == null ? kTarget : LWMotion.smoothScale(kNow, kTarget, dt);
+    stepGame(dt);
     if (path.length) {
       const walk = (snap && snap.walk_speed) || 96;
       const vmax = LWMotion.modeSpeed(lastMode === 'wander' || lastMode === 'watch' || lastMode === 'race_back' ? lastMode : 'home', walk);
@@ -300,6 +369,8 @@ async function showLetter(p) {
 
 (async () => {
   ch = await LWCharacter.mount($('charHost'));
+  if (T) { hatsApi = LWCharacter.bindHats((c, a) => T.core.invoke(c, a), ch, () => snap); await hatsApi.refresh(); }
+  if (T) { try { games = await T.core.invoke('list_games') || []; } catch (_) { games = []; } }
   await LWContent.ready;
   requestAnimationFrame(frame);
   if (!T) { onState({ mode: 'typing', paused: false, words: 0, target_words: 3000, project_name: 'Demo', tier: 'short_story', origin: [0, 0], monitors: [], colors: {}, desk_monitor: 0 }); return; }
@@ -309,4 +380,13 @@ async function showLetter(p) {
   T.event.listen('handoff', () => { if (lastMode === 'race_back') { handedOff = true; comp.style.visibility = 'hidden'; } });
   T.event.listen('project-complete', e => showLetter(e.payload));
   T.event.listen('target-rect', e => onTarget(e.payload));
+  T.event.listen('game-cursor', e => { if (snap) gameCursor = toCss(e.payload.x, e.payload.y); });
+  T.event.listen('tag-click', () => beginCheer());
+  T.event.listen('focus-say', e => {
+    const p = e.payload || {};
+    if (LWDomain.focusAtDesk(snap)) return;
+    const buddy = (snap && snap.buddy) || 'Inky';
+    const text = p.text || (p.kind === 'invite' ? LWContent.line('focusBreak', { buddy }) : '');
+    if (text) say(null, text, p.kind === 'explain' || p.kind === 'invite' ? 8000 : 5000);
+  });
 })();

@@ -76,6 +76,14 @@ pub struct Settings {
     pub walk_speed: f64,
     /// Speech-bubble font size in logical px, 9-20
     pub bubble_px: f64,
+    /// Installed supporter hat id, or empty. Clamped against packs/ beside state.json.
+    pub hat: String,
+    /// #rrggbb. Free hats accept any hex, including black. Choice hats accept only the manifest list.
+    pub hat_color: String,
+    /// Shows the pack's optional extra piece. Forced off when that pack has none.
+    pub hat_extra: bool,
+    /// Quiet minutes before Buddy offers a game. 0 turns the invitation off. Clamped to 0–180.
+    pub focus_minutes: u32,
 }
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Tiers { pub short_story: u64, pub novella: u64, pub novel: u64 }
@@ -202,6 +210,10 @@ impl Default for Settings {
             walk_speed: 96.0,
             bubble_px: 12.0,
             colors: Colors::default(),
+            hat: String::new(),
+            hat_color: String::new(),
+            hat_extra: false,
+            focus_minutes: 30,
         }
     }
 }
@@ -532,6 +544,10 @@ impl Data {
 /// Keystrokes-per-word slider range is 1..=5 (v0.3); older files may hold larger values.
 pub fn clamp_kpw(v: u64) -> u64 { v.clamp(1, 5) }
 
+/// Quiet minutes before a game. 0 is off. The desk steps by five; settings may use any minute in range.
+pub const MAX_FOCUS_MINUTES: u32 = 180;
+pub fn clamp_focus_minutes(v: u32) -> u32 { v.min(MAX_FOCUS_MINUTES) }
+
 pub const MAX_TITLES: usize = 32;
 pub const MAX_TITLE_LEN: usize = 80;
 
@@ -605,7 +621,11 @@ pub fn load(path: &PathBuf, now: u64) -> (Data, Option<LoadIssue>) {
                 d.settings.distraction_titles = titles;
                 let journal_bad = d.settings.journal_dir.as_deref().is_some_and(|p| !journal_dir_ok(p));
                 if journal_bad { d.settings.journal_dir = None; }
-                if d.settings.colors != before || titles_changed || journal_bad { save(path, &d); }
+                let hat_changed = crate::packs::clamp_saved(&mut d.settings.hat, &mut d.settings.hat_color, &mut d.settings.hat_extra, &crate::packs::packs_dir(path));
+                let focus_was = d.settings.focus_minutes;
+                d.settings.focus_minutes = clamp_focus_minutes(d.settings.focus_minutes);
+                let focus_changed = d.settings.focus_minutes != focus_was;
+                if d.settings.colors != before || titles_changed || journal_bad || hat_changed || focus_changed { save(path, &d); }
                 return (d, None);
             }
             Err(e) => LoadErrorKind::Parse(e),

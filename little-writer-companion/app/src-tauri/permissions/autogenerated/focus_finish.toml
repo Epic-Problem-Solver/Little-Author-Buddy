@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-focus-finish"
+description = "Enables the focus_finish command without any pre-configured scope."
+commands.allow = ["focus_finish"]
+
+[[permission]]
+identifier = "deny-focus-finish"
+description = "Denies the focus_finish command without any pre-configured scope."
+commands.deny = ["focus_finish"]

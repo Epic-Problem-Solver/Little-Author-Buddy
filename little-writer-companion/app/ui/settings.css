@@ -20,3 +20,6 @@ button{padding:5px 10px}#msg,#expmsg{color:#3d7a35;margin-left:8px}
 #mpBubble{position:absolute;bottom:58px;left:0;white-space:nowrap;background:#fff;border:2px solid #241414;border-radius:10px;padding:2px 7px}
 
 .derived{color:#7a6248;font-size:11px;margin-left:2px}
+.hat-off{display:none}
+#hatSwatches button{margin:0 6px 6px 0}
+#hatSwatches button.on{outline:2px solid #241414;outline-offset:1px}

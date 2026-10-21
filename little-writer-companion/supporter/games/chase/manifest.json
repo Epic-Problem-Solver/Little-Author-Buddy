@@ -1,0 +1,9 @@
+{
+  "id": "chase",
+  "kind": "game",
+  "name": "Chase",
+  "minAppVersion": "0.6.2",
+  "engine": "chase",
+  "order": 1,
+  "files": ["game.json"]
+}

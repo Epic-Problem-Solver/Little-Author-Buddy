@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220">
+  <g class="lw-hat-back">
+    <path class="lw-cap-brim-rear" d="M78 64 C100 52 150 50 200 60 C216 66 220 82 204 90 C176 100 120 98 78 86 C64 80 64 70 78 64 Z" fill="var(--hat)" stroke="var(--outline)" stroke-width="6" stroke-linejoin="round"/>
+  </g>
+  <g class="lw-hat-front">
+    <path d="M60 84 C66 66 82 48 104 38 C112 34 120 32 128 34 C150 38 166 48 174 66 C180 80 178 90 176 90 C154 90 86 90 62 88 C56 86 56 86 60 84 Z" fill="var(--hat)"/>
+    <path d="M96 50 C110 44 130 44 144 50 C130 48 110 48 96 50 Z" fill="var(--hat-shade)"/>
+    <path d="M60 84 C66 66 82 48 104 38 C112 34 120 32 128 34 C150 38 166 48 174 66 C180 80 178 90 176 90 C154 90 86 90 62 88 C56 86 56 86 60 84 Z" fill="none" stroke="var(--outline)" stroke-width="6" stroke-linejoin="round"/>
+    <circle cx="120" cy="36" r="3.5" fill="var(--hat-shade)" stroke="var(--outline)" stroke-width="3.5"/>
+    <path class="lw-cap-strap" d="M102 74 H134 V86 H102 Z" fill="var(--hat-shade)" stroke="var(--outline)" stroke-width="4" stroke-linejoin="round"/>
+    <circle class="lw-cap-strap" cx="112" cy="80" r="1.6" fill="var(--outline)"/>
+    <circle class="lw-cap-strap" cx="124" cy="80" r="1.6" fill="var(--hat)"/>
+    <!-- Top edge is the crown's lower contour. Unmirrored, the bill angles left;
+         the scene mirror sends it right. Painted after the crown. -->
+    <g class="lw-cap-brim-away">
+      <path d="M176 90 C154 90 86 90 62 88 C44 96 36 110 52 122 C70 134 108 128 140 114 C160 104 174 96 176 90 Z" fill="var(--hat)" stroke="var(--outline)" stroke-width="6" stroke-linejoin="round"/>
+      <path d="M150 98 C118 112 82 116 56 106" fill="none" stroke="var(--hat-shade)" stroke-width="4" stroke-linecap="round"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,15 @@
+{
+  "id": "cowboy",
+  "kind": "hat",
+  "name": "Cowboy hat",
+  "minAppVersion": "0.6.2",
+  "color": "choice",
+  "defaultColor": "#6e4527",
+  "colors": [
+    { "label": "Black", "value": "#241414" },
+    { "label": "Brown", "value": "#6e4527" },
+    { "label": "White", "value": "#f4f0ea" }
+  ],
+  "files": ["hat.svg"],
+  "order": 4
+}

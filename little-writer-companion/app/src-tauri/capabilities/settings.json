@@ -6,6 +6,7 @@
     "core:event:allow-unlisten",
     "allow-get-data",
     "allow-get-snapshot",
+    "allow-list-hats",
     "allow-get-warnings",
     "allow-update-settings",
     "allow-new-project",

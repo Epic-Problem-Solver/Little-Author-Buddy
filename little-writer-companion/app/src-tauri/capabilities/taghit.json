@@ -1,0 +1,7 @@
+{
+  "identifier": "taghit",
+  "windows": ["taghit"],
+  "permissions": [
+    "allow-focus-tag"
+  ]
+}

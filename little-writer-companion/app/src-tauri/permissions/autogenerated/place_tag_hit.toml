@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-place-tag-hit"
+description = "Enables the place_tag_hit command without any pre-configured scope."
+commands.allow = ["place_tag_hit"]
+
+[[permission]]
+identifier = "deny-place-tag-hit"
+description = "Denies the place_tag_hit command without any pre-configured scope."
+commands.deny = ["place_tag_hit"]

@@ -1,7 +1,7 @@
 const I = window.__TAURI__.core.invoke, $ = id => document.getElementById(id);
 // Presets set the body colour. Shade and hands are derived. The outline stays #241414.
 const TIER_UNLOCK = LWDomain.TIER_UNLOCK, TOOL_UNLOCK = LWDomain.TOOL_UNLOCK;
-let data, ch;
+let data, ch, mp, hats = [], hatsFailed = false;
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 let curTab = 'settings';
 function tab(t0) { const t = t0 || (location.hash ? location.hash.slice(1) : curTab); curTab = t; document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id === t)); document.querySelectorAll('nav a').forEach(a => a.classList.toggle('on', a.hash === '#' + t)); load(); }
@@ -12,8 +12,100 @@ function colors() {
   else if (body) lastBody = body.value;
   return LWPalette.normalize({ body: body ? body.value : lastBody });
 }
+function hatInk(hex) {
+  const n = parseInt(String(hex).slice(1), 16);
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return (r * 299 + g * 587 + b * 114) / 1000 > 160 ? '#241414' : '#f4f0ea';
+}
+function hatForm() {
+  const id = $('hat').value;
+  const pack = hats.find(h => h.id === id);
+  if (!pack) return { hat: '', hat_color: '', hat_extra: false, pack: null };
+  let color = pack.default_color;
+  if (pack.color === 'choice') {
+    const on = $('hatSwatches').querySelector('button.on');
+    color = on ? on.dataset.color : pack.default_color;
+  } else color = $('hatColor').value;
+  return { hat: id, hat_color: (color || '').toLowerCase(), hat_extra: !!(pack.extra && $('hatExtra').checked), pack };
+}
+function previewHat() {
+  const sel = hatsFailed ? null : hatForm();
+  const spec = sel && sel.pack ? { id: sel.hat, color: sel.hat_color, extra: sel.hat_extra, svg: sel.pack.svg } : null;
+  if (ch) ch.setHat(spec);
+  if (mp) mp.setHat(spec);
+}
+function savedHatFields() {
+  if (hatsFailed) return { hat: data.settings.hat || '', hat_color: data.settings.hat_color || '', hat_extra: !!data.settings.hat_extra };
+  const sel = hatForm();
+  return { hat: sel.hat, hat_color: sel.hat_color, hat_extra: sel.hat_extra };
+}
+function showHatFields(saved) {
+  const pack = hats.find(h => h.id === $('hat').value);
+  const sw = $('hatSwatches');
+  sw.replaceChildren();
+  if (!pack) {
+    $('hatFree').classList.add('hat-off');
+    $('hatExtraRow').classList.add('hat-off');
+    previewHat();
+    return;
+  }
+  const want = (saved && saved.hat === pack.id && saved.hat_color ? saved.hat_color : pack.default_color).toLowerCase();
+  if (pack.color === 'choice') {
+    $('hatFree').classList.add('hat-off');
+    const values = pack.colors.map(c => c.value.toLowerCase());
+    const chosen = values.includes(want) ? want : pack.default_color;
+    for (const c of pack.colors) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = c.label;
+      b.dataset.color = c.value;
+      b.style.background = c.value;
+      b.style.color = hatInk(c.value);
+      if (c.value.toLowerCase() === chosen) b.className = 'on';
+      b.onclick = () => { for (const x of sw.querySelectorAll('button')) x.classList.toggle('on', x === b); previewHat(); };
+      sw.appendChild(b);
+    }
+  } else {
+    $('hatFree').classList.remove('hat-off');
+    $('hatColor').value = /^#[0-9a-f]{6}$/i.test(want) ? want : pack.default_color;
+  }
+  if (pack.extra) {
+    $('hatExtraRow').classList.remove('hat-off');
+    $('hatExtraName').textContent = pack.extra;
+    $('hatExtra').checked = !!(saved && saved.hat === pack.id && saved.hat_extra);
+  } else $('hatExtraRow').classList.add('hat-off');
+  previewHat();
+}
+function syncHatForm(s) {
+  if (hatsFailed) {
+    $('hatEmpty').textContent = 'The packs folder could not be read. The saved hat was left as it is.';
+    $('hatEmpty').classList.remove('hat-off');
+    $('hatPick').classList.add('hat-off');
+    return;
+  }
+  const has = hats.length > 0;
+  $('hatEmpty').textContent = 'No hats are installed.';
+  $('hatEmpty').classList.toggle('hat-off', has);
+  $('hatPick').classList.toggle('hat-off', !has);
+  if (!has) { previewHat(); return; }
+  const sel = $('hat');
+  sel.replaceChildren();
+  const none = document.createElement('option');
+  none.value = ''; none.textContent = 'No hat';
+  sel.appendChild(none);
+  for (const h of hats) {
+    const o = document.createElement('option');
+    o.value = h.id; o.textContent = h.name;
+    sel.appendChild(o);
+  }
+  sel.value = s.hat && hats.some(h => h.id === s.hat) ? s.hat : '';
+  showHatFields(s);
+}
 async function load() {
   data = await I('get_data'); const s = data.settings, snap = await I('get_snapshot');
+  try { hats = await I('list_hats') || []; hatsFailed = false; }
+  catch (_) { hats = []; hatsFailed = true; }
+  syncHatForm(s);
   $('warns').innerHTML = (await I('get_warnings')).map(w => `<div>${esc(w)}</div>`).join('');
   const shown = LWPalette.normalize(s.colors); lastBody = shown.body;
   document.querySelectorAll('[data-c]').forEach(i => { if (shown[i.dataset.c]) i.value = shown[i.dataset.c]; });
@@ -36,6 +128,7 @@ async function load() {
   $('tool').value = TOOL_UNLOCK[s.tool] <= level ? s.tool : LWDomain.TOOLS[level]; ch && ch.setTool($('tool').value);
   $('unlockall').checked = !!s.unlock_all;
   $('bs').value = s.buddy_scale; $('ws').value = s.walk_speed; $('bp').value = s.bubble_px; $('buddy').value = s.buddy_name;
+  $('focus').value = s.focus_minutes == null ? 30 : s.focus_minutes;
   for (const id of ['bs', 'ws', 'bp']) $(id).dispatchEvent(new Event('input'));
   const a = data.active, kpw = s.keys_per_word, carry = Math.floor(data.carry_keystrokes / kpw);
   $('await').innerHTML = data.awaiting_next ? `🎉 Project complete! ${carry ? `${carry.toLocaleString()} extra words will carry into the next project. ` : ''}` +
@@ -67,12 +160,17 @@ $('save').onclick = async () => {
     tiers: { short_story: Math.max(1, +$('t1').value | 0), novella: Math.max(1, +$('t2').value | 0), novel: Math.max(1, +$('t3').value | 0) },
     desk_monitor: $('desk').value === '' ? null : +$('desk').value, roam_all_monitors: $('roam').checked, journal_dir: $('jdir').value.trim() || null,
     buddy_scale: +$('bs').value, walk_speed: +$('ws').value, bubble_px: +$('bp').value, buddy_name: $('buddy').value.trim() || data.settings.buddy_name,
-    tool: $('tool').value, unlock_all: $('unlockall').checked, detect_titles: $('dt').checked, detect_media: $('dm').checked, detect_scroll: $('ds').checked, distraction_titles: $('titles').value.split('\n').map(x => x.trim()).filter(Boolean) };
+    tool: $('tool').value, unlock_all: $('unlockall').checked, detect_titles: $('dt').checked, detect_media: $('dm').checked, detect_scroll: $('ds').checked, distraction_titles: $('titles').value.split('\n').map(x => x.trim()).filter(Boolean),
+    focus_minutes: Math.min(180, Math.max(0, +$('focus').value | 0)),
+    ...savedHatFields() };
   try { await I('update_settings', { settings: s }); $('msg').textContent = 'Saved'; setTimeout(() => $('msg').textContent = '', 2000); load(); }
   catch (e) { $('msg').textContent = String(e); }
 };
 $('padd').onclick = async () => { try { await I('new_project', { name: $('pname').value || 'Untitled', tier: $('ptier').value, targetWords: null }); } catch (e) { alert(e); } load(); };
 $('tool').onchange = () => ch.setTool($('tool').value);
+$('hat').onchange = () => showHatFields(null);
+$('hatColor').oninput = () => previewHat();
+$('hatExtra').onchange = () => previewHat();
 // Unlock-all applies immediately (it only changes what is unlocked, not progress)
 $('unlockall').onchange = async () => {
   try { await I('update_settings', { settings: { ...data.settings, unlock_all: $('unlockall').checked } }); }
@@ -86,8 +184,8 @@ window.__TAURI__.event.listen('show-tab', e => tab(e.payload));
 window.__TAURI__.event.listen('settings-changed', () => load());
 LWCharacter.mount($('preview')).then(async c => { ch = c; c.setState('typing'); tab((await I('initial_tab')) || 'settings'); });
 // live motion preview: a small buddy walking at the chosen speed and size, with a sample bubble
-let mp, mpX = 0, mpV = 0, mpDir = 1, mpT = null;
-LWCharacter.mount($('mpChar')).then(c => { mp = c; c.setState('wander'); requestAnimationFrame(mpFrame); });
+let mpX = 0, mpV = 0, mpDir = 1, mpT = null;
+LWCharacter.mount($('mpChar')).then(c => { mp = c; c.setState('wander'); previewHat(); requestAnimationFrame(mpFrame); });
 function mpFrame(t) {
   const dt = mpT == null ? 0 : LWMotion.clampDt(t - mpT); mpT = t;
   const k = +$('bs').value || 1, w = $('motionPreview').clientWidth - 60 * k;

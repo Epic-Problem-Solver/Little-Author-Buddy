@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220">
+  <g class="lw-hat-front">
+    <path d="M32 58 C52 76 82 88 120 90 C158 88 188 76 208 58 C192 52 168 56 150 62 C136 66 104 66 90 62 C72 56 48 52 32 58 Z" fill="var(--hat)"/>
+    <path d="M32 58 C52 76 82 88 120 90 C158 88 188 76 208 58 C192 52 168 56 150 62 C136 66 104 66 90 62 C72 56 48 52 32 58 Z" fill="none" stroke="var(--outline)" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M76 68 C78 50 88 34 100 24 C106 14 112 16 116 28 C118 40 122 40 124 28 C128 16 134 14 140 24 C152 34 162 50 164 68 C152 78 88 78 76 68 Z" fill="var(--hat)"/>
+    <path d="M84 52 C106 46 134 46 156 52 L160 64 C148 72 92 72 80 64 Z" fill="var(--hat-shade)"/>
+    <path d="M76 68 C78 50 88 34 100 24 C106 14 112 16 116 28 C118 40 122 40 124 28 C128 16 134 14 140 24 C152 34 162 50 164 68 C152 78 88 78 76 68 Z" fill="none" stroke="var(--outline)" stroke-width="6" stroke-linejoin="round"/>
+  </g>
+</svg>

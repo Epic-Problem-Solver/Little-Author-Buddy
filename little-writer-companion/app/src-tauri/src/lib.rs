@@ -1,5 +1,8 @@
 mod commands;
 mod distraction;
+mod focus;
+mod games;
+mod packs;
 mod home_geo;
 mod idle;
 mod input;
@@ -18,7 +21,9 @@ use tauri::Manager;
 pub fn run() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
-            commands::race_arrived, commands::get_snapshot, commands::get_data, commands::get_warnings,
+            commands::race_arrived, commands::get_snapshot, commands::list_hats, commands::list_games,
+            commands::focus_press, commands::focus_finish, commands::focus_tag, commands::set_focus_minutes, commands::place_tag_hit,
+            commands::get_data, commands::get_warnings,
             commands::new_project, commands::start_next, commands::update_settings,
             commands::save_letter, commands::export_journal, commands::default_journal_dir, commands::open_settings,
             commands::quit_app, commands::track_window, commands::initial_tab,
@@ -41,6 +46,7 @@ pub fn run() {
             let counters = Arc::new(input::Counters::default());
             let st: state::AppState = Arc::new(std::sync::Mutex::new(state::Shared {
                 data, path, dirty: false, snap: None, warnings, no_save, interactive_until: 0,
+                focus: focus::Session::default(),
             }));
             app.manage(st.clone());
             app.manage(counters.clone());

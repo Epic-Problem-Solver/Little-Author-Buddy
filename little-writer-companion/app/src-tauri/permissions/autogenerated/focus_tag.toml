@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-focus-tag"
+description = "Enables the focus_tag command without any pre-configured scope."
+commands.allow = ["focus_tag"]
+
+[[permission]]
+identifier = "deny-focus-tag"
+description = "Denies the focus_tag command without any pre-configured scope."
+commands.deny = ["focus_tag"]

@@ -195,6 +195,24 @@
           "markdownDescription": "Enables the finish_onboarding command without any pre-configured scope."
         },
         {
+          "description": "Enables the focus_finish command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-focus-finish",
+          "markdownDescription": "Enables the focus_finish command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the focus_press command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-focus-press",
+          "markdownDescription": "Enables the focus_press command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the focus_tag command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-focus-tag",
+          "markdownDescription": "Enables the focus_tag command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_data command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-data",
@@ -219,6 +237,18 @@
           "markdownDescription": "Enables the initial_tab command without any pre-configured scope."
         },
         {
+          "description": "Enables the list_games command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-list-games",
+          "markdownDescription": "Enables the list_games command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the list_hats command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-list-hats",
+          "markdownDescription": "Enables the list_hats command without any pre-configured scope."
+        },
+        {
           "description": "Enables the new_project command without any pre-configured scope.",
           "type": "string",
           "const": "allow-new-project",
@@ -229,6 +259,12 @@
           "type": "string",
           "const": "allow-open-settings",
           "markdownDescription": "Enables the open_settings command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the place_tag_hit command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-place-tag-hit",
+          "markdownDescription": "Enables the place_tag_hit command without any pre-configured scope."
         },
         {
           "description": "Enables the quit_app command without any pre-configured scope.",
@@ -253,6 +289,12 @@
           "type": "string",
           "const": "allow-save-letter",
           "markdownDescription": "Enables the save_letter command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_focus_minutes command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-focus-minutes",
+          "markdownDescription": "Enables the set_focus_minutes command without any pre-configured scope."
         },
         {
           "description": "Enables the start_next command without any pre-configured scope.",
@@ -291,6 +333,24 @@
           "markdownDescription": "Denies the finish_onboarding command without any pre-configured scope."
         },
         {
+          "description": "Denies the focus_finish command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-focus-finish",
+          "markdownDescription": "Denies the focus_finish command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the focus_press command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-focus-press",
+          "markdownDescription": "Denies the focus_press command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the focus_tag command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-focus-tag",
+          "markdownDescription": "Denies the focus_tag command without any pre-configured scope."
+        },
+        {
           "description": "Denies the get_data command without any pre-configured scope.",
           "type": "string",
           "const": "deny-get-data",
@@ -315,6 +375,18 @@
           "markdownDescription": "Denies the initial_tab command without any pre-configured scope."
         },
         {
+          "description": "Denies the list_games command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-list-games",
+          "markdownDescription": "Denies the list_games command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the list_hats command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-list-hats",
+          "markdownDescription": "Denies the list_hats command without any pre-configured scope."
+        },
+        {
           "description": "Denies the new_project command without any pre-configured scope.",
           "type": "string",
           "const": "deny-new-project",
@@ -325,6 +397,12 @@
           "type": "string",
           "const": "deny-open-settings",
           "markdownDescription": "Denies the open_settings command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the place_tag_hit command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-place-tag-hit",
+          "markdownDescription": "Denies the place_tag_hit command without any pre-configured scope."
         },
         {
           "description": "Denies the quit_app command without any pre-configured scope.",
@@ -349,6 +427,12 @@
           "type": "string",
           "const": "deny-save-letter",
           "markdownDescription": "Denies the save_letter command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_focus_minutes command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-focus-minutes",
+          "markdownDescription": "Denies the set_focus_minutes command without any pre-configured scope."
         },
         {
           "description": "Denies the start_next command without any pre-configured scope.",

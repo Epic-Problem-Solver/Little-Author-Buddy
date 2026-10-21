@@ -181,6 +181,48 @@ pub fn install_tray(app: &AppHandle, st: &AppState, counters: &Arc<input::Counte
     Ok(())
 }
 
+/// Open or close the small window that catches a click on Buddy during tag.
+/// The overlay stays click-through, so the rest of the desktop still receives clicks.
+pub fn set_tag_window(app: &AppHandle, on: bool) {
+    let h = app.clone();
+    let _ = app.run_on_main_thread(move || {
+        if on {
+            if h.get_webview_window("taghit").is_some() { return; }
+            let _ = tauri::WebviewWindowBuilder::new(&h, "taghit", tauri::WebviewUrl::App("hit.html".into()))
+                .title("Little Author — Tag")
+                .inner_size(80.0, 80.0)
+                .resizable(false)
+                .decorations(false)
+                .transparent(true)
+                .background_color(tauri::window::Color(0, 0, 0, 0))
+                .always_on_top(true)
+                .skip_taskbar(true)
+                .shadow(false)
+                .focused(false)
+                .visible(true)
+                .content_protected(false)
+                .build();
+        } else if let Some(w) = h.get_webview_window("taghit") {
+            let _ = w.close();
+        }
+    });
+}
+
+pub fn place_tag_window(app: &AppHandle, x: i32, y: i32, w: u32, h: u32) {
+    let hnd = app.clone();
+    let _ = app.run_on_main_thread(move || {
+        let Some(win) = hnd.get_webview_window("taghit") else { return };
+        let _ = win.set_position(PhysicalPosition::new(x, y));
+        let _ = win.set_size(PhysicalSize::new(w.max(8), h.max(8)));
+    });
+}
+
+/// Sample the cursor only during play, and keep the tag catcher in step with the session.
+pub fn sync_game_chrome(app: &AppHandle, play: bool, tag: bool) {
+    signals::GAME_CURSOR.store(play, Ordering::Relaxed);
+    if signals::TAG_HIT.swap(tag, Ordering::Relaxed) != tag { set_tag_window(app, tag); }
+}
+
 pub fn show_overlay(app: &AppHandle) {
     if let Some(w) = app.get_webview_window("overlay") {
         let _ = w.show();

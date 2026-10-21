@@ -127,6 +127,41 @@ pub fn has_compositor() -> bool {
     }
 }
 
+/// Cursor position in physical pixels, top-left origin. Only called while a focus game is playing.
+#[cfg(windows)]
+pub fn cursor_pos() -> Option<(i32, i32)> {
+    use windows::Win32::Foundation::POINT;
+    use windows::Win32::UI::WindowsAndMessaging::GetCursorPos;
+    unsafe {
+        let mut p = POINT::default();
+        GetCursorPos(&mut p).ok()?;
+        Some((p.x, p.y))
+    }
+}
+
+#[cfg(target_os = "linux")]
+pub fn cursor_pos() -> Option<(i32, i32)> {
+    use x11::xlib;
+    unsafe {
+        let d = xlib::XOpenDisplay(std::ptr::null());
+        if d.is_null() { return None; }
+        let root = xlib::XDefaultRootWindow(d);
+        let mut root_r: xlib::Window = 0;
+        let mut child: xlib::Window = 0;
+        let mut rx = 0i32;
+        let mut ry = 0i32;
+        let mut wx = 0i32;
+        let mut wy = 0i32;
+        let mut mask = 0u32;
+        let ok = xlib::XQueryPointer(d, root, &mut root_r, &mut child, &mut rx, &mut ry, &mut wx, &mut wy, &mut mask);
+        xlib::XCloseDisplay(d);
+        if ok == 0 { None } else { Some((rx, ry)) }
+    }
+}
+
+#[cfg(target_os = "macos")]
+pub fn cursor_pos() -> Option<(i32, i32)> { macos_wm::cursor_pos() }
+
 /// Cocoa's window position uses a bottom-left origin on the main display.
 /// Quartz and the rest of this app use a top-left origin, y growing downward.
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]

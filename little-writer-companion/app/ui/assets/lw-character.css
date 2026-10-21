@@ -210,3 +210,15 @@
 .lw-ui-close:hover .lw-ui-glyph{transform:rotate(90deg)}
 .lw-ui:focus-visible{outline:3px solid var(--outline,#241414);outline-offset:2px;border-radius:50%}
 
+/* Hats. Packs fill .lw-hat-back (behind the head), .lw-hat (crown), and .lw-hat-face (inside the face).
+   Optional pieces use .lw-hat-extra and show when data-hat-extra="on". The face group hides them when Buddy turns around. */
+.lw-hat-extra{display:none}
+.lw-char[data-hat-extra=on] .lw-hat-extra{display:inline}
+.lw-hat,.lw-hat-back,.lw-hat-face{pointer-events:none}
+/* Backward cap. The rear brim sits behind the head while we see his face.
+   Turned away, the visor is on the back of his head, top edge along the cap. Unmirrored it angles left; the mirror sends it right. The front strap hides. */
+.lw-cap-brim-away{display:none}
+.lw-char:is([data-body=watching],[data-body=away]) .lw-cap-brim-away{display:inline}
+.lw-char:is([data-body=watching],[data-body=away]) .lw-cap-brim-rear{display:none}
+.lw-char:is([data-body=watching],[data-body=away]) .lw-cap-strap{display:none}
+

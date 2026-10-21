@@ -79,6 +79,19 @@ svg.lw-char
 ```
 Hands: `.lw-hand.lw-hand-l|r > g[transform] > .lw-hand-inner`. Respects `prefers-reduced-motion`.
 
+## Hats
+Supporter hats are not part of the free installer. `app/scripts/sync-assets.sh` does not copy `supporter/`. Each pack is a folder `supporter/hats/<id>/` with `manifest.json` and `hat.svg`. The running app reads the installed copy from `packs/<id>/` beside `state.json`.
+
+`hat.svg` uses the character viewBox `0 0 240 220`. Its groups are copied onto anchors in `character.svg`:
+- `.lw-hat-back` paints before the body (the brim behind the head).
+- `.lw-hat-front` paints into `.lw-hat`, after `.lw-back` and before the face.
+- `.lw-hat-face` paints into `.lw-hat-face` inside the face, so it hides when Buddy turns around.
+
+Fills use `var(--hat)` and `var(--hat-shade)`. The outline is `var(--outline)`. An optional piece uses class `lw-hat-extra` and shows when `data-hat-extra="on"`. The backward cap swaps `.lw-cap-brim-rear`, `.lw-cap-brim-away`, and `.lw-cap-strap` from `lw-character.css`.
+
+## Games
+Supporter games live in `supporter/games/<id>/` with `manifest.json` and `game.json`. `sync-assets.sh` does not copy them. The installed copy is `packs/<id>/` beside `state.json`. Chase and tag are the engines the app runs. `game.json` holds the lines Buddy speaks (`explain`, `cheer`, `away`). Pack scripts are not executed.
+
 ## Changelog
 **v0.4**: taller desk (viewBox still 240×220); three writing tools behind `data-tool`; UI close/gear buttons.
 Possibly breaking: (1) the old trapezoid "paper" in `.lw-desk` is gone; the default tool is now the laptop. (2) The single `.lw-rig` is now two groups (`.lw-rig-back` and `.lw-rig-front`), and `.lw-hand-l` now matches two elements, so a selector like `querySelector('.lw-rig')` only gets the back rig. (3) At the desk the body sits 18px higher (it was 14px), and the sleep pose moved up to match.

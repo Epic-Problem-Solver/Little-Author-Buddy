@@ -1,0 +1,10 @@
+{
+  "id": "beanie",
+  "kind": "hat",
+  "name": "Knit beanie",
+  "minAppVersion": "0.6.2",
+  "color": "free",
+  "defaultColor": "#c4534a",
+  "files": ["hat.svg"],
+  "order": 2
+}

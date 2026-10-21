@@ -1,5 +1,8 @@
 //! Invoke handlers. Window creation stays async so WebView2 does not deadlock.
 
+use crate::focus::{self, Phase};
+use crate::games;
+use crate::packs;
 use crate::signals;
 use crate::state::{self, AppState};
 use crate::store::{self, Tier};
@@ -10,6 +13,96 @@ use tauri::{AppHandle, Emitter, Manager, State};
 
 #[tauri::command]
 pub fn get_snapshot(st: State<AppState>) -> Option<state::Snapshot> { st.lock().unwrap().snap.clone() }
+
+/// Installed supporter hats. The SVG is read once here; the paint snapshot only carries the choice.
+#[tauri::command]
+pub fn list_hats(st: State<AppState>) -> Vec<packs::HatInfo> {
+    let dir = { let s = st.lock().unwrap(); packs::packs_dir(&s.path) };
+    packs::list(&dir)
+}
+
+/// Installed supporter games. Lines only. The app runs chase and tag. Pack scripts are not loaded.
+#[tauri::command]
+pub fn list_games(st: State<AppState>) -> Vec<games::GameInfo> {
+    let dir = { let s = st.lock().unwrap(); packs::packs_dir(&s.path) };
+    games::list(&dir)
+}
+
+fn publish(st: &mut state::Shared, spoken: Option<focus::Spoken>) -> (Option<state::Snapshot>, Option<games::FocusSay>) {
+    if let Some(snap) = st.snap.as_mut() { state::write_focus(snap, &st.focus, st.data.settings.focus_minutes); }
+    let say = spoken.map(|sp| games::say_event(sp.kind, &sp.game, &st.data.settings.buddy_name, &packs::packs_dir(&st.path)));
+    (st.snap.clone(), say)
+}
+
+fn emit_focus(app: &AppHandle, snap: Option<state::Snapshot>, say: Option<games::FocusSay>) {
+    if let Some(snap) = snap { let _ = app.emit("companion-state", &snap); }
+    if let Some(say) = say { let _ = app.emit("focus-say", &say); }
+}
+
+/// Desk game button. The first click explains. The next click on that same game starts it.
+#[tauri::command]
+pub fn focus_press(app: AppHandle, st: State<AppState>, game: String) {
+    let game = game.trim().to_string();
+    let (snap, say, shared_play) = {
+        let mut s = st.lock().unwrap();
+        if !games::known(&packs::packs_dir(&s.path), &game) { return; }
+        let spoken = s.focus.press(&game);
+        let published = publish(&mut s, spoken);
+        let play = s.focus.phase == Phase::Play;
+        let tag = play && s.focus.game == "tag";
+        (published.0, published.1, (play, tag))
+    };
+    windows::sync_game_chrome(&app, shared_play.0, shared_play.1);
+    emit_focus(&app, snap, say);
+}
+
+/// The overlay reports a catch, a tag, or that the celebration is over.
+#[tauri::command]
+pub fn focus_finish(app: AppHandle, st: State<AppState>) {
+    let snap = {
+        let mut s = st.lock().unwrap();
+        if !s.focus.finish() { return; }
+        publish(&mut s, None).0
+    };
+    windows::sync_game_chrome(&app, false, false);
+    emit_focus(&app, snap, None);
+}
+
+/// The tag catcher was clicked. The overlay celebrates, then calls `focus_finish`.
+#[tauri::command]
+pub fn focus_tag(app: AppHandle, st: State<AppState>) {
+    let ok = {
+        let s = st.lock().unwrap();
+        s.focus.phase == Phase::Play && s.focus.game == "tag"
+    };
+    if ok { let _ = app.emit("tag-click", ()); }
+}
+
+/// Move the tag catcher over Buddy. Physical pixels. Ignored unless tag is playing.
+#[tauri::command]
+pub fn place_tag_hit(app: AppHandle, st: State<AppState>, x: i32, y: i32, w: u32, h: u32) {
+    let ok = {
+        let s = st.lock().unwrap();
+        s.focus.phase == Phase::Play && s.focus.game == "tag"
+    };
+    if ok { windows::place_tag_window(&app, x, y, w, h); }
+}
+
+/// Desk − / + and any caller that sets the quiet-minute goal directly.
+#[tauri::command]
+pub fn set_focus_minutes(app: AppHandle, st: State<AppState>, minutes: u32) {
+    let minutes = store::clamp_focus_minutes(minutes);
+    let (snap, say) = {
+        let mut s = st.lock().unwrap();
+        if s.data.settings.focus_minutes == minutes { return; }
+        s.data.settings.focus_minutes = minutes;
+        let spoken = s.focus.limit(focus::limit_ms(minutes));
+        s.save();
+        publish(&mut s, spoken)
+    };
+    emit_focus(&app, snap, say);
+    let _ = app.emit_to("settings", "settings-changed", ());
+}
 
 /// Settings document: projects, queue, journal, and the form. The overlay uses `get_snapshot` instead.
 #[tauri::command]
@@ -43,7 +136,7 @@ pub fn start_next(st: State<AppState>) -> bool {
 }
 
 #[tauri::command]
-pub fn update_settings(st: State<AppState>, settings: store::Settings) -> Result<(), String> {
+pub fn update_settings(app: AppHandle, st: State<AppState>, settings: store::Settings) -> Result<(), String> {
     let mut s = st.lock().unwrap();
     let mut v = settings;
     v.keys_per_word = store::clamp_kpw(v.keys_per_word);
@@ -62,8 +155,19 @@ pub fn update_settings(st: State<AppState>, settings: store::Settings) -> Result
         Some(p) if store::journal_dir_ok(p) => Some(p.to_string()),
         Some(_) => return Err("journal folder must be an absolute path without ..".into()),
     };
+    packs::clamp_saved(&mut v.hat, &mut v.hat_color, &mut v.hat_extra, &packs::packs_dir(&s.path));
+    v.focus_minutes = store::clamp_focus_minutes(v.focus_minutes);
+    let focus_changed = v.focus_minutes != s.data.settings.focus_minutes;
     s.data.settings = v;
+    let minutes = s.data.settings.focus_minutes;
+    let spoken = if focus_changed { s.focus.limit(focus::limit_ms(minutes)) } else { None };
     s.save();
+    let published = publish(&mut s, spoken);
+    let play = s.focus.phase == Phase::Play;
+    let tag = play && s.focus.game == "tag";
+    drop(s);
+    windows::sync_game_chrome(&app, play, tag);
+    emit_focus(&app, published.0, published.1);
     Ok(())
 }
 

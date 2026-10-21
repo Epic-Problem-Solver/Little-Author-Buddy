@@ -16,6 +16,16 @@
   <div id="motionPreview"><div id="mpWalker"><div id="mpBubble">Hello!</div><div id="mpChar"></div></div></div>
   <p class="info">Size and speed also adapt automatically to each monitor's scale.</p></fieldset>
  <fieldset><legend>Buddy</legend><label>Name <input id="buddy" maxlength="40"></label></fieldset>
+ <fieldset><legend>Hat</legend>
+  <p class="info">Supporter hats installed in the packs folder next to state.json. They do not change writing progress.</p>
+  <p class="info hat-off" id="hatEmpty">No hats are installed.</p>
+  <div id="hatPick" class="hat-off">
+   <label>Hat <select id="hat"></select></label>
+   <span class="sw hat-off" id="hatFree"><input type="color" id="hatColor"><span>Hat colour</span></span>
+   <div id="hatSwatches"></div>
+   <label id="hatExtraRow" class="hat-off"><input type="checkbox" id="hatExtra"> <span id="hatExtraName"></span></label>
+  </div>
+ </fieldset>
  <fieldset><legend>Writing tool</legend>
   <label>Tool <select id="tool"><option value="pen">Feather pen</option><option value="typewriter">Typewriter 🔒 finish a Short Story</option><option value="laptop">Laptop 🔒 finish a Novella</option></select></label>
   <label><input type="checkbox" id="unlockall"> Unlock all (testing) — unlocks every tier and tool without changing your real progress</label></fieldset>
@@ -32,6 +42,9 @@
   <label><input type="checkbox" id="dm"> Media playback</label>
   <label><input type="checkbox" id="ds"> Scrolling without typing</label>
   <label>Titles (one per line, case-insensitive substring of the focused window)<br><textarea id="titles" rows="5"></textarea></label></fieldset>
+ <fieldset><legend>Focus timer</legend>
+  <label>Quiet minutes before a game <input type="number" id="focus" min="0" max="180" step="1"></label>
+  <p class="info">Counts while Buddy is writing, thinking, or wandering. A distraction resets it. 0 turns the invitation off. The timer and its buttons sit on the front of the desk.</p></fieldset>
  <fieldset><legend>Letter journal folder</legend><input id="jdir"></fieldset>
  <button id="save">Save</button><span id="msg"></span>
 </section>
@@ -50,7 +63,8 @@
   <li>Window titles are read only to spot distractions and are never saved or logged.</li>
   <li>Media detection reads only playing/paused. Scroll detection counts wheel ticks only.</li>
   <li>“Pause listening” in the tray stops all counting.</li>
-  <li>Data: <code id="dpath">state.json</code> in the app data folder; fan letters as .md files in your journal folder. Uninstalling keeps your data unless you tick “delete application data”.</li>
+  <li>A focus game reads the cursor position only while it is playing. Tag also receives a click on Buddy. Neither is saved.</li>
+  <li>Data: <code id="dpath">state.json</code> in the app data folder; fan letters as .md files in your journal folder. Supporter hats and games are read from a packs folder next to state.json. The app does not download them. Uninstalling keeps your data unless you tick “delete application data”.</li>
  </ul>
 </section>
 <script src="domain.js"></script>

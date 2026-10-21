@@ -1,0 +1,9 @@
+{
+  "id": "tag",
+  "kind": "game",
+  "name": "Tag",
+  "minAppVersion": "0.6.2",
+  "engine": "tag",
+  "order": 2,
+  "files": ["game.json"]
+}

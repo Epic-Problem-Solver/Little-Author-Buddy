@@ -7,6 +7,13 @@ fn main() {
             tauri_build::AppManifest::new().commands(&[
                 "race_arrived",
                 "get_snapshot",
+                "list_hats",
+                "list_games",
+                "focus_press",
+                "focus_finish",
+                "focus_tag",
+                "set_focus_minutes",
+                "place_tag_hit",
                 "get_data",
                 "get_warnings",
                 "new_project",

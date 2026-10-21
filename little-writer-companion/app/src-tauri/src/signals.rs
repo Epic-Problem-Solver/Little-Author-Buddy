@@ -12,3 +12,7 @@ pub static SETTINGS_TAB: Mutex<String> = Mutex::new(String::new());
 pub static REAL_MONS: Mutex<Vec<(i32, i32, u32, u32)>> = Mutex::new(Vec::new());
 pub static HOME_RESIZED_ONCE: AtomicBool = AtomicBool::new(false);
 pub static COMPOSITOR: OnceLock<bool> = OnceLock::new();
+/// True only while a focus game is playing, so the cursor is not sampled the rest of the time.
+pub static GAME_CURSOR: AtomicBool = AtomicBool::new(false);
+/// True while the tag click-catcher window should exist.
+pub static TAG_HIT: AtomicBool = AtomicBool::new(false);

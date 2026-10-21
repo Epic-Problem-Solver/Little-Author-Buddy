@@ -1,0 +1,10 @@
+{
+  "id": "party",
+  "kind": "hat",
+  "name": "Party hat",
+  "minAppVersion": "0.6.2",
+  "color": "free",
+  "defaultColor": "#e0a030",
+  "files": ["hat.svg"],
+  "order": 3
+}

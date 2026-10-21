@@ -2,6 +2,8 @@
 //! progress model what changed, then emits the paint view.
 
 use crate::distraction::{self, Policy};
+use crate::focus::{self, Phase};
+use crate::games;
 use crate::home_geo;
 use crate::idle::{Inputs, Machine, Params};
 use crate::input;
@@ -20,6 +22,9 @@ use tauri::{AppHandle, Emitter};
 
 #[derive(Serialize, Clone)]
 struct TargetEvent { id: u64, #[serde(flatten)] target: platform::Target }
+
+#[derive(Serialize, Clone)]
+struct CursorEv { x: i32, y: i32 }
 
 struct TickCfg {
     idle_ms: u64,
@@ -57,6 +62,9 @@ pub fn tracker_loop(app: AppHandle) {
         std::thread::sleep(Duration::from_millis(40));
         let id = *signals::TRACK.lock().unwrap();
         if let Some(id) = id { let _ = app.emit("target-rect", TargetEvent { id, target: platform::target_rect(id) }); }
+        if signals::GAME_CURSOR.load(Ordering::Relaxed) {
+            if let Some((x, y)) = platform::cursor_pos() { let _ = app.emit("game-cursor", CursorEv { x, y }); }
+        }
     }
 }
 
@@ -71,6 +79,7 @@ pub fn tick_loop(app: AppHandle, st: AppState, c: Arc<input::Counters>) {
     let mut media = false;
     let mut last_save = state::now_ms();
     let mut home_db = state::Debounce::new(st.lock().unwrap().data.settings.home_pos);
+    let mut focus_at = state::now_ms();
     loop {
         std::thread::sleep(Duration::from_millis(250));
         tick += 1;
@@ -101,22 +110,32 @@ pub fn tick_loop(app: AppHandle, st: AppState, c: Arc<input::Counters>) {
 
         let home = home_geo::get();
         let home_side = home.map_or("right", |h| windows::desk_side((h.0, h.1, h.2, h.3), &signals::REAL_MONS.lock().unwrap()));
-        let (view, credit) = {
+        let dt = now.saturating_sub(focus_at).min(2_000);
+        focus_at = now;
+        let (view, credit, spoken, buddy, packs) = {
             let mut s = st.lock().unwrap();
             let credit = s.data.credit(dk, now);
             if credit.changed { s.dirty = true; }
             if credit.completed.is_some() { s.save(); last_save = now; }
+            let limit_ms = focus::limit_ms(s.data.settings.focus_minutes);
+            let paused = c.paused.load(Ordering::Relaxed);
+            let spoken = s.focus.tick(focus::TickIn { dt_ms: dt, mode, paused, keys: dk, limit_ms });
             let listener_error = c.listener_error.lock().unwrap().clone();
             let view = state::paint(&s, Frame {
-                mode, paused: c.paused.load(Ordering::Relaxed), origin, monitors: monitors.clone(),
+                mode, paused, origin, monitors: monitors.clone(),
                 fg: fg.clone(), reason: reason.clone(), home, home_side,
                 force_hide: std::env::var("LWC_FORCE_HIDE").is_ok(), listener_error,
             });
             s.snap = Some(view.clone());
             if s.dirty && now - last_save > 2_000 { s.save(); last_save = now; }
-            (view, credit)
+            let buddy = s.data.settings.buddy_name.clone();
+            let packs = crate::packs::packs_dir(&s.path);
+            (view, credit, spoken, buddy, packs)
         };
+        let say = spoken.map(|sp| games::say_event(sp.kind, &sp.game, &buddy, &packs));
+        windows::sync_game_chrome(&app, view.focus_phase == Phase::Play, view.focus_phase == Phase::Play && view.focus_game == "tag");
         let _ = app.emit("companion-state", &view);
+        if let Some(say) = say { let _ = app.emit("focus-say", &say); }
         if let Some(n) = credit.notice { let _ = app.emit("notice", n); }
         if let Some(done) = credit.completed {
             let _ = app.emit("project-complete", &done);

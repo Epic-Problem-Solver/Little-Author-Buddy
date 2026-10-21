@@ -10,12 +10,17 @@
   const RACE_HOLD_MS = 1000;
 
   function atHome(mode) { return HOME_MODES.includes(mode); }
+  // Invite and explain come from whichever window is showing Buddy. Play moves him onto the overlay.
+  function focusAtDesk(s) {
+    if (!s || s.focus_phase === 'play') return false;
+    return atHome(s.paused ? 'paused' : s.mode);
+  }
   function realLevel(completed) {
     if (completed.some(p => p.tier === TIER.novella || p.tier === TIER.novel)) return 2;
     if (completed.some(p => p.tier === TIER.shortStory)) return 1;
     return 0;
   }
 
-  const D = { TIER, TOOL, TOOLS, TIER_UNLOCK, TOOL_UNLOCK, HOME_MODES, RACE_HOLD_MS, atHome, realLevel };
+  const D = { TIER, TOOL, TOOLS, TIER_UNLOCK, TOOL_UNLOCK, HOME_MODES, RACE_HOLD_MS, atHome, focusAtDesk, realLevel };
   if (typeof module !== 'undefined' && module.exports) module.exports = D; else root.LWDomain = D;
 })(this);

@@ -1,6 +1,7 @@
 //! App state and the paint view the overlay and desk actually render.
 //! Journal, queue, and the settings form stay on `get_data`.
 
+use crate::focus::{self, Phase};
 use crate::idle::Mode;
 use crate::platform;
 use crate::store;
@@ -72,6 +73,15 @@ pub struct Snapshot {
     pub unlock_all: bool,
     pub home: Option<(i32, i32, u32, u32, f64)>,
     pub home_side: &'static str,
+    pub hat: String,
+    pub hat_color: String,
+    pub hat_extra: bool,
+    /// Quiet time counted toward the focus game, and the limit. `focus_limit_ms` 0 is off.
+    pub focus_ms: u64,
+    pub focus_limit_ms: u64,
+    pub focus_ready: bool,
+    pub focus_phase: Phase,
+    pub focus_game: String,
 }
 
 /// Samples the tick already collected. `paint` does not call into windows.
@@ -97,6 +107,8 @@ pub struct Shared {
     /// A corrupt file could not be moved aside: never write over it.
     pub no_save: bool,
     pub interactive_until: u64,
+    /// Focus streak and the game it unlocked. Not written to state.json.
+    pub focus: focus::Session,
 }
 
 impl Shared {
@@ -157,8 +169,24 @@ pub fn paint(shared: &Shared, frame: Frame) -> Snapshot {
         unlock_all: data.settings.unlock_all,
         home: frame.home,
         home_side: frame.home_side,
+        hat: data.settings.hat.clone(),
+        hat_color: data.settings.hat_color.clone(),
+        hat_extra: data.settings.hat_extra,
+        focus_ms: shared.focus.elapsed_ms,
+        focus_limit_ms: focus::limit_ms(data.settings.focus_minutes),
+        focus_ready: shared.focus.ready,
+        focus_phase: shared.focus.phase,
+        focus_game: shared.focus.game.clone(),
     };
     snap
+}
+
+pub fn write_focus(snap: &mut Snapshot, focus: &focus::Session, minutes: u32) {
+    snap.focus_ms = focus.elapsed_ms;
+    snap.focus_limit_ms = focus::limit_ms(minutes);
+    snap.focus_ready = focus.ready;
+    snap.focus_phase = focus.phase;
+    snap.focus_game = focus.game.clone();
 }
 
 #[cfg(test)]
@@ -189,7 +217,7 @@ mod tests {
         let secret = "TopSecretWindowTitle";
         let shared = Shared {
             data: store::Data::default(), path: PathBuf::new(), dirty: false, snap: None,
-            warnings: vec![], no_save: true, interactive_until: 0,
+            warnings: vec![], no_save: true, interactive_until: 0, focus: focus::Session::default(),
         };
         let frame = Frame {
             mode: Mode::Watch, paused: false, origin: (0, 0), monitors: vec![],

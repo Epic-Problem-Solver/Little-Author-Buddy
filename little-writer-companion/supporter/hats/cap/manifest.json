@@ -1,0 +1,10 @@
+{
+  "id": "cap",
+  "kind": "hat",
+  "name": "Backward cap",
+  "minAppVersion": "0.6.2",
+  "color": "free",
+  "defaultColor": "#3d6b8a",
+  "files": ["hat.svg"],
+  "order": 5
+}

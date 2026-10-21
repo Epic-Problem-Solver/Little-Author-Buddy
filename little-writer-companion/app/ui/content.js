@@ -7,7 +7,7 @@ window.LWContent = (() => {
       inspirational: [{ from: 'Anonymous', body: '"Start writing, no matter what. The water does not flow until the faucet is turned on." — Louis L\'Amour' }],
       humorous: [{ from: 'Your cat', body: 'You typed {wordCount} words and none of them were "feed the cat". Disappointed.' }],
     } },
-    flavour: { states: { sleeping: ['zzz…'], wandering: ['Just stretching…'], watchingVideo: ['Ooh, what\'s this?'], backToWork: ['Back to it!'], projectComplete: ['We did it!'] } },
+    flavour: { states: { sleeping: ['zzz…'], wandering: ['Just stretching…'], watchingVideo: ['Ooh, what\'s this?'], backToWork: ['Back to it!'], projectComplete: ['We did it!'], focusBreak: ['Ooh! Time for a game!'] } },
   };
   let letters = FB.letters, flavour = FB.flavour;
   const get = async p => { try { const r = await fetch(p); if (r.ok) return await r.json(); } catch (_) {} return null; };

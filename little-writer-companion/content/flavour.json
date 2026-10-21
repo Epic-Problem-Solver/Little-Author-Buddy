@@ -75,6 +75,13 @@
       "{buddy} is SO proud of you!",
       "{projectTitle}: written by you, supervised by {buddy}.",
       "{buddy} would like a tiny bow too, please."
+    ],
+    "focusBreak": [
+      "Ooh! Time for a game!",
+      "Look at that stretch. {buddy} calls a game.",
+      "Ooh! The quiet held. A game?",
+      "{buddy} kept the streak. Ooh, a game!",
+      "That was a long, good sit. Game?"
     ]
   }
 }

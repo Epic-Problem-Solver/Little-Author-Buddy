@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220">
+  <g class="lw-hat-front">
+    <path d="M98 50 L120 20 L142 50 Z" fill="var(--hat)"/>
+    <path d="M113 32 H127 L130 38 H110 Z" fill="var(--hat-shade)"/>
+    <path d="M108 42 H132 L136 47 H104 Z" fill="var(--hat-shade)"/>
+    <path d="M98 50 L120 20 L142 50" fill="none" stroke="var(--outline)" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M98 50 A22 7 0 0 0 142 50 Z" fill="var(--hat)"/>
+    <path d="M98 50 A22 7 0 0 0 142 50" fill="none" stroke="var(--outline)" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="120" cy="22" r="5.5" fill="#f6efe2" stroke="var(--outline)" stroke-width="5"/>
+  </g>
+</svg>

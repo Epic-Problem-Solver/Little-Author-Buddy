@@ -1,0 +1,10 @@
+{
+  "id": "beret",
+  "kind": "hat",
+  "name": "Beret",
+  "minAppVersion": "0.6.2",
+  "color": "free",
+  "defaultColor": "#2f3a66",
+  "files": ["hat.svg"],
+  "order": 1
+}
