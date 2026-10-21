@@ -62,8 +62,9 @@ jobs:
       - name: Check both processor types
         working-directory: little-writer-companion/app/src-tauri
         run: |
-          bin=$(find target/universal-apple-darwin/release/bundle/macos -type f -path '*/Contents/MacOS/*' -print -quit)
+          bin=target/universal-apple-darwin/release/little-writer-companion
           echo "binary: $bin"
+          test -f "$bin"
           info=$(lipo -info "$bin")
           echo "$info"
           echo "$info" | grep -q x86_64
