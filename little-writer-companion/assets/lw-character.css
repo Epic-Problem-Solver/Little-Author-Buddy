@@ -184,6 +184,23 @@
 @keyframes lw-rush{0%,100%{transform:rotate(-14deg) translate(-4px,0)}50%{transform:rotate(-14deg) translate(-4px,-9px)}}
 @keyframes lw-trail{0%,100%{transform:translate(0,-4px)}50%{transform:translate(6px,5px)}}
 
+/* High five. The front hand moves to the side the unmirrored art faces, opposite the backward-cap brim.
+   data-slap plays the meeting swing once, then the hand is down. */
+.lw-char[data-body=highfive] .lw-rig{animation:lw-breathe 3s ease-in-out infinite}
+.lw-char[data-body=highfive] .lw-rig-front .lw-hand-r{
+  transform:translate(-148px,-78px);
+  transition:transform .16s ease-out}
+.lw-char[data-body=highfive] .lw-rig-front .lw-hand-r .lw-hand-inner{animation:lw-highfive-bob .7s ease-in-out infinite}
+@keyframes lw-highfive-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.lw-char[data-body=highfive][data-slap=on] .lw-rig-front .lw-hand-r{
+  transition:none;
+  animation:lw-highfive-slap .42s ease-in forwards}
+.lw-char[data-body=highfive][data-slap=on] .lw-rig-front .lw-hand-r .lw-hand-inner{animation:none}
+@keyframes lw-highfive-slap{
+  0%{transform:translate(-148px,-78px)}
+  46%{transform:translate(-148px,16px)}
+  100%{transform:translate(0,0)}}
+
 /* Zzz stays readable when the scene is mirrored */
 .lw-char[data-side=left]:is([data-body=typing],[data-body=sleeping]) .lw-zzz text{animation-name:lw-z-m}
 @keyframes lw-z-m{0%{opacity:0;transform:translate(-10px,10px) scale(-.6,.6)}30%{opacity:1}100%{opacity:0;transform:translate(8px,-10px) scale(-1.2,1.2)}}

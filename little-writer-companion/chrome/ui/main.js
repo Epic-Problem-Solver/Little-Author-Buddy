@@ -241,6 +241,7 @@ function beginCheer() {
   celebrating = true;
   ch.setFace('proud');
   ch.setBody('idle');
+  if (ch.el.hasAttribute('data-slap')) ch.el.removeAttribute('data-slap');
   const id = snap.focus_game;
   const g = games.find(x => x.id === id);
   const fallback = { tag: 'You got {buddy}!', redlight: 'You made it!', highfive: 'High five!', warmer: 'You found {buddy}!' };
@@ -259,6 +260,34 @@ function freshMem(id) {
     };
   }
   return gameMem;
+}
+// Happy window holds the hand up. A counted click swings it down, then the cheer waits out that swing.
+function poseHighfive(mem, n) {
+  const now = Date.now();
+  if (n.hits === 0) mem.shownHits = 0;
+  else if (n.hits > (mem.shownHits || 0)) {
+    mem.shownHits = n.hits;
+    mem.slapUntil = now + 420;
+    if (ch.el.getAttribute('data-slap') === 'on') {
+      ch.el.removeAttribute('data-slap');
+      void ch.el.getBoundingClientRect();
+    }
+  }
+  if (mem.slapUntil && now < mem.slapUntil) {
+    ch.setFace('excited');
+    applyLook('highfive', 'right');
+    if (ch.el.getAttribute('data-slap') !== 'on') ch.el.setAttribute('data-slap', 'on');
+    return false;
+  }
+  if (ch.el.hasAttribute('data-slap')) ch.el.removeAttribute('data-slap');
+  if (mem.pendingCheer) {
+    mem.pendingCheer = false;
+    beginCheer();
+    return true;
+  }
+  ch.setFace(n.happy ? 'excited' : 'focused');
+  applyLook(n.happy ? 'highfive' : 'idle', 'right');
+  return false;
 }
 function warmerSpot(k) {
   const ms = monitorsCss();
@@ -329,12 +358,10 @@ function stepGame(dt) {
     const clicked = gameClick;
     gameClick = false;
     const n = LWGames.highfive(mem, dt, clicked);
-    ch.setBody('idle');
-    ch.setFace(n.happy ? 'excited' : 'focused');
-    applyLook('idle', 'right');
+    if (n.caught) mem.pendingCheer = true;
+    if (poseHighfive(mem, n)) return;
     placeTag(k);
-    if (n.caught) beginCheer();
-    else if (clicked && n.hits > 0 && n.hits < LWGames.HIGHFIVE_GOAL) say(null, n.hits === 1 ? 'One!' : 'Two!', 900);
+    if (!n.caught && clicked && n.hits > 0 && n.hits < LWGames.HIGHFIVE_GOAL) say(null, n.hits === 1 ? 'One!' : 'Two!', 900);
     return;
   }
   const speed = ((snap.walk_speed) || 96) * k * 2.2;
@@ -417,6 +444,9 @@ function showFocus(s) {
       ch.setWalkDir(t[0] < pos[0] ? 'left' : 'right');
       setGoal(t);
     }
+  } else if (entering && s.focus_game === 'highfive') {
+    ch.setFace('excited');
+    applyLook('highfive', 'right');
   } else if (!celebrating && (s.focus_game === 'chase' || s.focus_game === 'tag') && ch.el.getAttribute('data-body') !== 'rushing') {
     ch.setFace('excited');
     ch.setBody('rushing');
