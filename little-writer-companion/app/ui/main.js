@@ -209,7 +209,7 @@ function placeBubble(k) {
 }
 
 // ---- state ------------------------------------------------------------------------------
-let raceHoldUntil = 0, rushing = false, arrivedSent = false, handedOff = false, settling = false, focusBackSent = false, explainPlaces = 0;
+let raceHoldUntil = 0, rushing = false, arrivedSent = false, handedOff = false, settling = false, focusBackSent = false;
 function say(key, text, ms) {
   const t = text || LWContent.line(key, { buddy: (snap && snap.buddy) || 'Buddy' }); if (!t) return;
   bubble.textContent = t; bubble.classList.add('on'); clearTimeout(bubbleT); bubbleT = setTimeout(() => bubble.classList.remove('on'), ms || 5000);
@@ -386,7 +386,7 @@ function syncHud(s, mode) {
 }
 function focusOut(s) {
   const phase = s && s.focus_phase;
-  return phase === 'ask' || phase === 'explain' || phase === 'play' || phase === 'back';
+  return phase === 'play' || phase === 'back';
 }
 function showFocus(s) {
   const phase = s.focus_phase;
@@ -397,26 +397,19 @@ function showFocus(s) {
     handedOff = false;
     settling = false;
     arrivedSent = false;
-    if (phase === 'play') { hitSent = ''; gameMem = null; gameClick = false; path = []; goal = pos ? pos.slice() : goal; }
+    const c = focusCenter();
+    pos = c.slice();
+    path = [];
+    goal = pos.slice();
+    if (phase === 'play') { hitSent = ''; gameMem = null; gameClick = false; }
     if (phase === 'back') { focusBackSent = false; rushing = true; }
-    if (phase === 'ask' || phase === 'explain') rushing = false;
-    if (phase === 'explain') { hitSent = ''; explainPlaces = 45; }
   }
   lastMode = modeName;
   ch.setColors(s.colors);
   ch.setTool(s.tool);
   bubble.style.fontSize = ((s.bubble_px || 12)) + 'px';
   comp.style.visibility = 'visible';
-  if (phase === 'ask' || phase === 'explain') {
-    setGoal(focusCenter(), 16);
-    if (!path.length) {
-      ch.setFace('curious');
-      applyLook('idle', visualLook());
-    } else if (ch.el.getAttribute('data-body') !== 'walking') {
-      ch.setFace('curious');
-      applyLook('walking', visualLook());
-    }
-  } else if (phase === 'back') {
+  if (phase === 'back') {
     if (entering) {
       ch.setFace('excited');
       ch.setState('race_back');
@@ -434,6 +427,13 @@ function onState(s) {
   snap = s;
   if (!pos) pos = deskPos();
   const mode = s.paused ? 'paused' : s.mode;
+  const phase = s.focus_phase;
+  if (phase === 'ask' || phase === 'explain') {
+    path = [];
+    if (pos) goal = pos.slice();
+    comp.style.visibility = 'hidden';
+    return;
+  }
   if (focusOut(s)) { showFocus(s); return; }
   if (celebrating) celebrating = false;
   gameMem = null;
@@ -471,10 +471,6 @@ function frame(t) {
     if ((lastMode === 'focus_ask' || lastMode === 'focus_explain') && !path.length) {
       ch.setFace('curious');
       applyLook('idle', visualLook());
-    }
-    if (snap && snap.focus_phase === 'explain') {
-      if (explainPlaces > 0) { explainPlaces--; hitSent = ''; }
-      placeTag(kNow);
     }
     if (lastMode === 'focus_back' && !focusBackSent) {
       const t = raceTarget(kNow);
@@ -538,6 +534,8 @@ async function showLetter(p) {
   });
   T.event.listen('focus-say', e => {
     const p = e.payload || {};
+    const phase = snap && snap.focus_phase;
+    if (phase !== 'play' && phase !== 'back') return;
     if (LWDomain.focusAtDesk(snap)) return;
     const buddy = (snap && snap.buddy) || 'Buddy';
     const text = p.text || (p.kind === 'invite' ? LWContent.line('focusBreak', { buddy }) : '');

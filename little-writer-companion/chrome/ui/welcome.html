@@ -1,0 +1,42 @@
+<!doctype html><html><head><script src="../files.js"></script><script src="../host.js"></script><meta charset="utf-8"><title>Welcome back</title>
+<style>
+body{font:14px system-ui,sans-serif;background:#f3e4cb;color:#241414;margin:0;padding:16px 18px 14px}
+h2{margin:0 0 8px;font-size:18px}
+#lead{margin:0 0 12px}
+#notes{max-height:380px;overflow:auto}
+h3{margin:0 0 4px;font-size:14px}
+section{margin:0 0 12px}
+ul{margin:0;padding-left:18px}
+li{margin:4px 0}
+.nav{display:flex;justify-content:flex-end;margin-top:8px}
+button{padding:6px 14px}
+</style></head><body>
+<h2>Welcome back</h2>
+<p id="lead"></p>
+<div id="notes"></div>
+<div class="nav"><button id="done" type="button">Back to the desk</button></div>
+<script>
+const I = (...a) => window.__TAURI__.core.invoke(...a);
+function addSection(parent, section) {
+  const block = document.createElement('section');
+  const heading = document.createElement('h3');
+  heading.textContent = 'Version ' + section.version;
+  block.appendChild(heading);
+  const list = document.createElement('ul');
+  (section.lines || []).forEach((line) => {
+    const item = document.createElement('li');
+    item.textContent = line;
+    list.appendChild(item);
+  });
+  block.appendChild(list);
+  parent.appendChild(block);
+}
+I('get_welcome').then((view) => {
+  const name = (view && view.buddy) || 'Buddy';
+  document.getElementById('lead').textContent = name + ' kept your stories, settings, and letters.';
+  const notes = document.getElementById('notes');
+  ((view && view.sections) || []).forEach((section) => addSection(notes, section));
+});
+document.getElementById('done').onclick = () => I('dismiss_welcome');
+</script>
+</body></html>

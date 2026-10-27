@@ -1,0 +1,8 @@
+{
+  "identifier": "welcome",
+  "windows": ["welcome"],
+  "permissions": [
+    "allow-get-welcome",
+    "allow-dismiss-welcome"
+  ]
+}

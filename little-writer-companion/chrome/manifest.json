@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Little Author Buddy",
+  "version": "0.8.0",
+  "description": "A writing companion for Chrome. Letter keys on web pages advance the story. Key contents are never stored.",
+  "minimum_chrome_version": "114",
+  "permissions": ["storage", "tabs", "windows", "system.display", "alarms", "alwaysOnTopWindows"],
+  "host_permissions": ["<all_urls>"],
+  "background": { "service_worker": "background.js" },
+  "action": {
+    "default_title": "Little Author Buddy",
+    "default_popup": "action.html",
+    "default_icon": { "32": "icons/32.png", "128": "icons/128.png" }
+  },
+  "icons": { "32": "icons/32.png", "128": "icons/128.png" },
+  "content_scripts": [{
+    "matches": ["<all_urls>"],
+    "js": ["content.js"],
+    "all_frames": true,
+    "match_about_blank": true,
+    "run_at": "document_start"
+  }],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
+  }
+}

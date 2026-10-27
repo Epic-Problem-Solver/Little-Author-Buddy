@@ -82,7 +82,7 @@ pub struct Settings {
     pub hat_color: String,
     /// Shows the pack's optional extra piece. Forced off when that pack has none.
     pub hat_extra: bool,
-    /// Writing minutes before Buddy offers a game. 0 turns the offer off. Clamped to 0–180.
+    /// Writing minutes in a sprint before Buddy offers a game. 0 turns the offer off. Clamped to 0–180.
     pub focus_minutes: u32,
 }
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -251,6 +251,8 @@ pub struct Data {
     pub awaiting_next: bool,
     /// None = save from before v0.5 (migrated on load); Some(false) = first run, show onboarding.
     pub onboarded: Option<bool>,
+    /// Last build that opened this save. Empty on a save from before the welcome note.
+    pub seen_version: String,
 }
 
 pub const DEFAULT_BUDDY: &str = "Buddy";
@@ -422,6 +424,7 @@ mod tests {
         let (d, _) = load(&p, 1); // v0.4 save
         assert_eq!(d.onboarded, Some(true));
         assert_eq!(d.settings.buddy_name, DEFAULT_BUDDY);
+        assert_eq!(d.seen_version, "");
         std::fs::write(&p, r#"{"onboarded":false}"#).unwrap();
         assert_eq!(load(&p, 1).0.onboarded, Some(false));
         let _ = std::fs::remove_dir_all(dir);
@@ -544,7 +547,7 @@ impl Data {
 /// Keystrokes-per-word slider range is 1..=5 (v0.3); older files may hold larger values.
 pub fn clamp_kpw(v: u64) -> u64 { v.clamp(1, 5) }
 
-/// Writing minutes before a game. 0 is off. Settings may use any minute from 0 to 180.
+/// Writing minutes in a sprint. 0 is off. Settings may use any minute from 0 to 180.
 pub const MAX_FOCUS_MINUTES: u32 = 180;
 pub fn clamp_focus_minutes(v: u32) -> u32 { v.min(MAX_FOCUS_MINUTES) }
 

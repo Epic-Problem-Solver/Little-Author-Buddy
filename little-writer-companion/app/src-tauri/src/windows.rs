@@ -1,5 +1,6 @@
-//! Tray, overlay, desk, settings, and onboarding windows.
+//! Tray, overlay, desk, settings, onboarding, and the Events test window.
 
+use crate::focus;
 use crate::home_geo;
 use crate::input;
 use crate::signals;
@@ -153,16 +154,84 @@ pub fn open_onboarding(app: &AppHandle) {
     });
 }
 
+/// Returning desk. The version is stored only after the window is created.
+pub fn open_welcome(app: &AppHandle) {
+    let h = app.clone();
+    let _ = app.run_on_main_thread(move || {
+        let due = match h.try_state::<AppState>() {
+            Some(st) => {
+                let s = st.lock().unwrap();
+                crate::welcome::pending(&s.data.seen_version, s.data.onboarded == Some(true), env!("CARGO_PKG_VERSION")).is_some()
+            }
+            None => false,
+        };
+        if !due { return; }
+        if h.get_webview_window("welcome").is_some() { return; }
+        let built = tauri::WebviewWindowBuilder::new(&h, "welcome", tauri::WebviewUrl::App("welcome.html".into()))
+            .title("Welcome back").inner_size(440.0, 560.0).resizable(false).center()
+            .always_on_top(true).content_protected(false).build();
+        if built.is_err() { return; }
+        if let Some(st) = h.try_state::<AppState>() {
+            let mut s = st.lock().unwrap();
+            let current = env!("CARGO_PKG_VERSION");
+            if crate::welcome::pending(&s.data.seen_version, s.data.onboarded == Some(true), current).is_some() {
+                s.data.seen_version = current.to_string();
+                s.save();
+            }
+        }
+    });
+}
+
+/// Games list. Decorated, centered, and left off the always-on-top stack.
+pub fn open_games(app: &AppHandle) {
+    let h = app.clone();
+    let _ = app.run_on_main_thread(move || {
+        if let Some(w) = h.get_webview_window("games") {
+            let _ = w.unminimize();
+            let _ = w.show();
+            let _ = w.set_focus();
+            return;
+        }
+        let _ = tauri::WebviewWindowBuilder::new(&h, "games", tauri::WebviewUrl::App("games.html".into()))
+            .title("Little Author — Games")
+            .inner_size(420.0, 560.0)
+            .center()
+            .content_protected(false)
+            .build();
+    });
+}
+
+/// Test build. Buttons in this window run real companion events.
+pub fn open_dashboard(app: &AppHandle) {
+    let h = app.clone();
+    let _ = app.run_on_main_thread(move || {
+        if let Some(w) = h.get_webview_window("dashboard") {
+            let _ = w.unminimize();
+            let _ = w.show();
+            let _ = w.set_focus();
+            return;
+        }
+        let _ = tauri::WebviewWindowBuilder::new(&h, "dashboard", tauri::WebviewUrl::App("dashboard.html".into()))
+            .title("Little Author — Events")
+            .inner_size(400.0, 560.0)
+            .position(16.0, 16.0)
+            .always_on_top(true)
+            .content_protected(false)
+            .build();
+    });
+}
+
 pub fn install_tray(app: &AppHandle, st: &AppState, counters: &Arc<input::Counters>) -> tauri::Result<()> {
     let pause = MenuItem::with_id(app, "pause", "Pause listening", true, None::<&str>)?;
     let interact = MenuItem::with_id(app, "interact", "Interact with companion (30 s)", true, None::<&str>)?;
+    let events = MenuItem::with_id(app, "events", "Events…", true, None::<&str>)?;
     let projects = MenuItem::with_id(app, "projects", "Projects…", true, None::<&str>)?;
     let settings = MenuItem::with_id(app, "settings", "Settings…", true, None::<&str>)?;
     let journal = MenuItem::with_id(app, "journal", "Letter journal…", true, None::<&str>)?;
     let privacy = MenuItem::with_id(app, "privacy", "Privacy…", true, None::<&str>)?;
     let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
     let sep = PredefinedMenuItem::separator(app)?;
-    let menu = Menu::with_items(app, &[&pause, &interact, &projects, &settings, &journal, &privacy, &sep, &quit_item])?;
+    let menu = Menu::with_items(app, &[&pause, &interact, &events, &projects, &settings, &journal, &privacy, &sep, &quit_item])?;
     app.manage(TrayItems { pause, interact });
     let st_q = st.clone();
     let c_t = counters.clone();
@@ -173,6 +242,7 @@ pub fn install_tray(app: &AppHandle, st: &AppState, counters: &Arc<input::Counte
         .on_menu_event(move |app, ev| match ev.id().as_ref() {
             "pause" => { do_toggle(app, &c_t); }
             "interact" => { let on = st_q.lock().unwrap().interactive_until == 0; set_interactive(app, &st_q, on); }
+            "events" => open_dashboard(app),
             "settings" | "journal" | "projects" | "privacy" => open_window(app, ev.id().as_ref()),
             "quit" => quit(app),
             _ => {}
@@ -189,7 +259,7 @@ pub fn set_tag_window(app: &AppHandle, on: bool) {
         if on {
             if h.get_webview_window("taghit").is_some() { return; }
             let _ = tauri::WebviewWindowBuilder::new(&h, "taghit", tauri::WebviewUrl::App("hit.html".into()))
-                .title("Little Author — Tag")
+                .title("Little Author — Tag the Buddy")
                 .inner_size(80.0, 80.0)
                 .resizable(false)
                 .decorations(false)
@@ -217,10 +287,61 @@ pub fn place_tag_window(app: &AppHandle, x: i32, y: i32, w: u32, h: u32) {
     });
 }
 
-/// Sample the cursor only during play. The click catcher is up for the ready click and during a click game.
+/// Sample the cursor only during play. The click catcher is up only during a click game.
 pub fn sync_game_chrome(app: &AppHandle, play: bool, tag: bool) {
     signals::GAME_CURSOR.store(play, Ordering::Relaxed);
     if signals::TAG_HIT.swap(tag, Ordering::Relaxed) != tag { set_tag_window(app, tag); }
+}
+
+/// Logical size used when a game is placed on a monitor. Physical size is this times the monitor scale.
+const PROMPT_W: f64 = 300.0;
+const PROMPT_H: f64 = 280.0;
+
+fn rect_overlap(a: (i32, i32, i32, i32), m: &MonRect) -> i64 {
+    let (ax, ay, aw, ah) = a;
+    let x0 = (ax as i64).max(m.0 as i64);
+    let y0 = (ay as i64).max(m.1 as i64);
+    let x1 = (ax as i64 + aw as i64).min(m.0 as i64 + m.2 as i64);
+    let y1 = (ay as i64 + ah as i64).min(m.1 as i64 + m.3 as i64);
+    (x1 - x0).max(0) * (y1 - y0).max(0)
+}
+
+fn point_in(m: &MonRect, x: i32, y: i32) -> bool {
+    let (x, y) = (x as i64, y as i64);
+    x >= m.0 as i64 && y >= m.1 as i64 && x < m.0 as i64 + m.2 as i64 && y < m.1 as i64 + m.3 as i64
+}
+
+/// Monitor index for the question. The anchor's largest overlap wins.
+/// No overlap uses the desk point, then the primary monitor.
+fn holding_monitor(anchor: Option<focus::Anchor>, desk: Option<(i32, i32)>, mons: &[MonRect]) -> Option<usize> {
+    if mons.is_empty() { return None; }
+    if let Some((x, y, w, h)) = anchor {
+        if w > 0 && h > 0 {
+            let mut best = None;
+            let mut area = 0i64;
+            for (i, m) in mons.iter().enumerate() {
+                let a = rect_overlap((x, y, w, h), m);
+                if a > area { area = a; best = Some(i); }
+            }
+            if best.is_some() { return best; }
+        }
+    }
+    if let Some((x, y)) = desk {
+        if let Some(i) = mons.iter().position(|m| point_in(m, x, y)) { return Some(i); }
+    }
+    mons.iter().position(|m| m.5).or(Some(0))
+}
+
+/// Physical top-left and size, centered on the monitor from `holding_monitor`.
+pub fn prompt_place(anchor: Option<focus::Anchor>, desk: Option<(i32, i32)>, mons: &[MonRect]) -> Option<((i32, i32), (u32, u32))> {
+    let m = &mons[holding_monitor(anchor, desk, mons)?];
+    let scale = if m.4.is_finite() && m.4 > 0.0 { m.4 } else { 1.0 };
+    let pw = (PROMPT_W * scale).round().max(1.0) as i64;
+    let ph = (PROMPT_H * scale).round().max(1.0) as i64;
+    let (mw, mh) = (m.2 as i64, m.3 as i64);
+    let x = if pw >= mw { m.0 as i64 } else { m.0 as i64 + (mw - pw) / 2 };
+    let y = if ph >= mh { m.1 as i64 } else { m.1 as i64 + (mh - ph) / 2 };
+    Some(((x as i32, y as i32), (pw as u32, ph as u32)))
 }
 
 pub fn show_overlay(app: &AppHandle) {
@@ -258,6 +379,7 @@ pub fn create_home(app: &AppHandle, saved: Option<(i32, i32)>) -> tauri::Result<
             let _ = h.run_on_main_thread(move || {
                 if let Some(w) = h2.get_webview_window("home") { let _ = w.set_focus(); }
                 if let Some(w) = h2.get_webview_window("onboarding") { let _ = w.set_focus(); }
+                if let Some(w) = h2.get_webview_window("welcome") { let _ = w.set_focus(); }
             });
         });
     }
@@ -308,5 +430,24 @@ mod tests {
         assert_eq!(desk_side((2000, 100, 200, 200), &m), "left");
         assert_eq!(desk_side((4300, 1200, 200, 200), &m), "right");
         assert_eq!(desk_side((-500, 500, 200, 200), &m), "left");
+    }
+
+    #[test]
+    fn the_question_sits_on_the_monitor_that_holds_the_window() {
+        let mons = [(0, 0, 1920, 1080, 1.0, true), (1920, 0, 2560, 1440, 1.5, false)];
+        let on_second = prompt_place(Some((2000, 100, 800, 600)), None, &mons).unwrap();
+        assert_eq!(on_second.1, (450, 420));
+        assert_eq!(on_second.0, (1920 + (2560 - 450) / 2, (1440 - 420) / 2));
+        let primary = prompt_place(None, None, &mons).unwrap();
+        assert_eq!(primary.1, (300, 280));
+        assert_eq!(primary.0, ((1920 - 300) / 2, (1080 - 280) / 2));
+        let desk = prompt_place(None, Some((2000, 80)), &mons).unwrap();
+        assert_eq!(desk.1, (450, 420));
+        assert_eq!(desk.0.0, on_second.0.0);
+        let missed = prompt_place(Some((-4000, -4000, 10, 10)), None, &mons).unwrap();
+        assert_eq!(missed.0, primary.0);
+        let overlap = prompt_place(Some((1800, 0, 400, 100)), None, &mons).unwrap();
+        assert_eq!(overlap.1, (450, 420));
+        assert!(prompt_place(None, None, &[]).is_none());
     }
 }

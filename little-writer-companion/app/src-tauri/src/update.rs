@@ -19,7 +19,7 @@ pub struct UpdateStatus {
 
 /// `major.minor.patch`, shorter forms pad with 0. A leading `v` is ignored.
 /// Empty, more than three segments, a non-digit, or a segment longer than 6 digits is refused.
-fn version_parts(raw: &str) -> Option<[u64; 3]> {
+pub(crate) fn version_parts(raw: &str) -> Option<[u64; 3]> {
     let t = raw.trim();
     let t = t.strip_prefix('v').unwrap_or(t);
     let mut p = [0u64; 3];

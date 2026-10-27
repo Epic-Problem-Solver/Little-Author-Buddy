@@ -1,6 +1,5 @@
 //! Listen-only key and scroll tap. Keycodes are classified as letters and discarded.
 //! The unshifted character used for that test is never stored or logged.
-//! Y and N are noted while Buddy is asking. This tap cannot swallow them.
 
 use super::{install_layout, with_down, COUNTERS};
 use core_foundation::base::{CFTypeRef, TCFType};

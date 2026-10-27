@@ -1,7 +1,7 @@
 const I = window.__TAURI__.core.invoke, $ = id => document.getElementById(id);
 // Presets set the body colour. Shade and hands are derived. The outline stays #241414.
 const TIER_UNLOCK = LWDomain.TIER_UNLOCK, TOOL_UNLOCK = LWDomain.TOOL_UNLOCK;
-let data, ch, mp, hats = [], hatsFailed = false;
+let data, ch, mp, hatCh, hats = [], hatsFailed = false, games = [], gamesFailed = false;
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 let curTab = 'settings';
 function tab(t0) { const t = t0 || (location.hash ? location.hash.slice(1) : curTab); curTab = t; document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id === t)); document.querySelectorAll('nav a').forEach(a => a.classList.toggle('on', a.hash === '#' + t)); load(); }
@@ -33,6 +33,7 @@ function previewHat() {
   const spec = sel && sel.pack ? { id: sel.hat, color: sel.hat_color, extra: sel.hat_extra, svg: sel.pack.svg } : null;
   if (ch) ch.setHat(spec);
   if (mp) mp.setHat(spec);
+  if (hatCh) hatCh.setHat(spec);
 }
 function savedHatFields() {
   if (hatsFailed) return { hat: data.settings.hat || '', hat_color: data.settings.hat_color || '', hat_extra: !!data.settings.hat_extra };
@@ -101,11 +102,31 @@ function syncHatForm(s) {
   sel.value = s.hat && hats.some(h => h.id === s.hat) ? s.hat : '';
   showHatFields(s);
 }
+function syncGameList() {
+  const list = $('gameList');
+  list.replaceChildren();
+  if (gamesFailed) {
+    $('gameEmpty').textContent = 'The packs folder could not be read.';
+    $('gameEmpty').classList.remove('hat-off');
+    return;
+  }
+  const has = games.length > 0;
+  $('gameEmpty').textContent = 'No games are installed.';
+  $('gameEmpty').classList.toggle('hat-off', has);
+  for (const g of games) {
+    const li = document.createElement('li');
+    li.textContent = g.name;
+    list.appendChild(li);
+  }
+}
 async function load() {
   data = await I('get_data'); const s = data.settings, snap = await I('get_snapshot');
   try { hats = await I('list_hats') || []; hatsFailed = false; }
   catch (_) { hats = []; hatsFailed = true; }
+  try { games = await I('list_games') || []; gamesFailed = false; }
+  catch (_) { games = []; gamesFailed = true; }
   syncHatForm(s);
+  syncGameList();
   $('warns').innerHTML = (await I('get_warnings')).map(w => `<div>${esc(w)}</div>`).join('');
   const shown = LWPalette.normalize(s.colors); lastBody = shown.body;
   document.querySelectorAll('[data-c]').forEach(i => { if (shown[i.dataset.c]) i.value = shown[i.dataset.c]; });
@@ -128,7 +149,6 @@ async function load() {
   $('tool').value = TOOL_UNLOCK[s.tool] <= level ? s.tool : LWDomain.TOOLS[level]; ch && ch.setTool($('tool').value);
   $('unlockall').checked = !!s.unlock_all;
   $('bs').value = s.buddy_scale; $('ws').value = s.walk_speed; $('bp').value = s.bubble_px; $('buddy').value = s.buddy_name;
-  $('focus').value = s.focus_minutes == null ? 30 : s.focus_minutes;
   for (const id of ['bs', 'ws', 'bp']) $(id).dispatchEvent(new Event('input'));
   const a = data.active, kpw = s.keys_per_word, carry = Math.floor(data.carry_keystrokes / kpw);
   $('await').innerHTML = data.awaiting_next ? `🎉 Project complete! ${carry ? `${carry.toLocaleString()} extra words will carry into the next project. ` : ''}` +
@@ -155,17 +175,18 @@ document.querySelectorAll('[data-c]').forEach(i => {
   i.oninput = apply; i.onchange = apply;
 });
 $('kpw').oninput = () => $('kpwv').textContent = $('kpw').value;
-$('save').onclick = async () => {
+async function saveSettings(msg) {
   const s = { ...data.settings, colors: colors(), keys_per_word: Math.min(5, Math.max(1, +$('kpw').value | 0)), idle_threshold_ms: Math.max(5, +$('idle').value) * 1000,
     tiers: { short_story: Math.max(1, +$('t1').value | 0), novella: Math.max(1, +$('t2').value | 0), novel: Math.max(1, +$('t3').value | 0) },
     desk_monitor: $('desk').value === '' ? null : +$('desk').value, roam_all_monitors: $('roam').checked, journal_dir: $('jdir').value.trim() || null,
     buddy_scale: +$('bs').value, walk_speed: +$('ws').value, bubble_px: +$('bp').value, buddy_name: $('buddy').value.trim() || data.settings.buddy_name,
     tool: $('tool').value, unlock_all: $('unlockall').checked, detect_titles: $('dt').checked, detect_media: $('dm').checked, detect_scroll: $('ds').checked, distraction_titles: $('titles').value.split('\n').map(x => x.trim()).filter(Boolean),
-    focus_minutes: Math.min(180, Math.max(0, +$('focus').value | 0)),
     ...savedHatFields() };
-  try { await I('update_settings', { settings: s }); $('msg').textContent = 'Saved'; setTimeout(() => $('msg').textContent = '', 2000); load(); }
-  catch (e) { $('msg').textContent = String(e); }
-};
+  try { await I('update_settings', { settings: s }); msg.textContent = 'Saved'; setTimeout(() => msg.textContent = '', 2000); load(); }
+  catch (e) { msg.textContent = String(e); }
+}
+$('save').onclick = () => saveSettings($('msg'));
+$('saveHat').onclick = () => saveSettings($('supporterMsg'));
 $('padd').onclick = async () => { try { await I('new_project', { name: $('pname').value || 'Untitled', tier: $('ptier').value, targetWords: null }); } catch (e) { alert(e); } load(); };
 $('tool').onchange = () => ch.setTool($('tool').value);
 $('hat').onchange = () => showHatFields(null);
@@ -202,6 +223,24 @@ $('checkUpdate').onclick = async () => {
   btn.textContent = old;
 };
 $('openUpdate').onclick = () => I('open_download_page').catch(() => {});
+$('activate').onclick = async () => {
+  const btn = $('activate');
+  btn.disabled = true;
+  const old = btn.textContent;
+  btn.textContent = 'Activating…';
+  $('dlcmsg').textContent = '';
+  let installed = false;
+  try {
+    const r = await I('activate_supporter');
+    $('dlcmsg').textContent = r.message;
+    installed = !!r.installed;
+  } catch (e) {
+    $('dlcmsg').textContent = (e && e.message) ? e.message : String(e);
+  }
+  btn.disabled = false;
+  btn.textContent = old;
+  if (installed) load();
+};
 window.onhashchange = () => tab();
 // The backend tells us which tab to show (no '#fragment' in the asset URL; it breaks the Windows bundle)
 window.__TAURI__.event.listen('show-tab', e => tab(e.payload));
@@ -210,6 +249,7 @@ LWCharacter.mount($('preview')).then(async c => { ch = c; c.setState('typing'); 
 // live motion preview: a small buddy walking at the chosen speed and size, with a sample bubble
 let mpX = 0, mpV = 0, mpDir = 1, mpT = null;
 LWCharacter.mount($('mpChar')).then(c => { mp = c; c.setState('wander'); previewHat(); requestAnimationFrame(mpFrame); });
+LWCharacter.mount($('hatPreview')).then(c => { hatCh = c; c.setState('typing'); previewHat(); });
 function mpFrame(t) {
   const dt = mpT == null ? 0 : LWMotion.clampDt(t - mpT); mpT = t;
   const k = +$('bs').value || 1, w = $('motionPreview').clientWidth - 60 * k;

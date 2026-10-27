@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-get-welcome"
+description = "Enables the get_welcome command without any pre-configured scope."
+commands.allow = ["get_welcome"]
+
+[[permission]]
+identifier = "deny-get-welcome"
+description = "Denies the get_welcome command without any pre-configured scope."
+commands.deny = ["get_welcome"]

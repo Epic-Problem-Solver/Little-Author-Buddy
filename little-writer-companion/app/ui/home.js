@@ -1,4 +1,4 @@
-// Home (desk) window: draggable, fixed size. X quits the whole app (saves first); gear opens Settings.
+// Home (desk) window: draggable, fixed size. X quits the whole app (saves first); the controller opens Games; gear opens Settings.
 const T = window.__TAURI__, I = (c, a) => T.core.invoke(c, a), $ = id => document.getElementById(id);
 let handedOff = false;
 let ch, desk, snap, hatsApi, proudUntil = 0, lastMode, lastAway, noticeUntil = 0, speechT = 0;
@@ -15,7 +15,6 @@ function render(s) {
   // Buddy size also scales the desk buddy (same cap + bottom-centre origin as the overlay's race-back target)
   const hsc = Math.min(s.buddy_scale || 1, LWMotion.HOME_MAX_SCALE);
   $('stage').style.transform = Math.abs(hsc - 1) > 1e-3 ? `scale(${hsc})` : '';
-  paintFocus(s);
   if (desk) { desk.setTool(s.tool); desk.setColors(s.colors); if (s.home_side) desk.setSide(s.home_side); }
   if (Date.now() >= proudUntil && (mode !== lastMode || away !== lastAway)) {
     // Animator v0.7 desk-alone layer: fixed desk.svg (same tool/side, pixel-aligned) while the buddy is away
@@ -38,25 +37,6 @@ function render(s) {
 }
 function notice(text) { $('hudText').textContent = text; noticeUntil = Date.now() + 6000; }
 
-function fmtRemain(ms) {
-  const sec = Math.max(0, Math.ceil(ms / 1000));
-  return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
-}
-function paintFocus(s) {
-  const el = $('focus');
-  const limit = s.focus_limit_ms || 0;
-  const phase = s.focus_phase;
-  const out = phase === 'ask' || phase === 'explain' || phase === 'play' || phase === 'back';
-  el.style.left = s.home_side === 'left' ? '38px' : '14px';
-  $('focusTime').textContent = limit === 0 ? 'Off' : phase === 'play' ? 'Play' : fmtRemain(Math.max(0, limit - (s.focus_ms || 0)));
-  const start = $('focusStart'), pause = $('focusPause');
-  const running = !!s.focus_running && !s.focus_held;
-  start.disabled = out || limit === 0 || running;
-  pause.disabled = out || !s.focus_running;
-  start.classList.toggle('on', running);
-  pause.classList.toggle('on', !!s.focus_held);
-  start.title = s.focus_held ? 'Resume' : 'Start';
-}
 function showSpeech(text) {
   const el = $('speech');
   if (!text) { el.classList.remove('on'); return; }
@@ -66,15 +46,13 @@ function showSpeech(text) {
   speechT = setTimeout(() => el.classList.remove('on'), 8000);
 }
 document.addEventListener('mousedown', e => {
-  if (e.button !== 0 || e.target.closest('.btn') || e.target.closest('#focus') || e.target.closest('#speech') || (snap && snap.needs_title && e.target.closest('#hud'))) return;
+  if (e.button !== 0 || e.target.closest('.btn') || e.target.closest('#speech') || (snap && snap.needs_title && e.target.closest('#hud'))) return;
   T.window.getCurrentWindow().startDragging().catch(() => {});
 });
-$('focus').addEventListener('mousedown', e => e.stopPropagation());
-$('focusStart').onclick = e => { e.stopPropagation(); I('focus_start').catch(() => {}); };
-$('focusPause').onclick = e => { e.stopPropagation(); I('focus_pause').catch(() => {}); };
+$('games').onclick = () => I('open_games');
 $('close').onclick = () => I('quit_app');
 $('gear').onclick = () => I('open_settings', { tab: 'settings' });
-for (const id of ['close', 'gear']) $(id).onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') $(id).click(); };
+for (const id of ['games', 'gear', 'close']) $(id).onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') $(id).click(); };
 // first run is handled by the onboarding window; clicking the HUD reopens it if it was closed
 $('hud').onclick = () => { if (snap && snap.needs_title) I('reopen_onboarding'); };
 
@@ -83,6 +61,7 @@ $('hud').onclick = () => { if (snap && snap.needs_title) I('reopen_onboarding');
   hatsApi = LWCharacter.bindHats(I, ch, () => snap);
   await hatsApi.refresh();
   desk = await LWCharacter.mount($('deskHost'), 'desk.svg');
+  const gameBtn = await LWCharacter.button($('games'), 'ui-game.svg', '🎮'); gameBtn.classList.add('lw-ui', 'lw-ui-game');
   const g = await LWCharacter.button($('gear'), 'ui-gear.svg', '⚙'); g.classList.add('lw-ui', 'lw-ui-gear');
   const x = await LWCharacter.button($('close'), 'ui-close.svg', '×'); x.classList.add('lw-ui', 'lw-ui-close');
   const s = await I('get_snapshot'); if (s) render(s);
@@ -91,7 +70,7 @@ $('hud').onclick = () => { if (snap && snap.needs_title) I('reopen_onboarding');
     const p = e.payload || {};
     if (!LWDomain.focusAtDesk(snap)) return;
     const buddy = (snap && snap.buddy) || 'Buddy';
-    const text = p.text || (p.kind === 'invite' ? LWContent.line('focusBreak', { buddy }) : '');
+    const text = p.text || ((p.kind === 'invite' || p.kind === 'suggest') ? LWContent.line('focusBreak', { buddy }) : '');
     showSpeech(text);
   });
   // BUG-23: runner arrived -> show the typing desk buddy on the same event the overlay hides the runner

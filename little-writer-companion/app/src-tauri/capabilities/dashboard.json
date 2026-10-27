@@ -1,0 +1,7 @@
+{
+  "identifier": "dashboard",
+  "windows": ["dashboard"],
+  "permissions": [
+    "allow-dash-event"
+  ]
+}

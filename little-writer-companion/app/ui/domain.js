@@ -10,7 +10,7 @@
   const RACE_HOLD_MS = 1000;
 
   function atHome(mode) { return HOME_MODES.includes(mode); }
-  // Ask, explain, the walk back, and play speak on the overlay. The desk speaks while he is home and idle.
+  // Play and the walk back speak on the overlay. The desk speaks while he is home and idle. A suggestion is one of those desk lines.
   function focusAtDesk(s) {
     if (!s) return false;
     const phase = s.focus_phase;

@@ -1,7 +1,7 @@
 <!doctype html><html><head><meta charset="utf-8"><title>Little Author Buddy</title>
 <link rel="stylesheet" href="assets/lw-character.css"><link rel="stylesheet" href="settings.css">
 </head><body>
-<nav><a href="#settings">Settings</a><a href="#projects">Projects</a><a href="#journal">Letter journal</a><a href="#privacy">Privacy</a></nav>
+<nav><a href="#settings">Settings</a><a href="#supporter">Supporter</a><a href="#projects">Projects</a><a href="#journal">Letter journal</a><a href="#privacy">Privacy</a></nav>
 <div id="warns"></div>
 <section id="settings">
  <fieldset><legend>Colours</legend><div id="preview"></div>
@@ -16,16 +16,6 @@
   <div id="motionPreview"><div id="mpWalker"><div id="mpBubble">Hello!</div><div id="mpChar"></div></div></div>
   <p class="info">Size and speed also adapt automatically to each monitor's scale.</p></fieldset>
  <fieldset><legend>Buddy</legend><label>Name <input id="buddy" maxlength="40"></label></fieldset>
- <fieldset><legend>Hat</legend>
-  <p class="info">Supporter hats installed in the packs folder next to state.json. They do not change writing progress.</p>
-  <p class="info hat-off" id="hatEmpty">No hats are installed.</p>
-  <div id="hatPick" class="hat-off">
-   <label>Hat <select id="hat"></select></label>
-   <span class="sw hat-off" id="hatFree"><input type="color" id="hatColor"><span>Hat colour</span></span>
-   <div id="hatSwatches"></div>
-   <label id="hatExtraRow" class="hat-off"><input type="checkbox" id="hatExtra"> <span id="hatExtraName"></span></label>
-  </div>
- </fieldset>
  <fieldset><legend>Writing tool</legend>
   <label>Tool <select id="tool"><option value="pen">Feather pen</option><option value="typewriter">Typewriter 🔒 finish a Short Story</option><option value="laptop">Laptop 🔒 finish a Novella</option></select></label>
   <label><input type="checkbox" id="unlockall"> Unlock all (testing) — unlocks every tier and tool without changing your real progress</label></fieldset>
@@ -42,9 +32,6 @@
   <label><input type="checkbox" id="dm"> Media playback</label>
   <label><input type="checkbox" id="ds"> Scrolling without typing</label>
   <label>Titles (one per line, case-insensitive substring of the focused window)<br><textarea id="titles" rows="5"></textarea></label></fieldset>
- <fieldset><legend>Focus timer</legend>
-  <label>Writing minutes before a game <input type="number" id="focus" min="0" max="180" step="1"></label>
-  <p class="info">Counts only while Buddy is writing and the timer is running. Start begins it. Pause holds it. Thinking, wandering, and watching wait and keep the time. 0 turns it off. When it finishes, Buddy walks to the monitor with the active window and asks. Y explains the game, then a click starts it. N sends him back to the desk. Set the length here.</p></fieldset>
  <fieldset><legend>Letter journal folder</legend><input id="jdir"></fieldset>
  <fieldset><legend>Updates</legend>
   <p class="info">Asks GitHub for the latest release number. Nothing you wrote is sent, and the app does not download the update.</p>
@@ -53,6 +40,30 @@
   <span id="upmsg"></span>
  </fieldset>
  <button id="save">Save</button><span id="msg"></span>
+</section>
+<section id="supporter">
+ <fieldset><legend>Activate</legend>
+  <p class="info">Looks for Little Author Buddy DLC.zip in Downloads and copies the hats and games into the packs folder. If that file is not there, you can choose the zip. The app does not download it.</p>
+  <button type="button" id="activate">Activate</button>
+  <span id="dlcmsg"></span>
+ </fieldset>
+ <fieldset><legend>Hat</legend>
+  <div id="hatPreview"></div>
+  <p class="info">Supporter hats installed in the packs folder next to state.json. They do not change writing progress.</p>
+  <p class="info hat-off" id="hatEmpty">No hats are installed.</p>
+  <div id="hatPick" class="hat-off">
+   <label>Hat <select id="hat"></select></label>
+   <span class="sw hat-off" id="hatFree"><input type="color" id="hatColor"><span>Hat colour</span></span>
+   <div id="hatSwatches"></div>
+   <label id="hatExtraRow" class="hat-off"><input type="checkbox" id="hatExtra"> <span id="hatExtraName"></span></label>
+  </div>
+ </fieldset>
+ <fieldset><legend>Games</legend>
+  <p class="info">Installed names. The games button on the desk lists every game, and uses these names when the pack is here.</p>
+  <p class="info hat-off" id="gameEmpty">No games are installed.</p>
+  <ul id="gameList"></ul>
+ </fieldset>
+ <button type="button" id="saveHat">Save</button><span id="supporterMsg"></span>
 </section>
 <section id="projects"><div id="await"></div><div id="cur"></div><div id="queue"></div>
  <fieldset><legend>New project</legend>
@@ -64,13 +75,13 @@
  <h3>Privacy</h3>
  <ul>
   <li>Writing, projects, and the save stay on this computer. The app contacts GitHub only when Check for update is pressed, to read the latest release number, and sends none of that data. It does not download the update. On Windows, the WebView2 runtime it uses may contact Microsoft for runtime updates, independently of this app.</li>
-  <li>Only keystroke <b>counts</b> are kept. The key's position code is checked in memory (letter key or not) and then discarded. The text you type is never recorded. While Buddy is asking about a game, Y and N are noted as yes or no and then discarded. On Windows those two keys stay out of the document. They are never saved or logged.</li>
+  <li>Only keystroke <b>counts</b> are kept. The key's position code is checked in memory (letter key or not) and then discarded. The text you type is never recorded.</li>
   <li>No per-key timestamps are stored, only a total per day.</li>
-  <li>Window titles are read only to spot distractions and to ignore this app's own windows when a game is offered. They are never saved or logged.</li>
+  <li>Window titles are read only to spot distractions and to ignore this app's own windows when a game starts. They are never saved or logged. After fifteen minutes of writing at the desk, Buddy suggests a game. That suggestion is not saved. Falling asleep, wandering, or watching starts the wait over.</li>
   <li>Media detection reads only playing/paused. Scroll detection counts wheel ticks only.</li>
   <li>“Pause listening” in the tray stops all counting.</li>
-  <li>When the timer finishes, the active window's rectangle is kept in memory so Buddy can walk to that monitor. A focus game reads the cursor only while it is playing. The ready click and a tag click land on Buddy. None of this is saved.</li>
-  <li>Data: <code id="dpath">state.json</code> in the app data folder; fan letters as .md files in your journal folder. Supporter hats and games are read from a packs folder next to state.json. The app does not download them. Uninstalling keeps your data unless you tick “delete application data”.</li>
+  <li>A game reads the cursor only while it is playing. A tag click lands on Buddy during play. Nothing about the game is saved.</li>
+  <li>Data: <code id="dpath">state.json</code> in the app data folder; fan letters as .md files in your journal folder. Supporter hats and games are read from a packs folder next to state.json. The app does not download them. Activate copies a zip already saved on this computer. Uninstalling keeps your data unless you tick “delete application data”.</li>
  </ul>
 </section>
 <script src="domain.js"></script>

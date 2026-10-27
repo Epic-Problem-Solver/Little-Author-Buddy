@@ -34,6 +34,10 @@ The [download page](https://epic-problem-solver.github.io/Little-Author-Buddy/li
 - Make the AppImage executable with `chmod +x`. It uses WebKitGTK 4.1 and GTK 3 from the host. The Debian package uses the distro's WebKitGTK 4.1.
 - On Linux, key counting listens through X11.
 
+## Chrome and Chrome OS
+
+An unpacked extension in [`little-writer-companion/chrome`](little-writer-companion/chrome/README.md) runs the companion inside Chrome. Letter keys on web pages advance the story. The desk, projects, sprint games, and fan letters are the same idea as the desktop app, within what Chrome can do. The extension keeps its own save, separate from the desktop app. Load it from `chrome://extensions` with developer mode on.
+
 ## Opening the Mac app
 
 The v0.8.0 disk image runs on Intel and Apple silicon Macs. It is not signed or notarized. Gatekeeper stops the first launch and shows a warning that the developer cannot be verified, or that Apple cannot check the app for malicious software. Approve that one copy, then grant the privacy permissions the companion uses to count keys and see the front window.
@@ -119,7 +123,7 @@ The windows are included in screen capture. In OBS, Display capture records the 
 
 ## Supporter packs
 
-Hats, and the games chase-the-cursor, click-the-buddy, red light green light, high five, and warmer colder, are a zip from this same public repository. The free installer remains the only app. It can load those packs from a `packs` folder beside the save. Finished projects still decide the pen, the typewriter, and the laptop. The pack format is under Distribution in [SPEC.md](little-writer-companion/SPEC.md).
+Hats, and the games Chase the Mouse, Tag the Buddy, Red Light Green Light, High Five, and Hide and Seek, are a zip from this same public repository. The free installer remains the only app. It can load those packs from a `packs` folder beside the save. Finished projects still decide the pen, the typewriter, and the laptop. The pack format is under Distribution in [SPEC.md](little-writer-companion/SPEC.md).
 
 ## Building
 

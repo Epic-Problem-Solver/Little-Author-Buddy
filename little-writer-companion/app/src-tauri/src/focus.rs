@@ -1,5 +1,5 @@
-//! Focus timer. It counts only while Buddy is writing and the timer is running.
-//! Other modes wait and keep the time. Reaching the limit offers one game.
+//! Silent writing wait. Fifteen minutes of typing suggests one game from the desk.
+//! Sleep, wandering, and watching start that wait over. Typing is not stopped.
 //! Nothing here reads the cursor or a window title.
 
 use crate::idle::Mode;
@@ -7,6 +7,8 @@ use serde::Serialize;
 
 pub const MAX_MINUTES: u32 = crate::store::MAX_FOCUS_MINUTES;
 const PLAY_MS: u64 = 45_000;
+/// Uninterrupted writing before Buddy suggests a game. Not shown on the desk.
+pub const SUGGEST_MS: u64 = 15 * 60 * 1000;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Default)]
 #[serde(rename_all = "snake_case")]
@@ -20,7 +22,7 @@ pub enum Phase {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Kind { Invite, Ask, Explain, Decline, Away }
+pub enum Kind { Invite, Ask, Explain, Decline, Away, Sprint, Suggest }
 
 impl Kind {
     pub fn as_str(self) -> &'static str {
@@ -30,8 +32,18 @@ impl Kind {
             Kind::Explain => "explain",
             Kind::Decline => "decline",
             Kind::Away => "away",
+            Kind::Sprint => "sprint",
+            Kind::Suggest => "suggest",
         }
     }
+}
+
+/// Which question the sprint window is asking. `Sprint` is the follow-up after a no.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum Prompt {
+    #[default]
+    Game,
+    Sprint,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -50,6 +62,9 @@ pub struct Session {
     pub game: String,
     pub play_ms: u64,
     pub anchor: Option<Anchor>,
+    pub prompt: Prompt,
+    /// Writing time of the sprint that just finished, rounded to minutes, at least 1.
+    pub sprint_minutes: u32,
 }
 
 pub struct TickIn {
@@ -57,6 +72,8 @@ pub struct TickIn {
     pub mode: Mode,
     pub paused: bool,
     pub keys: u64,
+    /// Still passed in from the saved minute setting. The suggestion wait does not read it.
+    #[allow(dead_code)]
     pub limit_ms: u64,
 }
 
@@ -98,10 +115,10 @@ impl Session {
         true
     }
 
-    /// Advance one tick. Only writing counts, and only while the timer is running.
-    /// Tray pause and Pause hold the time. Reaching the limit invites once.
+    /// Advance one tick. Writing time suggests a game and then starts over.
+    /// Sleep, wandering, and watching clear that wait. Tray pause holds it.
+    /// Play is unchanged: letter keys end it, and 45 seconds says the away line.
     pub fn tick(&mut self, t: TickIn) -> Option<Spoken> {
-        if t.limit_ms == 0 { self.clear(); return None; }
         if self.phase == Phase::Play {
             if t.paused { return None; }
             if t.keys > 0 { self.clear(); return None; }
@@ -113,25 +130,41 @@ impl Session {
             }
             return None;
         }
-        if self.phase != Phase::Idle || !self.running || self.held || t.paused || self.ready { return None; }
-        if t.mode != Mode::Typing { return None; }
+        if self.phase != Phase::Idle { return None; }
+        if matches!(t.mode, Mode::Asleep | Mode::Wander | Mode::Watch) {
+            self.elapsed_ms = 0;
+            return None;
+        }
+        if t.mode != Mode::Typing || t.paused { return None; }
         self.elapsed_ms = self.elapsed_ms.saturating_add(t.dt_ms);
-        if self.elapsed_ms >= t.limit_ms {
-            self.elapsed_ms = t.limit_ms;
-            self.ready = true;
-            self.running = false;
-            self.held = false;
-            self.game.clear();
-            self.anchor = None;
-            return Some(Spoken { kind: Kind::Invite, game: String::new() });
+        if self.elapsed_ms >= SUGGEST_MS {
+            self.elapsed_ms = 0;
+            return Some(Spoken { kind: Kind::Suggest, game: String::new() });
         }
         None
     }
 
-    /// The timer finished and a pack is installed. Buddy asks at `anchor`.
+    /// Start one game from the Games window. The desk wait starts over afterwards.
+    pub fn begin_play(&mut self, game: &str, anchor: Option<Anchor>) -> bool {
+        if !crate::games::known(game) { return false; }
+        self.clear();
+        self.phase = Phase::Play;
+        self.game = game.to_string();
+        self.anchor = anchor;
+        self.play_ms = 0;
+        true
+    }
+
+    fn note_minutes(&mut self) {
+        let rounded = (self.elapsed_ms.saturating_add(30_000) / 60_000).max(1);
+        self.sprint_minutes = u32::try_from(rounded).unwrap_or(u32::MAX);
+    }
+
+    /// The timer finished and a pack is installed. Buddy asks about that game.
     pub fn begin_ask(&mut self, game: &str, anchor: Option<Anchor>) -> Option<Spoken> {
         if !self.ready || self.phase != Phase::Idle || game.is_empty() { return None; }
         self.phase = Phase::Ask;
+        self.prompt = Prompt::Game;
         self.game = game.to_string();
         self.anchor = anchor;
         self.running = false;
@@ -139,15 +172,58 @@ impl Session {
         Some(Spoken { kind: Kind::Ask, game: self.game.clone() })
     }
 
-    /// Y explains and waits for a click. N starts the walk back. Ignored unless he is asking.
+    /// No pack is installed, or the writer declined the game. Ask about another sprint.
+    pub fn begin_sprint_ask(&mut self) -> Option<Spoken> {
+        if !self.ready || self.phase != Phase::Idle { return None; }
+        self.phase = Phase::Ask;
+        self.prompt = Prompt::Sprint;
+        self.game.clear();
+        self.anchor = None;
+        self.running = false;
+        self.held = false;
+        Some(Spoken { kind: Kind::Ask, game: String::new() })
+    }
+
+    /// Y on a game explains it. N asks about another sprint.
+    /// Y on that sprint starts it. N ends the question. Ignored unless he is asking.
     pub fn answer(&mut self, yes: bool) -> Option<Spoken> {
         if self.phase != Phase::Ask { return None; }
+        if self.prompt == Prompt::Sprint {
+            if yes {
+                self.clear();
+                self.running = true;
+                return Some(Spoken { kind: Kind::Sprint, game: String::new() });
+            }
+            let game = self.game.clone();
+            self.clear();
+            return Some(Spoken { kind: Kind::Decline, game });
+        }
         if yes {
             self.phase = Phase::Explain;
+            self.prompt = Prompt::Game;
             return Some(Spoken { kind: Kind::Explain, game: self.game.clone() });
         }
-        self.phase = Phase::Back;
-        Some(Spoken { kind: Kind::Decline, game: self.game.clone() })
+        self.phase = Phase::Ask;
+        self.prompt = Prompt::Sprint;
+        self.game.clear();
+        self.anchor = None;
+        self.running = false;
+        self.held = false;
+        Some(Spoken { kind: Kind::Ask, game: String::new() })
+    }
+
+    /// The question window closed. That is a no. Closing during the explanation
+    /// ends the question and does not start play.
+    pub fn dismiss(&mut self) -> Option<Spoken> {
+        match self.phase {
+            Phase::Ask => self.answer(false),
+            Phase::Explain => {
+                let game = self.game.clone();
+                self.clear();
+                Some(Spoken { kind: Kind::Decline, game })
+            }
+            Phase::Idle | Phase::Play | Phase::Back => None,
+        }
     }
 
     /// The click after the explanation starts play.
@@ -187,6 +263,7 @@ impl Session {
             self.held = false;
             if self.ready { return None; }
             self.ready = true;
+            self.note_minutes();
             self.game.clear();
             self.anchor = None;
             return Some(Spoken { kind: Kind::Invite, game: String::new() });
@@ -205,81 +282,61 @@ mod tests {
     }
 
     #[test]
-    fn the_timer_waits_for_start() {
+    fn fifteen_minutes_of_writing_suggests_without_leaving_the_desk() {
         let mut s = Session::default();
-        assert!(tick(&mut s, 5_000, Mode::Typing, false, 0, 1_000).is_none());
+        assert!(tick(&mut s, 5_000, Mode::Typing, false, 0, 0).is_none());
+        assert_eq!(s.elapsed_ms, 5_000);
+        assert_eq!(s.phase, Phase::Idle);
+        assert!(tick(&mut s, SUGGEST_MS - 5_001, Mode::Typing, false, 0, 0).is_none());
+        assert_eq!(s.elapsed_ms, SUGGEST_MS - 1);
+        let n = tick(&mut s, 1, Mode::Typing, false, 0, 0).unwrap();
+        assert_eq!(n.kind, Kind::Suggest);
         assert_eq!(s.elapsed_ms, 0);
-        assert!(!s.running);
-    }
-
-    #[test]
-    fn only_writing_counts_and_other_modes_keep_the_time() {
-        let mut s = Session::default();
-        assert!(s.start());
-        assert!(tick(&mut s, 1_000, Mode::Typing, false, 4, 10_000).is_none());
-        assert_eq!(s.elapsed_ms, 1_000);
-        for mode in [Mode::Asleep, Mode::Wander, Mode::Watch, Mode::RaceBack] {
-            assert!(tick(&mut s, 2_000, mode, false, 0, 10_000).is_none());
-            assert_eq!(s.elapsed_ms, 1_000);
-            assert!(s.running);
-            assert!(!s.ready);
+        assert_eq!(s.phase, Phase::Idle);
+        assert!(!s.ready);
+        tick(&mut s, 60_000, Mode::Typing, false, 0, 0);
+        assert_eq!(s.elapsed_ms, 60_000);
+        for mode in [Mode::Asleep, Mode::Wander, Mode::Watch] {
+            assert!(tick(&mut s, 2_000, mode, false, 0, 0).is_none());
+            assert_eq!(s.elapsed_ms, 0);
         }
-        assert!(tick(&mut s, 1_000, Mode::Typing, false, 0, 10_000).is_none());
-        assert_eq!(s.elapsed_ms, 2_000);
+        tick(&mut s, 4_000, Mode::Typing, false, 0, 0);
+        assert!(tick(&mut s, 2_000, Mode::RaceBack, false, 0, 0).is_none());
+        assert_eq!(s.elapsed_ms, 4_000);
+        assert!(tick(&mut s, SUGGEST_MS, Mode::Typing, false, 0, 0).unwrap().kind == Kind::Suggest);
+        assert!(s.begin_play("chase", None));
+        assert_eq!(s.phase, Phase::Play);
+        assert!(!s.begin_play("nope", None));
     }
 
     #[test]
-    fn start_pause_and_a_second_start() {
+    fn start_and_pause_do_not_gate_the_wait() {
         let mut s = Session::default();
         assert!(s.start());
         assert!(!s.start());
-        tick(&mut s, 3_000, Mode::Typing, false, 0, 10_000);
+        tick(&mut s, 3_000, Mode::Typing, false, 0, 0);
         assert!(s.pause());
-        assert!(!s.running);
         assert!(s.held);
-        tick(&mut s, 5_000, Mode::Typing, false, 0, 10_000);
-        assert_eq!(s.elapsed_ms, 3_000);
+        tick(&mut s, 2_000, Mode::Typing, false, 0, 0);
+        assert_eq!(s.elapsed_ms, 5_000);
         assert!(s.start());
         assert!(!s.held);
-        tick(&mut s, 1_000, Mode::Typing, false, 0, 10_000);
-        assert_eq!(s.elapsed_ms, 4_000);
-        assert!(!s.start());
-        assert_eq!(s.elapsed_ms, 4_000);
     }
 
     #[test]
     fn tray_pause_does_not_count() {
         let mut s = Session::default();
-        s.start();
-        assert!(tick(&mut s, 5_000, Mode::Typing, true, 0, 10_000).is_none());
-        assert_eq!(s.elapsed_ms, 0);
-        assert!(s.running);
+        tick(&mut s, 4_000, Mode::Typing, false, 0, 0);
+        assert!(tick(&mut s, 5_000, Mode::Typing, true, 0, 0).is_none());
+        assert_eq!(s.elapsed_ms, 4_000);
     }
 
     #[test]
-    fn zero_minutes_stays_off() {
+    fn the_minute_setting_does_not_stop_the_wait() {
         let mut s = Session::default();
-        s.start();
-        s.elapsed_ms = 50_000;
         assert!(tick(&mut s, 1_000, Mode::Typing, false, 0, 0).is_none());
-        assert_eq!(s, Session::default());
-    }
-
-    #[test]
-    fn invite_fires_once() {
-        let mut s = Session::default();
-        s.start();
-        assert!(tick(&mut s, 500, Mode::Typing, false, 0, 1_000).is_none());
-        let n = tick(&mut s, 500, Mode::Typing, false, 0, 1_000).unwrap();
-        assert_eq!(n.kind, Kind::Invite);
-        assert!(s.ready);
-        assert!(!s.running);
         assert_eq!(s.elapsed_ms, 1_000);
-        assert!(tick(&mut s, 5_000, Mode::Typing, false, 0, 1_000).is_none());
         assert_eq!(s.phase, Phase::Idle);
-        assert!(s.start());
-        assert!(!s.ready);
-        assert_eq!(s.elapsed_ms, 0);
     }
 
     #[test]
@@ -325,17 +382,77 @@ mod tests {
     }
 
     #[test]
-    fn n_understands_and_the_return_clears_the_session() {
+    fn closing_the_question_is_a_no() {
+        let mut ask = Session::default();
+        ask.ready = true;
+        ask.sprint_minutes = 12;
+        ask.begin_ask("chase", Some((1, 2, 3, 4)));
+        let n = ask.dismiss().unwrap();
+        assert_eq!(n.kind, Kind::Ask);
+        assert_eq!(ask.phase, Phase::Ask);
+        assert_eq!(ask.prompt, Prompt::Sprint);
+        assert_eq!(ask.sprint_minutes, 12);
+        let n = ask.dismiss().unwrap();
+        assert_eq!(n.kind, Kind::Decline);
+        assert_eq!(ask.phase, Phase::Idle);
+
+        let mut explained = Session::default();
+        explained.ready = true;
+        explained.begin_ask("tag", None);
+        explained.answer(true);
+        let n = explained.dismiss().unwrap();
+        assert_eq!(n.kind, Kind::Decline);
+        assert_eq!(explained.phase, Phase::Idle);
+        assert!(explained.game.is_empty());
+
+        let mut playing = Session::default();
+        playing.phase = Phase::Play;
+        playing.game = "chase".into();
+        assert!(playing.dismiss().is_none());
+        assert_eq!(playing.phase, Phase::Play);
+        assert!(Session::default().dismiss().is_none());
+    }
+
+    #[test]
+    fn n_asks_about_another_sprint_and_y_starts_it() {
         let mut s = Session::default();
         s.ready = true;
-        s.elapsed_ms = 1_000;
+        s.elapsed_ms = 90_000;
+        s.note_minutes();
+        assert_eq!(s.sprint_minutes, 2);
         s.begin_ask("tag", Some((1, 2, 3, 4)));
         let n = s.answer(false).unwrap();
+        assert_eq!(n.kind, Kind::Ask);
+        assert_eq!(s.prompt, Prompt::Sprint);
+        assert_eq!(s.phase, Phase::Ask);
+        let n = s.answer(true).unwrap();
+        assert_eq!(n.kind, Kind::Sprint);
+        assert!(s.running);
+        assert_eq!(s.phase, Phase::Idle);
+        assert_eq!(s.elapsed_ms, 0);
+    }
+
+    #[test]
+    fn a_second_no_clears_the_question() {
+        let mut s = Session::default();
+        s.ready = true;
+        s.begin_ask("tag", Some((1, 2, 3, 4)));
+        s.answer(false);
+        let n = s.answer(false).unwrap();
         assert_eq!(n.kind, Kind::Decline);
-        assert_eq!(s.phase, Phase::Back);
-        assert!(s.back_arrived());
         assert_eq!(s, Session::default());
         assert!(!s.back_arrived());
+    }
+
+    #[test]
+    fn no_pack_asks_about_another_sprint() {
+        let mut s = Session::default();
+        s.ready = true;
+        s.sprint_minutes = 5;
+        let n = s.begin_sprint_ask().unwrap();
+        assert_eq!(n.kind, Kind::Ask);
+        assert_eq!(s.prompt, Prompt::Sprint);
+        assert!(s.begin_sprint_ask().is_none());
     }
 
     #[test]

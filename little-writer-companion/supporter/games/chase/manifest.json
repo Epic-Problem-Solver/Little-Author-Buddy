@@ -1,7 +1,7 @@
 {
   "id": "chase",
   "kind": "game",
-  "name": "Chase",
+  "name": "Chase the Mouse",
   "minAppVersion": "0.6.2",
   "engine": "chase",
   "order": 1,

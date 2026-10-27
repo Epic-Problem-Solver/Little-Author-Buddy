@@ -5,7 +5,7 @@ use crate::distraction::{self, Policy};
 use crate::focus::{self, Phase};
 use crate::games;
 use crate::home_geo;
-use crate::idle::{Inputs, Machine, Params};
+use crate::idle::{Inputs, Machine, Mode, Params};
 use crate::input;
 use crate::layout::{RACE_HOLD_MS, RACE_SAFETY_MS};
 use crate::platform;
@@ -100,35 +100,37 @@ pub fn tick_loop(app: AppHandle, st: AppState, c: Arc<input::Counters>) {
         }
         let cfg = { TickCfg::from_shared(&st.lock().unwrap()) };
         if cfg.interactive_until != 0 && now > cfg.interactive_until { windows::set_interactive(&app, &st, false); }
+        let preview = signals::dash_peek(now, dk);
+        if let Some(h) = preview { machine.hold(h.mode, now, h.until); }
+        let dash_watch = preview.is_some_and(|h| h.mode == Mode::Watch);
         let idle = now.saturating_sub(machine.last_key) >= cfg.idle_ms;
         let (title, scrolls) = sample_distraction(&cfg, idle, tick, &mut fg, &mut media, &mut wheel_hist, now, dw);
         scroll_latched = idle && cfg.policy.detect_scroll && distraction::scroll_active(scroll_latched, scrolls, cfg.policy.scroll_events_threshold);
         let scrolls_for_reason = if scroll_latched { cfg.policy.scroll_events_threshold as u64 } else { 0 };
         let reason = if idle { distraction::reason(&cfg.policy, title.as_deref(), media, scrolls_for_reason) } else { None };
+        if dash_watch && fg.is_none() { fg = watch_preview(&monitors); }
 
         let mode = machine.step(
-            &Inputs { now, new_keys: dk, distracted: reason.is_some(), arrived: signals::RACE_ARRIVED.swap(false, Ordering::Relaxed) },
+            &Inputs { now, new_keys: dk, distracted: reason.is_some() || dash_watch, arrived: signals::RACE_ARRIVED.swap(false, Ordering::Relaxed) },
             &Params { idle_ms: cfg.idle_ms, race_ms: RACE_SAFETY_MS.max(cfg.race_back_ms) + RACE_HOLD_MS },
             || rand::thread_rng().gen_range(cfg.wander_min_ms..=cfg.wander_max_ms.max(cfg.wander_min_ms)),
         );
+        if preview.is_some_and(|h| h.mode == Mode::RaceBack) && mode != Mode::RaceBack {
+            signals::dash_clear_if_race();
+        }
 
         let home = home_geo::get();
         let home_side = home.map_or("right", |h| windows::desk_side((h.0, h.1, h.2, h.3), &signals::REAL_MONS.lock().unwrap()));
         let dt = now.saturating_sub(focus_at).min(2_000);
         focus_at = now;
-        let (view, credit, spoken, buddy, packs) = {
+        let (view, credit, spoken) = {
             let mut s = st.lock().unwrap();
             let credit = s.data.credit(dk, now);
             if credit.changed { s.dirty = true; }
             if credit.completed.is_some() { s.save(); last_save = now; }
             let limit_ms = focus::limit_ms(s.data.settings.focus_minutes);
             let paused = c.paused.load(Ordering::Relaxed);
-            let ans = signals::FOCUS_ANSWER.swap(0, Ordering::Relaxed);
-            let mut spoken = s.focus.tick(focus::TickIn { dt_ms: dt, mode, paused, keys: dk, limit_ms });
-            if ans != 0 {
-                if let Some(sp) = s.focus.answer(ans == 1) { spoken = Some(sp); }
-            }
-            signals::FOCUS_ASK.store(s.focus.phase == Phase::Ask, Ordering::Relaxed);
+            let spoken = s.focus.tick(focus::TickIn { dt_ms: dt, mode, paused, keys: dk, limit_ms });
             let listener_error = c.listener_error.lock().unwrap().clone();
             let view = state::paint(&s, Frame {
                 mode, paused, origin, monitors: monitors.clone(),
@@ -137,15 +139,16 @@ pub fn tick_loop(app: AppHandle, st: AppState, c: Arc<input::Counters>) {
             });
             s.snap = Some(view.clone());
             if s.dirty && now - last_save > 2_000 { s.save(); last_save = now; }
-            let buddy = s.data.settings.buddy_name.clone();
-            let packs = crate::packs::packs_dir(&s.path);
-            (view, credit, spoken, buddy, packs)
+            (view, credit, spoken)
         };
         let spoken = commands::settle_spoken(&st, spoken);
         let view = st.lock().unwrap().snap.clone().unwrap_or(view);
-        let say = spoken.map(|sp| games::say_event(sp.kind, &sp.game, &buddy, &packs));
+        let say = {
+            let s = st.lock().unwrap();
+            spoken.map(|sp| games::say_event(sp.kind, &sp.game, &s.data.settings.buddy_name, &crate::packs::packs_dir(&s.path), s.focus.prompt, s.focus.sprint_minutes))
+        };
         let play = view.focus_phase == Phase::Play;
-        let hit = view.focus_phase == Phase::Explain || (play && games::wants_hit(&view.focus_game));
+        let hit = play && games::wants_hit(&view.focus_game);
         windows::sync_game_chrome(&app, play, hit);
         let _ = app.emit("companion-state", &view);
         if let Some(say) = say { let _ = app.emit("focus-say", &say); }
@@ -155,6 +158,14 @@ pub fn tick_loop(app: AppHandle, st: AppState, c: Arc<input::Counters>) {
             windows::open_window(&app, "projects");
         }
     }
+}
+
+/// A window-shaped rect on the primary monitor, so a Watch preview has somewhere to stand.
+fn watch_preview(monitors: &[state::MonitorRect]) -> Option<platform::Fg> {
+    let m = monitors.iter().find(|m| m.primary).or_else(|| monitors.first())?;
+    let w = (m.w as i32 / 2).max(200).min(m.w as i32);
+    let h = (m.h as i32 / 2).max(160).min(m.h as i32);
+    Some(platform::Fg { id: 1, title: String::new(), x: m.x.saturating_add(48), y: m.y.saturating_add(48), w, h })
 }
 
 fn remember_fg(fg: &Option<platform::Fg>) {

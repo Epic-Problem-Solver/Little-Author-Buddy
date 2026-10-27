@@ -1,3 +1,4 @@
+mod activate;
 mod commands;
 mod distraction;
 mod focus;
@@ -13,6 +14,7 @@ mod state;
 mod store;
 mod tick;
 mod update;
+mod welcome;
 mod windows;
 
 use std::sync::Arc;
@@ -23,17 +25,24 @@ pub fn run() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             commands::race_arrived, commands::get_snapshot, commands::list_hats, commands::list_games,
+            commands::game_catalog, commands::open_games, commands::play_game,
             commands::focus_start, commands::focus_pause, commands::focus_back, commands::focus_finish, commands::focus_tag, commands::set_focus_minutes, commands::place_tag_hit,
             commands::get_data, commands::get_warnings,
             commands::new_project, commands::start_next, commands::update_settings,
             commands::save_letter, commands::export_journal, commands::default_journal_dir, commands::open_settings,
             commands::quit_app, commands::track_window, commands::initial_tab,
             commands::finish_onboarding, commands::reopen_onboarding,
-            update::check_update, update::open_download_page
+            commands::get_welcome, commands::dismiss_welcome,
+            update::check_update, update::open_download_page,
+            activate::activate_supporter,
+            commands::dash_event
         ])
         .setup(|app| {
             let path = app.path().app_data_dir()?.join("state.json");
             let (data, issue) = store::load(&path, state::now_ms());
+            let welcome = welcome::pending(&data.seen_version, data.onboarded == Some(true), env!("CARGO_PKG_VERSION"));
+            let show_welcome = welcome.is_some();
+            let welcome_sections = welcome.unwrap_or_default();
             let mut warnings = vec![];
             let no_save = issue.as_ref().map_or(false, |i| i.block_save());
             if let Some(i) = issue { let m = i.message(); eprintln!("{m}"); warnings.push(m); }
@@ -48,7 +57,7 @@ pub fn run() {
             let counters = Arc::new(input::Counters::default());
             let st: state::AppState = Arc::new(std::sync::Mutex::new(state::Shared {
                 data, path, dirty: false, snap: None, warnings, no_save, interactive_until: 0,
-                focus: focus::Session::default(),
+                focus: focus::Session::default(), welcome: welcome_sections,
             }));
             app.manage(st.clone());
             app.manage(counters.clone());
@@ -67,6 +76,8 @@ pub fn run() {
             windows::create_home(&handle, saved)?;
             for w in app.webview_windows().values() { let _ = w.set_content_protected(false); }
             if !st.lock().unwrap().data.onboarded.unwrap_or(true) { windows::open_onboarding(&handle); }
+            else if show_welcome { windows::open_welcome(&handle); }
+            windows::open_dashboard(&handle);
             let h = handle.clone();
             std::thread::spawn(move || tick::tick_loop(h, st, counters));
             let h2 = handle.clone();

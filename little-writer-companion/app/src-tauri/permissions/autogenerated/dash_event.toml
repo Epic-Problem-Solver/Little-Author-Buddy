@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-dash-event"
+description = "Enables the dash_event command without any pre-configured scope."
+commands.allow = ["dash_event"]
+
+[[permission]]
+identifier = "deny-dash-event"
+description = "Denies the dash_event command without any pre-configured scope."
+commands.deny = ["dash_event"]

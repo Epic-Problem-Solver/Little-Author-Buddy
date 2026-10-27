@@ -1,7 +1,7 @@
 {
   "id": "redlight",
   "kind": "game",
-  "name": "Red",
+  "name": "Red Light Green Light",
   "minAppVersion": "0.7.0",
   "engine": "redlight",
   "order": 3,

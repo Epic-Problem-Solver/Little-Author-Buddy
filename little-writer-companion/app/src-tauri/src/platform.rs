@@ -127,7 +127,7 @@ pub fn has_compositor() -> bool {
     }
 }
 
-/// Cursor position in physical pixels, top-left origin. Only called while a focus game is playing.
+/// Cursor position in physical pixels, top-left origin. Only called while a sprint game is playing.
 #[cfg(windows)]
 pub fn cursor_pos() -> Option<(i32, i32)> {
     use windows::Win32::Foundation::POINT;

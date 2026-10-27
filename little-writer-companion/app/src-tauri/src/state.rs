@@ -76,7 +76,7 @@ pub struct Snapshot {
     pub hat: String,
     pub hat_color: String,
     pub hat_extra: bool,
-    /// Writing time counted toward the focus game, and the limit. `focus_limit_ms` 0 is off.
+    /// Writing time counted toward the sprint, and the limit. `focus_limit_ms` 0 is off.
     pub focus_ms: u64,
     pub focus_limit_ms: u64,
     pub focus_ready: bool,
@@ -84,7 +84,7 @@ pub struct Snapshot {
     pub focus_held: bool,
     pub focus_phase: Phase,
     pub focus_game: String,
-    /// Active-window rectangle for the walk. Physical pixels. No title.
+    /// Active-window rectangle for the sprint question. Physical pixels. No title.
     pub focus_anchor: Option<(i32, i32, i32, i32)>,
 }
 
@@ -113,6 +113,8 @@ pub struct Shared {
     pub interactive_until: u64,
     /// Focus streak and the game it unlocked. Not written to state.json.
     pub focus: focus::Session,
+    /// Welcome lines for this launch. Not written to state.json.
+    pub welcome: Vec<crate::welcome::Section>,
 }
 
 impl Shared {
@@ -228,6 +230,7 @@ mod tests {
         let shared = Shared {
             data: store::Data::default(), path: PathBuf::new(), dirty: false, snap: None,
             warnings: vec![], no_save: true, interactive_until: 0, focus: focus::Session::default(),
+            welcome: vec![],
         };
         let frame = Frame {
             mode: Mode::Watch, paused: false, origin: (0, 0), monitors: vec![],
@@ -249,6 +252,7 @@ mod tests {
         let mut shared = Shared {
             data: store::Data::default(), path: PathBuf::new(), dirty: false, snap: None,
             warnings: vec![], no_save: true, interactive_until: 0, focus: focus::Session::default(),
+            welcome: vec![],
         };
         shared.focus.phase = Phase::Ask;
         shared.focus.anchor = Some((4, 5, 6, 7));

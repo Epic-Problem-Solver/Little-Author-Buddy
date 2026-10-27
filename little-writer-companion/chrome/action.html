@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Little Author Buddy</title>
+<style>
+  body { margin: 0; width: 240px; background: #f6efe2; color: #241414; font: 13px/1.35 system-ui, sans-serif; }
+  header { padding: 10px 12px 4px; font-weight: 700; }
+  p { margin: 0; padding: 0 12px 8px; }
+  button { display: block; width: calc(100% - 16px); margin: 0 8px 6px; padding: 6px 8px; text-align: left; background: #fff; color: #241414; border: 1px solid #241414; border-radius: 6px; cursor: pointer; font: inherit; }
+  button:disabled { opacity: 0.45; cursor: default; }
+  #desk { font-weight: 700; }
+</style>
+</head>
+<body>
+<header>Little Author Buddy</header>
+<p id="state">…</p>
+<button type="button" id="pause">Pause</button>
+<button type="button" id="projects">Projects</button>
+<button type="button" id="settings">Settings</button>
+<button type="button" id="journal">Journal</button>
+<button type="button" id="privacy">Privacy</button>
+<button type="button" id="quit">Quit</button>
+<button type="button" id="desk" hidden>Show desk</button>
+<script src="action.js"></script>
+</body>
+</html>

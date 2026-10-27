@@ -1,0 +1,8 @@
+{
+  "identifier": "games",
+  "windows": ["games"],
+  "permissions": [
+    "allow-game-catalog",
+    "allow-play-game"
+  ]
+}

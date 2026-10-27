@@ -177,16 +177,34 @@
       "description": "Permission identifier",
       "oneOf": [
         {
+          "description": "Enables the activate_supporter command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-activate-supporter",
+          "markdownDescription": "Enables the activate_supporter command without any pre-configured scope."
+        },
+        {
           "description": "Enables the check_update command without any pre-configured scope.",
           "type": "string",
           "const": "allow-check-update",
           "markdownDescription": "Enables the check_update command without any pre-configured scope."
         },
         {
+          "description": "Enables the dash_event command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-dash-event",
+          "markdownDescription": "Enables the dash_event command without any pre-configured scope."
+        },
+        {
           "description": "Enables the default_journal_dir command without any pre-configured scope.",
           "type": "string",
           "const": "allow-default-journal-dir",
           "markdownDescription": "Enables the default_journal_dir command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the dismiss_welcome command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-dismiss-welcome",
+          "markdownDescription": "Enables the dismiss_welcome command without any pre-configured scope."
         },
         {
           "description": "Enables the export_journal command without any pre-configured scope.",
@@ -199,6 +217,12 @@
           "type": "string",
           "const": "allow-finish-onboarding",
           "markdownDescription": "Enables the finish_onboarding command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the focus_answer command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-focus-answer",
+          "markdownDescription": "Enables the focus_answer command without any pre-configured scope."
         },
         {
           "description": "Enables the focus_back command without any pre-configured scope.",
@@ -231,6 +255,12 @@
           "markdownDescription": "Enables the focus_tag command without any pre-configured scope."
         },
         {
+          "description": "Enables the game_catalog command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-game-catalog",
+          "markdownDescription": "Enables the game_catalog command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_data command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-data",
@@ -247,6 +277,12 @@
           "type": "string",
           "const": "allow-get-warnings",
           "markdownDescription": "Enables the get_warnings command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_welcome command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-welcome",
+          "markdownDescription": "Enables the get_welcome command without any pre-configured scope."
         },
         {
           "description": "Enables the initial_tab command without any pre-configured scope.",
@@ -279,6 +315,12 @@
           "markdownDescription": "Enables the open_download_page command without any pre-configured scope."
         },
         {
+          "description": "Enables the open_games command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-open-games",
+          "markdownDescription": "Enables the open_games command without any pre-configured scope."
+        },
+        {
           "description": "Enables the open_settings command without any pre-configured scope.",
           "type": "string",
           "const": "allow-open-settings",
@@ -289,6 +331,18 @@
           "type": "string",
           "const": "allow-place-tag-hit",
           "markdownDescription": "Enables the place_tag_hit command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the play_game command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-play-game",
+          "markdownDescription": "Enables the play_game command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the prompt_line command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-prompt-line",
+          "markdownDescription": "Enables the prompt_line command without any pre-configured scope."
         },
         {
           "description": "Enables the quit_app command without any pre-configured scope.",
@@ -339,16 +393,34 @@
           "markdownDescription": "Enables the update_settings command without any pre-configured scope."
         },
         {
+          "description": "Denies the activate_supporter command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-activate-supporter",
+          "markdownDescription": "Denies the activate_supporter command without any pre-configured scope."
+        },
+        {
           "description": "Denies the check_update command without any pre-configured scope.",
           "type": "string",
           "const": "deny-check-update",
           "markdownDescription": "Denies the check_update command without any pre-configured scope."
         },
         {
+          "description": "Denies the dash_event command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-dash-event",
+          "markdownDescription": "Denies the dash_event command without any pre-configured scope."
+        },
+        {
           "description": "Denies the default_journal_dir command without any pre-configured scope.",
           "type": "string",
           "const": "deny-default-journal-dir",
           "markdownDescription": "Denies the default_journal_dir command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the dismiss_welcome command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-dismiss-welcome",
+          "markdownDescription": "Denies the dismiss_welcome command without any pre-configured scope."
         },
         {
           "description": "Denies the export_journal command without any pre-configured scope.",
@@ -361,6 +433,12 @@
           "type": "string",
           "const": "deny-finish-onboarding",
           "markdownDescription": "Denies the finish_onboarding command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the focus_answer command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-focus-answer",
+          "markdownDescription": "Denies the focus_answer command without any pre-configured scope."
         },
         {
           "description": "Denies the focus_back command without any pre-configured scope.",
@@ -393,6 +471,12 @@
           "markdownDescription": "Denies the focus_tag command without any pre-configured scope."
         },
         {
+          "description": "Denies the game_catalog command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-game-catalog",
+          "markdownDescription": "Denies the game_catalog command without any pre-configured scope."
+        },
+        {
           "description": "Denies the get_data command without any pre-configured scope.",
           "type": "string",
           "const": "deny-get-data",
@@ -409,6 +493,12 @@
           "type": "string",
           "const": "deny-get-warnings",
           "markdownDescription": "Denies the get_warnings command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_welcome command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-welcome",
+          "markdownDescription": "Denies the get_welcome command without any pre-configured scope."
         },
         {
           "description": "Denies the initial_tab command without any pre-configured scope.",
@@ -441,6 +531,12 @@
           "markdownDescription": "Denies the open_download_page command without any pre-configured scope."
         },
         {
+          "description": "Denies the open_games command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-open-games",
+          "markdownDescription": "Denies the open_games command without any pre-configured scope."
+        },
+        {
           "description": "Denies the open_settings command without any pre-configured scope.",
           "type": "string",
           "const": "deny-open-settings",
@@ -451,6 +547,18 @@
           "type": "string",
           "const": "deny-place-tag-hit",
           "markdownDescription": "Denies the place_tag_hit command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the play_game command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-play-game",
+          "markdownDescription": "Denies the play_game command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the prompt_line command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-prompt-line",
+          "markdownDescription": "Denies the prompt_line command without any pre-configured scope."
         },
         {
           "description": "Denies the quit_app command without any pre-configured scope.",

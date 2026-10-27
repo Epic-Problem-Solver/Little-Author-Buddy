@@ -12,7 +12,7 @@ window.LWCharacter = (() => {
   };
   const TOOLS = ['pen', 'typewriter', 'laptop'];
   const FALLBACK = '<svg class="lw-char" viewBox="0 0 240 220"><circle cx="120" cy="110" r="62" fill="var(--body,#e8cfa9)" stroke="var(--outline,#241414)" stroke-width="8"/><circle cx="100" cy="100" r="6" fill="var(--outline,#241414)"/><circle cx="140" cy="100" r="6" fill="var(--outline,#241414)"/></svg>';
-  const SVG_OK = { 'character.svg': 1, 'desk.svg': 1, 'ui-close.svg': 1, 'ui-gear.svg': 1 };
+  const SVG_OK = { 'character.svg': 1, 'desk.svg': 1, 'ui-close.svg': 1, 'ui-gear.svg': 1, 'ui-game.svg': 1 };
   const cache = {};
   async function svgText(name, fallback) {
     if (!Object.hasOwn(SVG_OK, name)) return fallback;
@@ -133,7 +133,7 @@ window.LWCharacter = (() => {
     }
     return { refresh, apply };
   }
-  // UI buttons (ui-close.svg / ui-gear.svg) inlined so their CSS vars + hover styles apply
+  // UI buttons (ui-close.svg / ui-gear.svg / ui-game.svg) inlined so their CSS vars + hover styles apply
   async function button(host, name, fallbackGlyph) {
     host.innerHTML = await svgText(name, `<svg class="lw-ui" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="#e8cfa9" stroke="#241414" stroke-width="3"/><text x="16" y="21" font-size="14" text-anchor="middle">${fallbackGlyph}</text></svg>`);
     return host.querySelector('svg');

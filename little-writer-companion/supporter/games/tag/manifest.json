@@ -1,7 +1,7 @@
 {
   "id": "tag",
   "kind": "game",
-  "name": "Tag",
+  "name": "Tag the Buddy",
   "minAppVersion": "0.6.2",
   "engine": "tag",
   "order": 2,

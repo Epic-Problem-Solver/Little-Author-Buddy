@@ -7,6 +7,7 @@
     "allow-get-data",
     "allow-get-snapshot",
     "allow-list-hats",
+    "allow-list-games",
     "allow-get-warnings",
     "allow-update-settings",
     "allow-new-project",
@@ -15,6 +16,7 @@
     "allow-default-journal-dir",
     "allow-initial-tab",
     "allow-check-update",
-    "allow-open-download-page"
+    "allow-open-download-page",
+    "allow-activate-supporter"
   ]
 }

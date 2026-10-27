@@ -127,7 +127,7 @@ One public repository and one `main` branch hold the app and the supporter conte
 
 ### Supporter packs
 
-- Source lives in `supporter/` in this same repository and is public. Hats are SVG art. Mini-games are chase-the-cursor, click-the-buddy, red light green light, high five, and warmer colder. A game pack is a manifest plus `game.json` (the lines Buddy speaks). The app runs those games itself, because pack scripts are not executed. Each pack has a manifest with `id`, `kind` (`hat` or `game`), `minAppVersion`, and `files`.
+- Source lives in `supporter/` in this same repository and is public. Hats are SVG art. Mini-games are Chase the Mouse, Tag the Buddy, Red Light Green Light, High Five, and Hide and Seek. A game pack is a manifest plus `game.json` (the lines Buddy speaks). The app runs those games itself, because pack scripts are not executed. Each pack has a manifest with `id`, `kind` (`hat` or `game`), `minAppVersion`, and `files`.
 - The Stripe product is a zip built from `supporter/`. A new hat, or new lines for a game the app already runs, is a new zip, not a new build of the app. A new engine is an app build.
 - The app loads installed packs from a `packs/` directory beside `state.json` in the `dev.lwc.companion` data directory (`%APPDATA%\dev.lwc.companion\packs\` on Windows, `~/.local/share/dev.lwc.companion/packs/` on Linux, `~/Library/Application Support/dev.lwc.companion/packs/` on macOS). Loading is local, the same kind of read as `content/*.json`. The app refuses a pack whose `minAppVersion` is newer than itself.
 - No license key, account, or network check is required. Building `supporter/` from source is allowed.

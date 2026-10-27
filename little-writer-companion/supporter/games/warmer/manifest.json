@@ -1,7 +1,7 @@
 {
   "id": "warmer",
   "kind": "game",
-  "name": "Warm",
+  "name": "Hide and Seek",
   "minAppVersion": "0.7.0",
   "engine": "warmer",
   "order": 5,

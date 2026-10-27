@@ -1,11 +1,12 @@
 body{font:14px system-ui,sans-serif;background:#f3e4cb;color:#241414;margin:0}
-nav{display:flex;gap:4px;background:#e8cfa9;padding:6px}nav a{padding:6px 12px;border-radius:6px;text-decoration:none;color:inherit}nav a.on{background:#fff}
+nav{display:flex;gap:4px;background:#e8cfa9;padding:6px;flex-wrap:wrap}nav a{padding:6px 12px;border-radius:6px;text-decoration:none;color:inherit}nav a.on{background:#fff}
 section{display:none;padding:14px}section.on{display:block}
 fieldset{border:1px solid #b77d48;border-radius:8px;margin:0 0 12px}label{display:block;margin:5px 0}
 input[type=number]{width:70px}textarea,#jdir{width:95%}
-#preview{width:120px;height:110px;float:right}#preview svg{width:120px;height:110px}
+#preview,#hatPreview{width:120px;height:110px;float:right}#preview svg,#hatPreview svg{width:120px;height:110px}
+#gameList{margin:6px 0 0;padding-left:18px}#gameList:empty{display:none}
 .letter{background:#fffaf0;border:2px solid #241414;border-radius:8px;padding:10px;margin:0 0 10px}.letter small{color:#7a6050}
-button{padding:5px 10px}#msg,#expmsg{color:#3d7a35;margin-left:8px}#upmsg{margin-left:8px}
+button{padding:5px 10px}#msg,#expmsg,#supporterMsg{color:#3d7a35;margin-left:8px}#upmsg,#dlcmsg{margin-left:8px}
 #warns div{background:#fff3cd;border:1px solid #b7791f;padding:8px;margin:8px}
 #await{background:#d6f0c4;border-radius:8px;padding:8px;margin-bottom:8px}#await:empty{display:none}
 .info{font-size:12px;color:#5a4636;margin:6px 0}

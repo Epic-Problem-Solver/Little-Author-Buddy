@@ -21,6 +21,18 @@ pub struct Machine {
 impl Machine {
     pub fn new(now: u64) -> Self { Self { mode: Mode::Typing, last_key: now, wander_at: u64::MAX, race_until: 0 } }
 
+    /// Pin a mode for the Events window. The tick calls this before `step`.
+    /// `until` is when sleep gets up, and the safety deadline for a race home.
+    pub fn hold(&mut self, mode: Mode, now: u64, until: u64) {
+        self.mode = mode;
+        match mode {
+            Mode::Typing => { self.last_key = now; self.race_until = 0; }
+            Mode::Asleep => { self.last_key = 0; self.wander_at = until; self.race_until = 0; }
+            Mode::Wander | Mode::Watch => { self.last_key = 0; self.wander_at = 0; self.race_until = 0; }
+            Mode::RaceBack => { self.last_key = 0; self.race_until = until; }
+        }
+    }
+
     /// `wander_delay` is called when falling asleep to pick a random 1-5 min delay.
     pub fn step(&mut self, i: &Inputs, p: &Params, mut wander_delay: impl FnMut() -> u64) -> Mode {
         use Mode::*;
@@ -98,5 +110,26 @@ mod tests {
         st(&mut m, 30_000, 0, false); st(&mut m, 31_000, 1, false);
         assert_eq!(st(&mut m, 39_999, 0, false), Mode::RaceBack);
         assert_eq!(st(&mut m, 40_000, 0, false), Mode::Typing);
+    }
+
+    #[test]
+    fn a_hold_sticks_until_step_is_allowed_to_leave_it() {
+        let p = Params { idle_ms: 20_000, race_ms: 1_500 };
+        let step = |m: &mut Machine, now, distracted, arrived| {
+            m.step(&Inputs { now, new_keys: 0, distracted, arrived }, &p, || 1)
+        };
+        let mut m = Machine::new(0);
+        m.hold(Mode::Asleep, 100_000, 220_000);
+        assert_eq!(step(&mut m, 100_000, false, false), Mode::Asleep);
+        m.hold(Mode::Watch, 101_000, 220_000);
+        assert_eq!(step(&mut m, 101_000, true, false), Mode::Watch);
+        assert_eq!(step(&mut m, 102_000, false, false), Mode::Wander);
+        m.hold(Mode::Wander, 103_000, 220_000);
+        assert_eq!(step(&mut m, 103_000, false, false), Mode::Wander);
+        m.hold(Mode::Typing, 104_000, 220_000);
+        assert_eq!(step(&mut m, 104_000, true, false), Mode::Typing);
+        m.hold(Mode::RaceBack, 105_000, 220_000);
+        assert_eq!(step(&mut m, 105_000, false, false), Mode::RaceBack);
+        assert_eq!(m.step(&Inputs { now: 106_000, new_keys: 0, distracted: false, arrived: true }, &p, || 1), Mode::Typing);
     }
 }

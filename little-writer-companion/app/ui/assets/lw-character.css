@@ -198,7 +198,7 @@
 .lw-char:is([data-body=watching],[data-body=away]) .lw-rig{animation:lw-watch 5s ease-in-out infinite}
 @keyframes lw-watch{0%,100%{transform:rotate(-4deg) scale(1)}45%,60%{transform:rotate(5deg) translateY(-3px) scale(1.04,1.02)}}
 
-/* ---------- UI buttons (ui-close.svg / ui-gear.svg, inline) ---------- */
+/* ---------- UI buttons (ui-close.svg / ui-gear.svg / ui-game.svg, inline) ---------- */
 .lw-ui{--ui-bg:var(--body,#e8cfa9);--ui-shade:var(--shade,#b77d48);--ui-glyph:var(--body,#e8cfa9);--ui-hover:#f4dfbf;--ui-close-hover:#e9867a;
   cursor:pointer;display:inline-block;overflow:visible;transition:transform .15s}
 .lw-ui *{transform-box:fill-box;transform-origin:center;transition:fill .15s,transform .3s}
@@ -206,6 +206,7 @@
 .lw-ui:active{transform:scale(.92)}
 .lw-ui-gear:hover .lw-ui-bg{fill:var(--ui-hover)}
 .lw-ui-gear:hover .lw-ui-glyph{transform:rotate(90deg)}
+.lw-ui-game:hover .lw-ui-bg{fill:var(--ui-hover)}
 .lw-ui-close:hover .lw-ui-bg{fill:var(--ui-close-hover)}
 .lw-ui-close:hover .lw-ui-glyph{transform:rotate(90deg)}
 .lw-ui:focus-visible{outline:3px solid var(--outline,#241414);outline-offset:2px;border-radius:50%}

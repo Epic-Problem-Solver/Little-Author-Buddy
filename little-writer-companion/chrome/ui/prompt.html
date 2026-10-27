@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head><script src="../files.js"></script><script src="../host.js"></script>
+<meta charset="utf-8">
+<title>Little Author — Sprint</title>
+<link rel="stylesheet" href="assets/lw-character.css">
+<style>
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #f6efe2; user-select: none; }
+  #bubble { position: absolute; z-index: 3; top: 8px; left: 8px; right: 8px; display: none; background: #fff; border: 2px solid #241414; border-radius: 10px; padding: 4px 8px; font: 12px/1.3 system-ui, sans-serif; color: #241414; text-align: center; }
+  #bubble.on { display: block; }
+  #companion { position: absolute; left: 50%; top: 72px; width: 150px; margin-left: -75px; }
+  #companion .clip { overflow: hidden; width: 150px; height: 137.5px; }
+  #companion svg { width: 100%; height: 100%; display: block; }
+  #hit { position: absolute; inset: 0; pointer-events: none; }
+  #hit.on { pointer-events: auto; cursor: pointer; }
+  #choices { position: absolute; z-index: 4; left: 8px; right: 8px; bottom: 8px; display: flex; gap: 8px; }
+  #choices.off { display: none; }
+  #choices button { flex: 1; height: 28px; margin: 0; font: 700 13px/26px system-ui, sans-serif; color: #241414; background: #fff; border: 2px solid #241414; border-radius: 8px; cursor: pointer; }
+  #choices button:active { background: #e8cfa9; }
+</style>
+</head>
+<body>
+<div id="bubble"></div>
+<div id="companion"><div class="clip" id="charHost"></div><div id="hit"></div></div>
+<div id="choices"><button type="button" id="yes">Yes</button><button type="button" id="no">No</button></div>
+<script src="assets/lw-color.js"></script>
+<script src="character.js"></script>
+<script src="prompt.js"></script>
+</body>
+</html>

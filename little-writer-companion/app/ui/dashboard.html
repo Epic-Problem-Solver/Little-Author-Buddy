@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Little Author — Events</title>
+<style>
+  html, body { margin: 0; background: #f6efe2; color: #241414; font: 13px/1.35 system-ui, sans-serif; }
+  main { padding: 12px 14px 18px; }
+  h1 { font: 700 15px/1.2 system-ui, sans-serif; margin: 0 0 4px; }
+  p { margin: 0 0 10px; font-size: 12px; }
+  h2 { font: 700 11px/1.2 system-ui, sans-serif; margin: 12px 0 6px; letter-spacing: .04em; text-transform: uppercase; }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; }
+  button { font: 700 12px/1 system-ui, sans-serif; color: #241414; background: #fff; border: 2px solid #241414; border-radius: 8px; padding: 7px 10px; cursor: pointer; }
+  button:active { background: #e8cfa9; }
+  #status { min-height: 1.35em; margin: 12px 0 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Events</h1>
+  <p>Test build. Each button runs the real event. Modes hold for about two minutes, or until the next button or a letter key. Suggest speaks from the desk. Play starts that game.</p>
+  <h2>Buddy</h2>
+  <div class="row" id="modes"></div>
+  <h2>Games</h2>
+  <div class="row" id="games"></div>
+  <h2>Desk</h2>
+  <div class="row" id="desk"></div>
+  <p id="status"></p>
+</main>
+<script src="dashboard.js"></script>
+</body>
+</html>

@@ -2,11 +2,13 @@
 
 use crate::focus::{self, Phase};
 use crate::games;
+use crate::idle::Mode;
 use crate::packs;
 use crate::platform;
 use crate::signals;
 use crate::state::{self, AppState};
 use crate::store::{self, Tier};
+use crate::welcome;
 use crate::windows;
 use rand::Rng;
 use std::path::{Component, Path, PathBuf};
@@ -30,55 +32,89 @@ pub fn list_games(st: State<AppState>) -> Vec<games::GameInfo> {
     games::list(&dir)
 }
 
+/// Every engine, with a pack's name and explanation when that pack is installed.
+#[tauri::command]
+pub fn game_catalog(st: State<AppState>) -> Vec<games::GameCard> {
+    let (dir, buddy) = {
+        let s = st.lock().unwrap();
+        (packs::packs_dir(&s.path), s.data.settings.buddy_name.clone())
+    };
+    games::catalog(&dir, &buddy)
+}
+
+/// The games window. Async so the new webview is not created inside the click.
+#[tauri::command]
+pub async fn open_games(app: AppHandle) {
+    windows::open_games(&app);
+}
+
+/// Start one known game on the overlay. The anchor is the active window, with its title dropped.
+/// Async so a click-game window is not created inside the WebView2 click.
+#[tauri::command]
+pub async fn play_game(app: AppHandle, st: State<'_, AppState>, id: String) -> Result<(), String> {
+    let id = id.trim().to_string();
+    if !games::known(&id) { return Err("Unknown game.".into()); }
+    let anchor = sprint_anchor();
+    let (snap, say) = {
+        let mut s = st.lock().unwrap();
+        if !s.focus.begin_play(&id, anchor) { return Err("Could not start.".into()); }
+        publish(&mut s, None)
+    };
+    show_focus(&app, st.inner(), snap, say);
+    Ok(())
+}
+
+fn say_of(st: &state::Shared, sp: focus::Spoken) -> games::FocusSay {
+    games::say_event(sp.kind, &sp.game, &st.data.settings.buddy_name, &packs::packs_dir(&st.path), st.focus.prompt, st.focus.sprint_minutes)
+}
+
 fn publish(st: &mut state::Shared, spoken: Option<focus::Spoken>) -> (Option<state::Snapshot>, Option<games::FocusSay>) {
-    signals::FOCUS_ASK.store(st.focus.phase == Phase::Ask, Ordering::Relaxed);
     if let Some(snap) = st.snap.as_mut() { state::write_focus(snap, &st.focus, st.data.settings.focus_minutes); }
-    let say = spoken.map(|sp| games::say_event(sp.kind, &sp.game, &st.data.settings.buddy_name, &packs::packs_dir(&st.path)));
+    let say = spoken.map(|sp| say_of(st, sp));
     (st.snap.clone(), say)
 }
 
 fn chrome(s: &state::Shared) -> (bool, bool) {
     let play = s.focus.phase == Phase::Play;
-    let hit = s.focus.phase == Phase::Explain || (play && games::wants_hit(&s.focus.game));
+    let hit = play && games::wants_hit(&s.focus.game);
     (play, hit)
 }
 
-/// An invite becomes one random installed game. No pack means he stays at the desk.
-pub(crate) fn settle_spoken(st: &AppState, spoken: Option<focus::Spoken>) -> Option<focus::Spoken> {
+fn show_focus(app: &AppHandle, st: &AppState, snap: Option<state::Snapshot>, say: Option<games::FocusSay>) {
+    let (play, hit) = {
+        let s = st.lock().unwrap();
+        chrome(&s)
+    };
+    windows::sync_game_chrome(app, play, hit);
+    emit_focus(app, snap, say);
+}
+
+/// One of the five engines. The suggestion names a game the desk can play.
+fn any_engine() -> String {
+    let ids: Vec<String> = games::ENGINES.iter().copied().map(str::to_string).collect();
+    focus::choose_id(&ids, rand::thread_rng().gen()).unwrap_or_else(|| "chase".into())
+}
+
+/// A suggestion names one engine and stays at the desk. An old invite is dropped.
+pub(crate) fn settle_spoken(_st: &AppState, spoken: Option<focus::Spoken>) -> Option<focus::Spoken> {
     match spoken {
-        Some(sp) if sp.kind == focus::Kind::Invite => offer_random(st),
+        Some(sp) if sp.kind == focus::Kind::Invite => None,
+        Some(mut sp) if sp.kind == focus::Kind::Suggest => {
+            if sp.game.is_empty() { sp.game = any_engine(); }
+            Some(sp)
+        }
         other => other,
     }
 }
 
-fn offer_random(st: &AppState) -> Option<focus::Spoken> {
-    let ids = {
-        let s = st.lock().unwrap();
-        games::list(&packs::packs_dir(&s.path)).into_iter().map(|g| g.id).collect::<Vec<_>>()
-    };
-    let Some(id) = focus::choose_id(&ids, rand::thread_rng().gen()) else { return None };
-    let anchor = platform::foreground()
-        .filter(|f| !f.title.contains("Little Author"))
-        .map(|f| (f.x, f.y, f.w, f.h));
-    let mut s = st.lock().unwrap();
-    let spoken = s.focus.begin_ask(&id, anchor);
-    signals::FOCUS_ASK.store(s.focus.phase == Phase::Ask, Ordering::Relaxed);
-    let minutes = s.data.settings.focus_minutes;
-    let focus = s.focus.clone();
-    if let Some(snap) = s.snap.as_mut() { state::write_focus(snap, &focus, minutes); }
-    spoken
-}
-
 fn emit_settled(app: &AppHandle, st: &AppState, spoken: Option<focus::Spoken>) {
     let spoken = settle_spoken(st, spoken);
-    let (snap, say, play, hit) = {
+    let (snap, say) = {
         let s = st.lock().unwrap();
-        let say = spoken.map(|sp| games::say_event(sp.kind, &sp.game, &s.data.settings.buddy_name, &packs::packs_dir(&s.path)));
-        let (play, hit) = chrome(&s);
-        (s.snap.clone(), say, play, hit)
+        let say = spoken.map(|sp| say_of(&s, sp));
+        (s.snap.clone(), say)
     };
-    windows::sync_game_chrome(app, play, hit);
-    emit_focus(app, snap, say);
+    show_focus(app, st, snap, say);
 }
 
 fn emit_focus(app: &AppHandle, snap: Option<state::Snapshot>, say: Option<games::FocusSay>) {
@@ -116,41 +152,25 @@ pub fn focus_finish(app: AppHandle, st: State<AppState>) {
         if !s.focus.finish() { return; }
         publish(&mut s, None).0
     };
-    windows::sync_game_chrome(&app, false, false);
-    emit_focus(&app, snap, None);
+    show_focus(&app, st.inner(), snap, None);
 }
 
-/// The click catcher. During the explanation it starts play. During a click game it counts the click.
+/// The click on Buddy during a click game.
 #[tauri::command]
 pub fn focus_tag(app: AppHandle, st: State<AppState>) {
-    enum Hit { Start(Option<state::Snapshot>, bool, bool), Tag }
-    let hit = {
-        let mut s = st.lock().unwrap();
-        if s.focus.phase == Phase::Explain && s.focus.ready_click() {
-            let snap = publish(&mut s, None).0;
-            let (play, tag) = chrome(&s);
-            Hit::Start(snap, play, tag)
-        } else if s.focus.phase == Phase::Play && games::wants_hit(&s.focus.game) {
-            Hit::Tag
-        } else {
-            return;
-        }
+    let ok = {
+        let s = st.lock().unwrap();
+        s.focus.phase == Phase::Play && games::wants_hit(&s.focus.game)
     };
-    match hit {
-        Hit::Tag => { let _ = app.emit("tag-click", ()); }
-        Hit::Start(snap, play, tag) => {
-            windows::sync_game_chrome(&app, play, tag);
-            emit_focus(&app, snap, None);
-        }
-    }
+    if ok { let _ = app.emit("tag-click", ()); }
 }
 
-/// Move the click catcher over Buddy. Physical pixels. Used for the ready click and for a click game.
+/// Move the click catcher over Buddy. Physical pixels. Used during a click game.
 #[tauri::command]
 pub fn place_tag_hit(app: AppHandle, st: State<AppState>, x: i32, y: i32, w: u32, h: u32) {
     let ok = {
         let s = st.lock().unwrap();
-        s.focus.phase == Phase::Explain || (s.focus.phase == Phase::Play && games::wants_hit(&s.focus.game))
+        s.focus.phase == Phase::Play && games::wants_hit(&s.focus.game)
     };
     if ok { windows::place_tag_window(&app, x, y, w, h); }
 }
@@ -180,8 +200,7 @@ pub fn focus_back(app: AppHandle, st: State<AppState>) {
         if !s.focus.back_arrived() { return; }
         publish(&mut s, None).0
     };
-    windows::sync_game_chrome(&app, false, false);
-    emit_focus(&app, snap, None);
+    show_focus(&app, st.inner(), snap, None);
 }
 
 /// Settings document: projects, queue, journal, and the form. The overlay uses `get_snapshot` instead.
@@ -358,6 +377,7 @@ pub async fn finish_onboarding(app: AppHandle, buddy: String, colors: store::Col
         s.data.settings.colors = colors;
         s.data.settings.colors.derive();
         s.data.onboarded = Some(true);
+        s.data.seen_version = env!("CARGO_PKG_VERSION").to_string();
         if s.data.active.is_none() && s.data.queue.is_empty() {
             let title = if title.trim().is_empty() { "My Short Story".to_string() } else { title.trim().chars().take(120).collect() };
             let now = state::now_ms();
@@ -373,6 +393,21 @@ pub async fn finish_onboarding(app: AppHandle, buddy: String, colors: store::Col
 
 #[tauri::command]
 pub async fn reopen_onboarding(app: AppHandle) { windows::open_onboarding(&app) }
+
+#[tauri::command]
+pub fn get_welcome(st: State<AppState>) -> welcome::View {
+    let s = st.lock().unwrap();
+    let name = s.data.settings.buddy_name.trim();
+    welcome::View {
+        buddy: if name.is_empty() { store::DEFAULT_BUDDY.into() } else { name.to_string() },
+        sections: s.welcome.clone(),
+    }
+}
+
+#[tauri::command]
+pub async fn dismiss_welcome(app: AppHandle) {
+    if let Some(w) = app.get_webview_window("welcome") { let _ = w.close(); }
+}
 
 #[tauri::command]
 pub async fn quit_app(app: AppHandle) { windows::quit(&app) }
@@ -399,6 +434,118 @@ pub fn race_arrived(app: AppHandle) {
     signals::RACE_ARRIVED.store(true, Ordering::Relaxed);
     let _ = app.emit_to("home", "handoff", ());
     let _ = app.emit_to("overlay", "handoff", ());
+}
+
+const DASH_NOTICE: &str = "Unlocked: Novella + typewriter!";
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum HoldSet { Keep, Clear, Set(Mode) }
+
+#[derive(Debug)]
+struct DashEffect {
+    hold: HoldSet,
+    spoken: Option<focus::Spoken>,
+    letter: bool,
+    notice: bool,
+    /// Paint him at the desk for this event so a home line is visible.
+    show_home: bool,
+    status: String,
+}
+
+fn sprint_anchor() -> Option<focus::Anchor> {
+    platform::foreground()
+        .filter(|f| !f.title.contains("Little Author"))
+        .map(|f| (f.x, f.y, f.w, f.h))
+}
+
+fn wants_anchor(id: &str) -> bool {
+    matches!(id, "play-chase" | "play-tag" | "play-redlight" | "play-highfive" | "play-warmer")
+}
+
+/// One Events-window click. Modes stick for two minutes. Play starts that game.
+fn apply_dash(focus: &mut focus::Session, id: &str, game: &str, anchor: Option<focus::Anchor>) -> Result<DashEffect, String> {
+    let mode = match id {
+        "typing" => Some(Mode::Typing),
+        "asleep" => Some(Mode::Asleep),
+        "wander" => Some(Mode::Wander),
+        "watch" => Some(Mode::Watch),
+        "race" => Some(Mode::RaceBack),
+        _ => None,
+    };
+    if let Some(mode) = mode {
+        let _ = focus.limit(0);
+        let status = match mode {
+            Mode::Typing => "Typing for 2 minutes.",
+            Mode::Asleep => "Asleep for 2 minutes.",
+            Mode::Wander => "Wandering for 2 minutes.",
+            Mode::Watch => "Watching for 2 minutes.",
+            Mode::RaceBack => "Racing home.",
+        };
+        return Ok(DashEffect { hold: HoldSet::Set(mode), spoken: None, letter: false, notice: false, show_home: false, status: status.into() });
+    }
+    let home = |spoken, status: &str| DashEffect {
+        hold: HoldSet::Set(Mode::Typing), spoken, letter: false, notice: false, show_home: true, status: status.into(),
+    };
+    match id {
+        "away" => {
+            let game = if focus.game.is_empty() { game.to_string() } else { focus.game.clone() };
+            let _ = focus.limit(0);
+            Ok(home(Some(focus::Spoken { kind: focus::Kind::Away, game }), "Game over."))
+        }
+        "play-chase" | "play-tag" | "play-redlight" | "play-highfive" | "play-warmer" => {
+            let gid = id.trim_start_matches("play-");
+            if !focus.begin_play(gid, anchor) { return Err("Could not start.".into()); }
+            let label = games::builtin_name(gid);
+            Ok(DashEffect { hold: HoldSet::Clear, spoken: None, letter: false, notice: false, show_home: false, status: format!("Playing {label}.") })
+        }
+        "letter" => Ok(DashEffect { hold: HoldSet::Keep, spoken: None, letter: true, notice: false, show_home: false, status: "Fan letter. One journal file. The project is unchanged.".into() }),
+        "notice" => Ok(DashEffect { hold: HoldSet::Keep, spoken: None, letter: false, notice: true, show_home: false, status: "Unlock notice.".into() }),
+        "suggest" => Ok(home(Some(focus::Spoken { kind: focus::Kind::Suggest, game: game.to_string() }), "Suggested a game.")),
+        _ => Err("Unknown event.".into()),
+    }
+}
+
+/// Events window. Each id runs the real companion path. This build opens that window on launch.
+/// Async so the sprint window is not created inside the click handler. WebView2 crashes when it is.
+#[tauri::command]
+pub async fn dash_event(app: AppHandle, st: State<'_, AppState>, id: String) -> Result<String, String> {
+    let id = id.trim();
+    let anchor = if wants_anchor(id) { sprint_anchor() } else { None };
+    let picked = if id == "suggest" { any_engine() } else { String::new() };
+    let now = state::now_ms();
+    let (effect, snap, say) = {
+        let mut s = st.lock().unwrap();
+        let game = if picked.is_empty() { "chase" } else { picked.as_str() };
+        let effect = apply_dash(&mut s.focus, id, game, anchor)?;
+        match effect.hold {
+            HoldSet::Keep => {}
+            HoldSet::Clear => { *signals::DASH_HOLD.lock().unwrap() = None; }
+            HoldSet::Set(mode) => {
+                *signals::DASH_HOLD.lock().unwrap() = Some(signals::DashHold { mode, until: now.saturating_add(signals::DASH_HOLD_MS) });
+            }
+        }
+        let (mut snap, say) = publish(&mut s, effect.spoken.clone());
+        let painted = match effect.hold { HoldSet::Set(mode) => Some(mode), _ if effect.show_home => Some(Mode::Typing), _ => None };
+        if let Some(mode) = painted {
+            if let Some(view) = s.snap.as_mut() { view.mode = mode; }
+            if let Some(view) = snap.as_mut() { view.mode = mode; }
+        }
+        (effect, snap, say)
+    };
+    show_focus(&app, st.inner(), snap, say);
+    if effect.letter {
+        let project = store::Project {
+            name: "Dashboard".into(),
+            tier: Tier::ShortStory,
+            target_words: 3000,
+            keystrokes: 0,
+            started_at: now,
+            completed_at: Some(now),
+        };
+        let _ = app.emit("project-complete", &project);
+    }
+    if effect.notice { let _ = app.emit("notice", DASH_NOTICE); }
+    Ok(effect.status)
 }
 
 #[cfg(test)]
@@ -456,9 +603,109 @@ mod tests {
         const COMMANDS: &str = include_str!("commands.rs");
         const WINDOWS: &str = include_str!("windows.rs");
         assert!(COMMANDS.contains("pub async fn open_settings("), "window-creating commands must be async (WebView2 deadlock)");
+        assert!(COMMANDS.contains("pub async fn dash_event("), "the sprint question is created from this command");
+        assert!(COMMANDS.contains("pub async fn open_games("), "the games window is created from this command");
+        assert!(COMMANDS.contains("pub async fn play_game("), "a click game creates its window from this command");
+        let home = include_str!("../capabilities/home.json");
+        assert!(home.contains("allow-open-games"));
+        assert!(!home.contains("allow-focus-start"));
+        assert!(!home.contains("allow-focus-pause"));
+        assert!(!home.contains("allow-set-focus-minutes"));
+        let games_cap = include_str!("../capabilities/games.json");
+        assert!(games_cap.contains("allow-game-catalog"));
+        assert!(games_cap.contains("allow-play-game"));
+        assert!(!games_cap.contains("allow-activate-supporter"));
+        let build = include_str!("../build.rs");
+        assert!(build.contains("\"open_games\""));
+        assert!(build.contains("\"game_catalog\""));
+        assert!(build.contains("\"play_game\""));
         assert!(COMMANDS.contains("pub async fn finish_onboarding("));
+        assert!(COMMANDS.contains("pub async fn dismiss_welcome("));
         assert!(WINDOWS.matches("WebviewWindowBuilder::new(&h,").count() >= 2);
         assert!(!COMMANDS.contains(concat!("settings.html", "#")), "no fragment in the asset URL");
         assert!(!WINDOWS.contains(concat!("settings.html", "#")));
+        assert!(!COMMANDS.contains(concat!("pub fn focus_", "answer(")));
+        assert!(!COMMANDS.contains(concat!("pub fn prompt_", "line(")));
+        assert!(!WINDOWS.contains(concat!("prompt", ".html")));
+    }
+
+    fn run_dash(id: &str) -> (focus::Session, Result<DashEffect, String>) {
+        let mut focus = focus::Session::default();
+        let effect = apply_dash(&mut focus, id, "chase", Some((8, 9, 100, 80)));
+        (focus, effect)
+    }
+
+    #[test]
+    fn dashboard_modes_clear_a_sprint_and_hold() {
+        let (focus, effect) = run_dash("asleep");
+        let effect = effect.unwrap();
+        assert_eq!(effect.hold, HoldSet::Set(Mode::Asleep));
+        assert_eq!(focus.phase, Phase::Idle);
+        assert!(!focus.running);
+        assert_eq!(run_dash("watch").1.unwrap().hold, HoldSet::Set(Mode::Watch));
+        assert_eq!(run_dash("race").1.unwrap().hold, HoldSet::Set(Mode::RaceBack));
+    }
+
+    #[test]
+    fn dashboard_sprint_events_use_the_real_session() {
+        let mut asked = focus::Session::default();
+        asked.running = true;
+        asked.elapsed_ms = 2_000;
+        for id in ["sprint-ask", "explain", "sprint-again", "sprint-yes", "sprint-no"] {
+            let err = apply_dash(&mut asked, id, "chase", Some((8, 9, 100, 80))).unwrap_err();
+            assert!(err.contains("Unknown"), "{id}");
+            assert!(asked.running);
+            assert_eq!(asked.elapsed_ms, 2_000);
+            assert_eq!(asked.phase, Phase::Idle);
+        }
+
+        let (sug, effect) = run_dash("suggest");
+        let effect = effect.unwrap();
+        assert_eq!(sug.phase, Phase::Idle);
+        assert!(!sug.running);
+        let spoken = effect.spoken.unwrap();
+        assert_eq!(spoken.kind, focus::Kind::Suggest);
+        assert_eq!(spoken.game, "chase");
+        assert!(effect.show_home);
+        assert_eq!(effect.hold, HoldSet::Set(Mode::Typing));
+
+        let (play, effect) = run_dash("play-tag");
+        assert_eq!(play.phase, Phase::Play);
+        assert_eq!(play.game, "tag");
+        assert_eq!(effect.unwrap().status, "Playing Tag the Buddy.");
+
+        let mut mid = focus::Session::default();
+        mid.phase = Phase::Play;
+        mid.game = "warmer".into();
+        let effect = apply_dash(&mut mid, "away", "chase", None).unwrap();
+        assert_eq!(mid.phase, Phase::Idle);
+        assert_eq!(effect.spoken.unwrap().game, "warmer");
+        assert_eq!(effect.hold, HoldSet::Set(Mode::Typing));
+    }
+
+    #[test]
+    fn dashboard_leaves_minutes_and_projects_alone() {
+        let mut focus = focus::Session::default();
+        focus.running = true;
+        focus.elapsed_ms = 1_000;
+        let err = apply_dash(&mut focus, "sprint-ask", "chase", None).unwrap_err();
+        assert!(err.contains("Unknown"));
+        assert!(focus.running);
+        assert_eq!(focus.elapsed_ms, 1_000);
+        let letter = apply_dash(&mut focus, "letter", "chase", None).unwrap();
+        assert!(letter.letter);
+        assert!(!letter.notice);
+        assert_eq!(letter.hold, HoldSet::Keep);
+        assert!(focus.running);
+        assert!(apply_dash(&mut focus, "nope", "chase", None).is_err());
+        let cap = include_str!("../capabilities/dashboard.json");
+        assert!(cap.contains("allow-dash-event"));
+        assert!(!cap.contains("allow-activate-supporter"));
+        assert!(!cap.contains("allow-update-settings"));
+        assert!(include_str!("../build.rs").contains("\"dash_event\""));
+        assert!(include_str!("lib.rs").contains("commands::dash_event"));
+        let windows = include_str!("windows.rs");
+        assert!(windows.contains("Events…"));
+        assert!(windows.contains("dashboard.html"));
     }
 }
