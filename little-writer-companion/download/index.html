@@ -189,12 +189,13 @@
   .lab-soon, .lab-free { scroll-margin: 24px; }
   .lab-soon {
     margin-top: 48px;
-    padding: 20px 22px 8px;
+    padding: 20px 22px 22px;
     border: 3px dashed var(--trim);
     border-radius: 16px;
     background: #000;
   }
-  .lab-soon p:last-child, .lab-free > p { max-width: 40rem; }
+  .lab-soon > p:not(.lab-buy), .lab-free > p { max-width: 40rem; }
+  .lab-buy { margin: 18px 0 0; text-align: center; }
   .lab-free { margin-top: 28px; }
   .lab-downloads {
     display: flex;
@@ -370,8 +371,9 @@
 
     <section class="lab-soon" id="lab-soon" aria-labelledby="lab-soon-title">
       <p class="lab-kicker">Supporter version</p>
-      <h2 id="lab-soon-title">Supporter version coming soon</h2>
+      <h2 id="lab-soon-title">Supporter pack</h2>
       <p>Hats for your buddy, and small games: Chase the Mouse, Tag the Buddy, Red Light Green Light, High Five, and Hide and Seek. The writing desk stays free. Paying is a way to support the project, and the source stays open.</p>
+      <p class="lab-buy"><a class="lab-dl" rel="noopener" href="https://addvaluestudios.com/little-author-buddy-dlc/">Buy DLC</a></p>
     </section>
 
     <section class="lab-free" id="lab-free" aria-labelledby="lab-free-title">
