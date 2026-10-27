@@ -619,7 +619,7 @@ mod tests {
         let status = install_bytes(&zip, &dest).unwrap();
         assert_eq!(
             status.message,
-            "Installed 1 hat. Red needs a newer Little Author Buddy, so it was left out."
+            "Installed 1 hat. Red Light Green Light needs a newer Little Author Buddy, so it was left out."
         );
         assert!(status.installed);
         assert!(!dest.join("redlight").exists());

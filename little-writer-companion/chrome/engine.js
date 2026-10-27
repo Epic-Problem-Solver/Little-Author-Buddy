@@ -2,7 +2,7 @@
 // letter counts and timing only, titles never saved, focus streak not written
 // into the save, packs are data (never scripts). No Chrome APIs in this file.
 (function (root) {
-  const APP_VERSION = '0.8.0';
+  const APP_VERSION = '0.9.0';
   const SUGGEST_MS = 15 * 60 * 1000;
   const DEFAULT_BUDDY = 'Buddy';
   const MAX_FOCUS_MINUTES = 180;
@@ -1139,6 +1139,12 @@
         'Red Light Green Light, High Five, and Hide and Seek are new games. They are not in this extension.',
         'The games button beside the gear lists each game. Play fills this window, then shrinks it back.',
         'Settings can check for a newer release. The check sends nothing you wrote, and it does not download the update.',
+      ],
+    },
+    {
+      version: '0.9.0',
+      lines: [
+        'This Chrome version is a separate download from the desktop app. It keeps its own save.',
       ],
     },
   ];

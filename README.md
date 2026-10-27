@@ -17,17 +17,18 @@
   <a href="LICENSE">MIT License</a>
 </p>
 
-Little Author Buddy is a writing companion for Windows, macOS, and Linux. It counts your own letter keys toward a project, keeps a quiet desk on screen, and marks a finished story with a fan letter written on your machine. Version 0.8.0 is the public beta.
+Little Author Buddy is a writing companion for Windows, macOS, and Linux. It counts your own letter keys toward a project, keeps a quiet desk on screen, and marks a finished story with a fan letter written on your machine. Version 0.9.0 is the public beta.
 
 ## Download
 
 The [download page](https://epic-problem-solver.github.io/Little-Author-Buddy/little-writer-companion/download/) introduces the app. Installers for the current release are below, and every build is listed on [GitHub Releases](https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/latest).
 
-| System | v0.8.0 |
+| System | v0.9.0 |
 | --- | --- |
-| Windows 10 and 11 (x64) | [Setup](https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/download/v0.8.0/Little-Author-Buddy_0.8.0_x64-setup.exe) · [Portable](https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/download/v0.8.0/Little-Author-Buddy-0.8.0-portable.exe) |
-| macOS (Intel and Apple silicon) | [Disk image](https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/download/v0.8.0/Little-Author-Buddy_0.8.0_universal.dmg) |
-| Linux (x64) | [AppImage](https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/download/v0.8.0/Little-Author-Buddy_0.8.0_amd64.AppImage) · [Debian package](https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/download/v0.8.0/Little-Author-Buddy_0.8.0_amd64.deb) |
+| Windows 10 and 11 (x64) | [Setup](https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/download/v0.9.0/Little-Author-Buddy_0.9.0_x64-setup.exe) · [Portable](https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/download/v0.9.0/Little-Author-Buddy-0.9.0-portable.exe) |
+| macOS (Intel and Apple silicon) | [Disk image](https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/download/v0.9.0/Little-Author-Buddy_0.9.0_universal.dmg) |
+| Linux (x64) | [AppImage](https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/download/v0.9.0/Little-Author-Buddy_0.9.0_amd64.AppImage) · [Debian package](https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/download/v0.9.0/Little-Author-Buddy_0.9.0_amd64.deb) |
+| Chrome and Chrome OS | [Extension](https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/download/v0.9.0/Little-Author-Buddy_0.9.0_chrome.zip) |
 
 - Windows uses WebView2, which is part of Windows 10 and 11. The setup installer can fetch it if it is missing. The portable build expects it to be present.
 - The macOS disk image is an unsigned universal build for Intel and Apple silicon. [Opening the Mac app](#opening-the-mac-app) has the steps and Apple’s links.
@@ -36,11 +37,11 @@ The [download page](https://epic-problem-solver.github.io/Little-Author-Buddy/li
 
 ## Chrome and Chrome OS
 
-An unpacked extension in [`little-writer-companion/chrome`](little-writer-companion/chrome/README.md) runs the companion inside Chrome. Letter keys on web pages advance the story. The desk, projects, sprint games, and fan letters are the same idea as the desktop app, within what Chrome can do. The extension keeps its own save, separate from the desktop app. Load it from `chrome://extensions` with developer mode on.
+The [Chrome extension](https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/download/v0.9.0/Little-Author-Buddy_0.9.0_chrome.zip) runs the companion inside Chrome and Chrome OS. Unzip it, open `chrome://extensions`, turn on Developer mode, and choose Load unpacked on that folder. Letter keys on web pages advance the story. The desk, projects, sprint games, and fan letters are the same idea as the desktop app, within what Chrome can do. The extension keeps its own save, separate from the desktop app. It needs Chrome or Chrome OS 114 or newer. Source is in [`little-writer-companion/chrome`](little-writer-companion/chrome/README.md).
 
 ## Opening the Mac app
 
-The v0.8.0 disk image runs on Intel and Apple silicon Macs. It is not signed or notarized. Gatekeeper stops the first launch and shows a warning that the developer cannot be verified, or that Apple cannot check the app for malicious software. Approve that one copy, then grant the privacy permissions the companion uses to count keys and see the front window.
+The v0.9.0 disk image runs on Intel and Apple silicon Macs. It is not signed or notarized. Gatekeeper stops the first launch and shows a warning that the developer cannot be verified, or that Apple cannot check the app for malicious software. Approve that one copy, then grant the privacy permissions the companion uses to count keys and see the front window.
 
 Apple’s pages for this:
 

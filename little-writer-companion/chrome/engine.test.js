@@ -348,10 +348,10 @@ test('a path that leaves the zip installs nothing', async () => {
 test('a newer pack is named and an extra file leaves that pack out', async () => {
   const zip = zipOf([
     ['later/manifest.json', JSON.stringify({
-      id: 'later', name: 'Later hat', minAppVersion: '0.9.0', order: 2,
+      id: 'later', name: 'Later hat', minAppVersion: '99.0.0', order: 2,
     })],
     ['soon/manifest.json', JSON.stringify({
-      id: 'soon', name: 'Soon hat', minAppVersion: '0.9.1', order: 1,
+      id: 'soon', name: 'Soon hat', minAppVersion: '99.0.1', order: 1,
     })],
   ].concat(hatFiles('beanie', 'Knit beanie'), [['beanie/notes.txt', 'extra']]));
   const result = await LWC.installZip(zip, null);
@@ -385,7 +385,7 @@ test('welcome notes follow the saved version and describe the Chrome desk', () =
   assert.equal(all.map(s => s.lines.join('\n')).join('\n').includes('active window'), false);
   const jumped = session(0, { onboarded: true, seen_version: '0.7.0', settings: { buddy_name: 'Ada' } });
   assert.equal(jumped.welcomeDue, true);
-  assert.deepEqual(jumped.welcome.map(s => s.version), ['0.8.0']);
+  assert.deepEqual(jumped.welcome.map(s => s.version), ['0.8.0', '0.9.0']);
   const view = LWC.invoke(jumped, 'get_welcome', {}, 1).value;
   assert.equal(view.buddy, 'Ada');
   assert.equal(view.sections[0].version, '0.8.0');
@@ -394,10 +394,11 @@ test('welcome notes follow the saved version and describe the Chrome desk', () =
   assert.equal(jumped.data.seen_version, '0.7.0');
   assert.equal(LWC.pendingWelcome('0.8.0', true, '0.8.0'), null);
   assert.equal(LWC.pendingWelcome('0.9.0', true, '0.8.0'), null);
-  assert.deepEqual(LWC.pendingWelcome('0.8.0', true, '0.9.0'), []);
+  assert.deepEqual(LWC.pendingWelcome('0.8.0', true, '0.9.0').map(s => s.version), ['0.9.0']);
+  assert.deepEqual(LWC.pendingWelcome('0.9.0', true, '0.10.0'), []);
   const fresh = session(0);
   assert.equal(fresh.welcomeDue, false);
   LWC.invoke(fresh, 'finish_onboarding', { buddy: 'Ada', colors: { body: '#cfe6ff' }, title: 'Notes' }, 1);
-  assert.equal(fresh.data.seen_version, '0.8.0');
+  assert.equal(fresh.data.seen_version, '0.9.0');
   assert.equal(LWC.pendingWelcome(fresh.data.seen_version, true, LWC.APP_VERSION), null);
 });

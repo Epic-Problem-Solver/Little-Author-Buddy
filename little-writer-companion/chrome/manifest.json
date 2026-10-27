@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Little Author Buddy",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "A writing companion for Chrome. Letter keys on web pages advance the story. Key contents are never stored.",
   "minimum_chrome_version": "114",
   "permissions": ["storage", "tabs", "windows", "system.display", "alarms", "alwaysOnTopWindows"],

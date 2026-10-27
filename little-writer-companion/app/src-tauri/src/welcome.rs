@@ -33,6 +33,12 @@ const NOTES: &[Note] = &[
             "Settings can check for a newer release. The check sends nothing you wrote, and it does not download the update.",
         ],
     },
+    Note {
+        version: "0.9.0",
+        lines: &[
+            "Little Author Buddy for Chrome is a separate download. It keeps its own save.",
+        ],
+    },
 ];
 
 #[derive(Clone, Serialize)]
@@ -115,7 +121,8 @@ mod tests {
 
     #[test]
     fn a_newer_build_with_no_written_notes_still_welcomes() {
-        let notes = pending("0.8.0", true, "0.9.0").unwrap();
+        let notes = pending("0.9.0", true, "0.10.0").unwrap();
         assert!(notes.is_empty());
+        assert_eq!(versions("0.8.0", "0.9.0").unwrap(), vec!["0.9.0"]);
     }
 }

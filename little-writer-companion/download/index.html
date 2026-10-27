@@ -207,7 +207,8 @@
   .lab-downloads.is-set .lab-os { display: none; }
   .lab-downloads.is-windows .lab-os[data-os="windows"],
   .lab-downloads.is-mac .lab-os[data-os="mac"],
-  .lab-downloads.is-linux .lab-os[data-os="linux"] { display: block; }
+  .lab-downloads.is-linux .lab-os[data-os="linux"],
+  .lab-downloads.is-chrome .lab-os[data-os="chrome"] { display: block; }
   .lab-dl {
     display: inline-flex;
     min-width: min(100%, 280px);
@@ -237,7 +238,7 @@
   .lab-silicon, .lab-alt, .lab-file, .lab-aside { font-size: 0.95rem; }
   .lab-choose, .lab-computer { display: none; text-align: center; }
   .lab-downloads.is-unknown .lab-choose, .lab-downloads.is-phone .lab-computer { display: block; }
-  .lab-switch { display: none; justify-content: center; gap: 18px; margin: 16px 0 0; }
+  .lab-switch { display: none; justify-content: center; flex-wrap: wrap; gap: 18px; margin: 16px 0 0; }
   .lab-downloads.is-set:not(.is-phone) .lab-switch { display: flex; }
   .lab-switch button {
     background: none;
@@ -375,12 +376,12 @@
 
     <section class="lab-free" id="lab-free" aria-labelledby="lab-free-title">
       <h2 id="lab-free-title">Free version</h2>
-      <p>The writing companion for Windows, Mac, and Linux.</p>
+      <p>The writing companion for Windows, Mac, Linux, and Chrome.</p>
       <div class="lab-downloads" id="lab-downloads">
         <p class="lab-computer" id="lab-computer">Little Author Buddy runs on a computer, not on a phone or tablet.</p>
         <p class="lab-choose" id="lab-choose">Which computer are you on?</p>
         <div class="lab-os" data-os="windows">
-          <a class="lab-dl" data-lab-dl="windows" data-coach="Open the setup file that just downloaded." rel="noopener" href="https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/latest/download/Little-Author-Buddy_0.8.0_x64-setup.exe">Download for Windows</a>
+          <a class="lab-dl" data-lab-dl="windows" data-coach="Open the setup file that just downloaded." rel="noopener" href="https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/latest/download/Little-Author-Buddy_0.9.0_x64-setup.exe">Download for Windows</a>
           <p class="lab-note">If Windows says it protected your PC, choose More info, then Run anyway.</p>
           <details class="lab-steps">
             <summary>Show the steps</summary>
@@ -389,11 +390,11 @@
               <li>If a blue window says Windows protected your PC, choose More info, then Run anyway.</li>
               <li>If a WebView2 installer appears, let it finish. Little Author Buddy is then in the Start menu.</li>
             </ol>
-            <p class="lab-file">The file is named Little-Author-Buddy_0.8.0_x64-setup.exe. That is the official copy.</p>
+            <p class="lab-file">The file is named Little-Author-Buddy_0.9.0_x64-setup.exe. That is the official copy.</p>
           </details>
         </div>
         <div class="lab-os" data-os="mac">
-          <a class="lab-dl" data-lab-dl="mac" data-coach="Open the disk image, and drag Little Author Buddy into Applications." rel="noopener" href="https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/latest/download/Little-Author-Buddy_0.8.0_universal.dmg">Download for Mac</a>
+          <a class="lab-dl" data-lab-dl="mac" data-coach="Open the disk image, and drag Little Author Buddy into Applications." rel="noopener" href="https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/latest/download/Little-Author-Buddy_0.9.0_universal.dmg">Download for Mac</a>
           <p class="lab-note">Mac will block the first open. Click Done. Do not move it to the Trash.</p>
           <p class="lab-silicon">Works on Intel and Apple silicon Macs.</p>
           <details class="lab-steps">
@@ -405,31 +406,46 @@
               <li>On that same page, allow Little Author Buddy under Accessibility, and under Input Monitoring if it is listed. Open the app again.</li>
             </ol>
             <p class="lab-aside">On macOS Sonoma or earlier, Control-click the app and choose Open.</p>
-            <p class="lab-file">The file is named Little-Author-Buddy_0.8.0_universal.dmg. That is the official copy.</p>
+            <p class="lab-file">The file is named Little-Author-Buddy_0.9.0_universal.dmg. That is the official copy.</p>
           </details>
         </div>
         <div class="lab-os" data-os="linux">
-          <a class="lab-dl" data-lab-dl="deb" data-coach="Open the download. Ubuntu will offer to install it." rel="noopener" href="https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/latest/download/Little-Author-Buddy_0.8.0_amd64.deb">Download for Ubuntu and Debian</a>
+          <a class="lab-dl" data-lab-dl="deb" data-coach="Open the download. Ubuntu will offer to install it." rel="noopener" href="https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/latest/download/Little-Author-Buddy_0.9.0_amd64.deb">Download for Ubuntu and Debian</a>
           <p class="lab-note">Open the download. Ubuntu will offer to install it.</p>
-          <p class="lab-alt"><a data-lab-dl="appimage" data-coach="Make that file executable, then open it." rel="noopener" href="https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/latest/download/Little-Author-Buddy_0.8.0_amd64.AppImage">Other Linux</a>. Make that file executable, then open it. The computer also needs WebKitGTK 4.1.</p>
+          <p class="lab-alt"><a data-lab-dl="appimage" data-coach="Make that file executable, then open it." rel="noopener" href="https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/latest/download/Little-Author-Buddy_0.9.0_amd64.AppImage">Other Linux</a>. Make that file executable, then open it. The computer also needs WebKitGTK 4.1.</p>
           <details class="lab-steps">
             <summary>Show the steps</summary>
             <ol>
               <li>Open the downloaded file.</li>
               <li>Ubuntu will ask to install it. Confirm. Little Author Buddy then appears with your applications.</li>
             </ol>
-            <p class="lab-file">The file is named Little-Author-Buddy_0.8.0_amd64.deb. That is the official copy.</p>
+            <p class="lab-file">The file is named Little-Author-Buddy_0.9.0_amd64.deb. That is the official copy.</p>
+          </details>
+        </div>
+        <div class="lab-os" data-os="chrome">
+          <a class="lab-dl" data-lab-dl="chrome" data-coach="Unzip the download, then load that folder in Chrome." rel="noopener" href="https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/latest/download/Little-Author-Buddy_0.9.0_chrome.zip">Download for Chrome</a>
+          <p class="lab-note">Unzip it, then load that folder in Chrome.</p>
+          <details class="lab-steps">
+            <summary>Show the steps</summary>
+            <ol>
+              <li>Unzip the download.</li>
+              <li>Open chrome://extensions.</li>
+              <li>Turn on Developer mode.</li>
+              <li>Choose Load unpacked and select the unzipped folder. That folder contains manifest.json.</li>
+            </ol>
+            <p class="lab-file">The file is named Little-Author-Buddy_0.9.0_chrome.zip. That is the official copy. It needs Chrome or Chrome OS 114 or newer, and it keeps its own save.</p>
           </details>
         </div>
         <div class="lab-switch" role="group" aria-label="Choose a computer">
           <button type="button" data-pick="windows" aria-pressed="false">Windows</button>
           <button type="button" data-pick="mac" aria-pressed="false">Mac</button>
           <button type="button" data-pick="linux" aria-pressed="false">Linux</button>
+          <button type="button" data-pick="chrome" aria-pressed="false">Chrome</button>
         </div>
       </div>
       <p class="lab-release">The latest free release from GitHub.</p>
     </section>
-    <!-- Preview another computer with ?os=windows, mac, linux, phone, or unknown. -->
+    <!-- Preview another computer with ?os=windows, mac, linux, chrome, phone, or unknown. -->
     <script>
     (function () {
       var q = '';
@@ -437,9 +453,10 @@
       var ua = navigator.userAgent || '';
       var platform = navigator.platform || '';
       var os = '';
-      if (q === 'windows' || q === 'mac' || q === 'linux' || q === 'phone') os = q;
+      if (q === 'windows' || q === 'mac' || q === 'linux' || q === 'chrome' || q === 'phone') os = q;
       else if (q === 'unknown') os = '';
       else if (/iPhone|iPad|iPod|Android/i.test(ua) || (platform === 'MacIntel' && navigator.maxTouchPoints > 1)) os = 'phone';
+      else if (/CrOS/i.test(ua)) os = 'chrome';
       else if (/Win/i.test(platform)) os = 'windows';
       else if (/Mac/i.test(platform)) os = 'mac';
       else if (/Linux|X11/i.test(platform)) os = 'linux';
@@ -884,7 +901,7 @@
   function showOs(os) {
     if (!downloads) return;
     downloads.classList.add('is-set');
-    downloads.classList.remove('is-windows', 'is-mac', 'is-linux', 'is-unknown', 'is-phone');
+    downloads.classList.remove('is-windows', 'is-mac', 'is-linux', 'is-chrome', 'is-unknown', 'is-phone');
     downloads.classList.add(os ? ('is-' + os) : 'is-unknown');
     downloads.setAttribute('data-shown', os);
     downloads.querySelectorAll('details').forEach(function (d) { d.open = false; });

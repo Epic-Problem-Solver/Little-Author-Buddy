@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
 define('LAB_DL_REPO', 'Epic-Problem-Solver/Little-Author-Buddy');
 
 /**
- * @return array{windows:string,mac:string,appimage:string,deb:string,version:string}
+ * @return array{windows:string,mac:string,appimage:string,deb:string,chrome:string,version:string}
  */
 function lab_dl_latest() {
     $cached = get_transient('lab_dl_latest');
@@ -33,6 +33,7 @@ function lab_dl_latest() {
         'mac' => '',
         'appimage' => '',
         'deb' => '',
+        'chrome' => '',
         'version' => '',
     );
     $response = wp_remote_get(
@@ -61,6 +62,7 @@ function lab_dl_latest() {
         'mac' => null,
         'appimage' => null,
         'deb' => null,
+        'chrome' => null,
     );
     $assets = isset($data['assets']) && is_array($data['assets']) ? $data['assets'] : array();
     foreach ($assets as $asset) {
@@ -77,6 +79,8 @@ function lab_dl_latest() {
             $best['mac'] = lab_dl_prefer($best['mac'], $name, $url, '/universal/i');
         } elseif (preg_match('/-setup\.exe$/i', $name)) {
             $best['windows'] = lab_dl_prefer($best['windows'], $name, $url, '/x64|amd64/i');
+        } elseif (preg_match('/chrome.*\.zip$/i', $name)) {
+            $best['chrome'] = lab_dl_prefer($best['chrome'], $name, $url, '/chrome/i');
         }
     }
 
@@ -164,10 +168,11 @@ function lab_dl_shortcode() {
 
     $latest = lab_dl_latest();
     $stable = array(
-        'windows' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_0.8.0_x64-setup.exe',
-        'mac' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_0.8.0_universal.dmg',
-        'appimage' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_0.8.0_amd64.AppImage',
-        'deb' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_0.8.0_amd64.deb',
+        'windows' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_0.9.0_x64-setup.exe',
+        'mac' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_0.9.0_universal.dmg',
+        'appimage' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_0.9.0_amd64.AppImage',
+        'deb' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_0.9.0_amd64.deb',
+        'chrome' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_0.9.0_chrome.zip',
     );
     foreach ($stable as $key => $from) {
         if (!empty($latest[$key])) {
