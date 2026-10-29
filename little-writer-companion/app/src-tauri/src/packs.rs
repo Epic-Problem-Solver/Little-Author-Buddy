@@ -228,7 +228,7 @@ mod tests {
         assert_eq!(hats[3].color, HatColorMode::Choice);
         assert_eq!(hats[3].colors.iter().map(|c| c.value.as_str()).collect::<Vec<_>>(), ["#241414", "#6e4527", "#f4f0ea"]);
         assert_eq!(hats[0].default_color, "#2f3a66");
-        assert!(version_ok("0.9.0") && version_ok("0.8.0") && version_ok("0.7.0") && version_ok("0.6.2") && version_ok("0.6") && !version_ok("0.9.1") && !version_ok("99.0.0"));
+        assert!(version_ok("0.9.1") && version_ok("0.9.0") && version_ok("0.8.0") && version_ok("0.7.0") && version_ok("0.6.2") && version_ok("0.6") && !version_ok("0.9.2") && !version_ok("99.0.0"));
     }
 
     #[test]

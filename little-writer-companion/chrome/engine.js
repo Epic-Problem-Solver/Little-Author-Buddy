@@ -2,7 +2,7 @@
 // letter counts and timing only, titles never saved, focus streak not written
 // into the save, packs are data (never scripts). No Chrome APIs in this file.
 (function (root) {
-  const APP_VERSION = '0.9.0';
+  const APP_VERSION = '0.9.1';
   const SUGGEST_MS = 15 * 60 * 1000;
   const DEFAULT_BUDDY = 'Buddy';
   const MAX_FOCUS_MINUTES = 180;
@@ -1145,6 +1145,13 @@
       version: '0.9.0',
       lines: [
         'This Chrome version is a separate download from the desktop app. It keeps its own save.',
+      ],
+    },
+    {
+      version: '0.9.1',
+      lines: [
+        'High Five raises Buddy\'s hand.',
+        'The desk window opens when a display reports a fractional position.',
       ],
     },
   ];
