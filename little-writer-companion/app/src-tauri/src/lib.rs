@@ -21,7 +21,20 @@ use std::sync::Arc;
 use std::time::Duration;
 use tauri::Manager;
 
+/// WebKitGTK accelerated compositing leaves the previous transparent frame on X11,
+/// and its monitor-sized child window is what makes Cinnamon hide the panel.
+/// Shared-memory frames repaint the whole view. A value already in the environment stays.
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+fn prefer_shared_webkit_frames() {
+    if std::env::var_os("WEBKIT_DISABLE_COMPOSITING_MODE").is_none() {
+        // Before the builder and before any worker thread, so nothing else is reading the environment.
+        unsafe { std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1"); }
+    }
+}
+
 pub fn run() {
+    #[cfg(target_os = "linux")]
+    prefer_shared_webkit_frames();
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             commands::race_arrived, commands::get_snapshot, commands::list_hats, commands::list_games,

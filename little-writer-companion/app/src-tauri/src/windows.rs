@@ -53,14 +53,73 @@ pub fn place_home(saved: Option<(i32, i32)>, size: (u32, u32), mons: &[MonRect])
     Some(clamp_on(m, m.0 as i64 + m.2 as i64 - w - (20.0 * m.4) as i64, m.1 as i64 + m.3 as i64 - h - (60.0 * m.4) as i64))
 }
 
-pub fn home_position(app: &AppHandle, saved: Option<(i32, i32)>, size: (u32, u32)) -> Option<(i32, i32)> {
+/// Work area when one was reported. An empty report falls back to the full monitor.
+pub fn usable_rect(full: (i32, i32, u32, u32), work: (i32, i32, u32, u32)) -> (i32, i32, u32, u32) {
+    if work.2 > 0 && work.3 > 0 { work } else { full }
+}
+
+fn rect_span(rects: &[(i32, i32, u32, u32)]) -> Option<(i32, i32, u32, u32)> {
+    if rects.is_empty() { return None; }
+    let mut x0 = i64::MAX;
+    let mut y0 = i64::MAX;
+    let mut x1 = i64::MIN;
+    let mut y1 = i64::MIN;
+    for r in rects {
+        x0 = x0.min(r.0 as i64);
+        y0 = y0.min(r.1 as i64);
+        x1 = x1.max(r.0 as i64 + r.2 as i64);
+        y1 = y1.max(r.1 as i64 + r.3 as i64);
+    }
+    let (w, h) = (x1 - x0, y1 - y0);
+    if w <= 0 || h <= 0 || w > u32::MAX as i64 || h > u32::MAX as i64 { return None; }
+    if x0 < i32::MIN as i64 || y0 < i32::MIN as i64 || x0 > i32::MAX as i64 || y0 > i32::MAX as i64 { return None; }
+    Some((x0 as i32, y0 as i32, w as u32, h as u32))
+}
+
+/// Bounding box of the usable rects, and those rects for roaming.
+/// A box that is exactly one full monitor drops one pixel of height, and every roam rect
+/// that forms that bottom edge drops the same pixel. Cinnamon hides the panel for a monitor-sized window.
+pub fn overlay_frame(full: &[(i32, i32, u32, u32)], usable: &[(i32, i32, u32, u32)]) -> Option<((i32, i32, u32, u32), Vec<(i32, i32, u32, u32)>)> {
+    let mut frame = rect_span(usable)?;
+    let mut roam = usable.to_vec();
+    if full.iter().any(|m| *m == frame) && frame.3 > 1 {
+        let bottom = frame.1 as i64 + frame.3 as i64;
+        let touch: Vec<usize> = roam.iter().enumerate()
+            .filter(|(_, r)| r.1 as i64 + r.3 as i64 == bottom)
+            .map(|(i, _)| i)
+            .collect();
+        if !touch.is_empty() && touch.iter().all(|&i| roam[i].3 > 1) {
+            frame.3 -= 1;
+            for i in touch { roam[i].3 -= 1; }
+        }
+    }
+    Some((frame, roam))
+}
+
+/// Full monitor geometry and the usable rect the desk and the overlay may occupy.
+fn monitor_lists(app: &AppHandle) -> Option<(Vec<(i32, i32, u32, u32)>, Vec<MonitorRect>)> {
     let w = app.get_webview_window("overlay")?;
     let prim = w.primary_monitor().ok().flatten().map(|m| (m.position().x, m.position().y));
-    let mons: Vec<MonRect> = w.available_monitors().ok()?.iter().map(|m| (
-        m.position().x, m.position().y, m.size().width, m.size().height,
-        m.scale_factor(), prim == Some((m.position().x, m.position().y)),
-    )).collect();
-    place_home(saved, size, &mons)
+    let listed = w.available_monitors().ok()?;
+    let mut full = Vec::with_capacity(listed.len());
+    let mut usable = Vec::with_capacity(listed.len());
+    for m in &listed {
+        let f = (m.position().x, m.position().y, m.size().width, m.size().height);
+        let wa = m.work_area();
+        let u = usable_rect(f, (wa.position.x, wa.position.y, wa.size.width, wa.size.height));
+        full.push(f);
+        usable.push(MonitorRect {
+            x: u.0, y: u.1, w: u.2, h: u.3, scale: m.scale_factor(),
+            primary: prim == Some((f.0, f.1)),
+        });
+    }
+    Some((full, usable))
+}
+
+pub fn home_position(app: &AppHandle, saved: Option<(i32, i32)>, size: (u32, u32)) -> Option<(i32, i32)> {
+    let (_, mons) = monitor_lists(app)?;
+    let rows: Vec<MonRect> = mons.into_iter().map(|m| (m.x, m.y, m.w, m.h, m.scale, m.primary)).collect();
+    place_home(saved, size, &rows)
 }
 
 /// Re-read the home window's real outer size and clamp it on screen. Main thread only.
@@ -74,28 +133,26 @@ pub fn reclamp_home(app: &AppHandle) {
     }
 }
 
-/// Size the overlay to the bounding box of every monitor, in physical pixels.
+/// Size the overlay to the bounding box of every monitor's work area, in physical pixels.
+/// A box that is still exactly one monitor loses one pixel of height so it is not treated as fullscreen.
 pub fn fit_overlay(app: &AppHandle) -> ((i32, i32), Vec<MonitorRect>) {
-    let Some(w) = app.get_webview_window("overlay") else { return ((0, 0), vec![]) };
-    let prim = w.primary_monitor().ok().flatten().map(|m| (m.position().x, m.position().y));
-    let mons: Vec<MonitorRect> = w.available_monitors().unwrap_or_default().iter().map(|m| MonitorRect {
-        x: m.position().x, y: m.position().y, w: m.size().width, h: m.size().height, scale: m.scale_factor(),
-        primary: prim == Some((m.position().x, m.position().y)),
-    }).collect();
+    let Some((full, mut mons)) = monitor_lists(app) else { return ((0, 0), vec![]) };
     if mons.is_empty() { return ((0, 0), mons) }
     *signals::REAL_MONS.lock().unwrap() = mons.iter().map(|m| (m.x, m.y, m.w, m.h)).collect();
-    let mons = if *signals::COMPOSITOR.get().unwrap_or(&true) { mons } else {
+    if !*signals::COMPOSITOR.get().unwrap_or(&true) {
         let p = mons.iter().find(|m| m.primary).unwrap_or(&mons[0]).clone();
         let (bw, bh) = ((460.0 * p.scale) as u32, (380.0 * p.scale) as u32);
-        vec![MonitorRect { x: p.x + p.w as i32 - bw as i32, y: p.y + p.h as i32 - bh as i32, w: bw, h: bh, scale: p.scale, primary: true }]
-    };
-    let x0 = mons.iter().map(|m| m.x).min().unwrap();
-    let y0 = mons.iter().map(|m| m.y).min().unwrap();
-    let x1 = mons.iter().map(|m| m.x + m.w as i32).max().unwrap();
-    let y1 = mons.iter().map(|m| m.y + m.h as i32).max().unwrap();
+        mons = vec![MonitorRect { x: p.x + p.w as i32 - bw as i32, y: p.y + p.h as i32 - bh as i32, w: bw, h: bh, scale: p.scale, primary: true }];
+    }
+    let usable: Vec<_> = mons.iter().map(|m| (m.x, m.y, m.w, m.h)).collect();
+    let Some(((x0, y0, fw, fh), roam)) = overlay_frame(&full, &usable) else { return ((0, 0), mons) };
+    for (m, r) in mons.iter_mut().zip(&roam) {
+        m.x = r.0; m.y = r.1; m.w = r.2; m.h = r.3;
+    }
+    let Some(w) = app.get_webview_window("overlay") else { return ((x0, y0), mons) };
     if w.outer_position().map(|p| (p.x, p.y)).ok() != Some((x0, y0)) { let _ = w.set_position(PhysicalPosition::new(x0, y0)); }
-    if w.inner_size().map(|s| (s.width, s.height)).ok() != Some(((x1 - x0) as u32, (y1 - y0) as u32)) {
-        let _ = w.set_size(PhysicalSize::new((x1 - x0) as u32, (y1 - y0) as u32));
+    if w.inner_size().map(|s| (s.width, s.height)).ok() != Some((fw, fh)) {
+        let _ = w.set_size(PhysicalSize::new(fw, fh));
     }
     ((x0, y0), mons)
 }
@@ -128,12 +185,17 @@ pub fn quit(app: &AppHandle) {
 
 pub fn initial_tab() -> String { signals::SETTINGS_TAB.lock().unwrap().clone() }
 
-/// Queue window work onto the main thread. The caller does not block.
+/// A new webview built on the UI thread never finishes on Windows, and the desk stops taking clicks.
+fn off_ui<F: FnOnce() + Send + 'static>(f: F) {
+    std::thread::spawn(f);
+}
+
+/// Queue window work off the UI thread. The caller does not block.
 pub fn open_window(app: &AppHandle, tab: &str) {
     let tab: String = tab.chars().filter(|c| c.is_ascii_alphanumeric()).collect();
     *signals::SETTINGS_TAB.lock().unwrap() = tab.clone();
     let h = app.clone();
-    let _ = app.run_on_main_thread(move || {
+    off_ui(move || {
         if let Some(w) = h.get_webview_window("settings") {
             let _ = h.emit_to("settings", "show-tab", tab);
             let _ = w.unminimize(); let _ = w.show(); let _ = w.set_focus();
@@ -146,7 +208,7 @@ pub fn open_window(app: &AppHandle, tab: &str) {
 
 pub fn open_onboarding(app: &AppHandle) {
     let h = app.clone();
-    let _ = app.run_on_main_thread(move || {
+    off_ui(move || {
         if let Some(w) = h.get_webview_window("onboarding") { let _ = w.show(); let _ = w.set_focus(); return; }
         let _ = tauri::WebviewWindowBuilder::new(&h, "onboarding", tauri::WebviewUrl::App("onboarding.html".into()))
             .title("Welcome to Little Author").inner_size(480.0, 600.0).resizable(false).center()
@@ -157,7 +219,7 @@ pub fn open_onboarding(app: &AppHandle) {
 /// Returning desk. The version is stored only after the window is created.
 pub fn open_welcome(app: &AppHandle) {
     let h = app.clone();
-    let _ = app.run_on_main_thread(move || {
+    off_ui(move || {
         let due = match h.try_state::<AppState>() {
             Some(st) => {
                 let s = st.lock().unwrap();
@@ -185,7 +247,7 @@ pub fn open_welcome(app: &AppHandle) {
 /// Games list. Decorated, centered, and left off the always-on-top stack.
 pub fn open_games(app: &AppHandle) {
     let h = app.clone();
-    let _ = app.run_on_main_thread(move || {
+    off_ui(move || {
         if let Some(w) = h.get_webview_window("games") {
             let _ = w.unminimize();
             let _ = w.show();
@@ -204,7 +266,7 @@ pub fn open_games(app: &AppHandle) {
 /// Test build. Buttons in this window run real companion events.
 pub fn open_dashboard(app: &AppHandle) {
     let h = app.clone();
-    let _ = app.run_on_main_thread(move || {
+    off_ui(move || {
         if let Some(w) = h.get_webview_window("dashboard") {
             let _ = w.unminimize();
             let _ = w.show();
@@ -251,40 +313,55 @@ pub fn install_tray(app: &AppHandle, st: &AppState, counters: &Arc<input::Counte
     Ok(())
 }
 
-/// Open or close the small window that catches a click on Buddy during tag.
+fn apply_tag_place(app: &AppHandle) {
+    if !signals::TAG_HIT.load(Ordering::Relaxed) { return; }
+    let Some((x, y, w, h)) = *signals::TAG_PLACE.lock().unwrap() else { return };
+    let Some(win) = app.get_webview_window("taghit") else { return };
+    if !signals::TAG_HIT.load(Ordering::Relaxed) { return; }
+    let _ = win.set_position(PhysicalPosition::new(x, y));
+    let _ = win.set_size(PhysicalSize::new(w.max(8), h.max(8)));
+    let _ = win.show();
+    // Show is posted. A game that ended in between has to close after that post, or the window stays up.
+    if !signals::TAG_HIT.load(Ordering::Relaxed) { let _ = win.close(); }
+}
+
+/// Open or close the small window that catches a click on Buddy during a click game.
 /// The overlay stays click-through, so the rest of the desktop still receives clicks.
 pub fn set_tag_window(app: &AppHandle, on: bool) {
+    if !on {
+        *signals::TAG_PLACE.lock().unwrap() = None;
+        if let Some(w) = app.get_webview_window("taghit") { let _ = w.close(); }
+        return;
+    }
     let h = app.clone();
-    let _ = app.run_on_main_thread(move || {
-        if on {
-            if h.get_webview_window("taghit").is_some() { return; }
-            let _ = tauri::WebviewWindowBuilder::new(&h, "taghit", tauri::WebviewUrl::App("hit.html".into()))
-                .title("Little Author — Tag the Buddy")
-                .inner_size(80.0, 80.0)
-                .resizable(false)
-                .decorations(false)
-                .transparent(true)
-                .background_color(tauri::window::Color(0, 0, 0, 0))
-                .always_on_top(true)
-                .skip_taskbar(true)
-                .shadow(false)
-                .focused(false)
-                .visible(true)
-                .content_protected(false)
-                .build();
-        } else if let Some(w) = h.get_webview_window("taghit") {
-            let _ = w.close();
+    off_ui(move || {
+        if h.get_webview_window("taghit").is_some() { return; }
+        let built = tauri::WebviewWindowBuilder::new(&h, "taghit", tauri::WebviewUrl::App("hit.html".into()))
+            .title("Little Author — Tag the Buddy")
+            .inner_size(80.0, 80.0)
+            .resizable(false)
+            .decorations(false)
+            .transparent(true)
+            .background_color(tauri::window::Color(0, 0, 0, 0))
+            .always_on_top(true)
+            .skip_taskbar(true)
+            .shadow(false)
+            .focused(false)
+            .visible(false)
+            .content_protected(false)
+            .build();
+        if built.is_err() { return; }
+        if !signals::TAG_HIT.load(Ordering::Relaxed) {
+            if let Some(w) = h.get_webview_window("taghit") { let _ = w.close(); }
+            return;
         }
+        apply_tag_place(&h);
     });
 }
 
 pub fn place_tag_window(app: &AppHandle, x: i32, y: i32, w: u32, h: u32) {
-    let hnd = app.clone();
-    let _ = app.run_on_main_thread(move || {
-        let Some(win) = hnd.get_webview_window("taghit") else { return };
-        let _ = win.set_position(PhysicalPosition::new(x, y));
-        let _ = win.set_size(PhysicalSize::new(w.max(8), h.max(8)));
-    });
+    *signals::TAG_PLACE.lock().unwrap() = Some((x, y, w, h));
+    apply_tag_place(app);
 }
 
 /// Sample the cursor only during play. The click catcher is up only during a click game.
@@ -449,5 +526,57 @@ mod tests {
         let overlap = prompt_place(Some((1800, 0, 400, 100)), None, &mons).unwrap();
         assert_eq!(overlap.1, (450, 420));
         assert!(prompt_place(None, None, &[]).is_none());
+    }
+
+    #[test]
+    fn empty_work_area_falls_back_to_the_monitor() {
+        assert_eq!(usable_rect((0, 0, 1920, 1080), (0, 0, 0, 0)), (0, 0, 1920, 1080));
+        assert_eq!(usable_rect((10, 20, 800, 600), (0, 0, 100, 0)), (10, 20, 800, 600));
+        assert_eq!(usable_rect((0, 0, 1920, 1080), (0, 40, 1920, 1040)), (0, 40, 1920, 1040));
+    }
+
+    #[test]
+    fn a_reported_panel_is_left_out_of_the_overlay() {
+        let full = [(0, 0, 1920, 1080)];
+        let bottom = [(0, 0, 1920, 1040)];
+        let (frame, roam) = overlay_frame(&full, &bottom).unwrap();
+        assert_eq!(frame, bottom[0]);
+        assert_eq!(roam, bottom.to_vec());
+        let top = [(0, 40, 1920, 1040)];
+        assert_eq!(overlay_frame(&full, &top).unwrap().0, top[0]);
+        let side = [(48, 0, 1872, 1080)];
+        assert_eq!(overlay_frame(&full, &side).unwrap().0, side[0]);
+    }
+
+    #[test]
+    fn a_monitor_sized_overlay_drops_one_pixel() {
+        let full = [(0, 0, 1920, 1080)];
+        let (frame, roam) = overlay_frame(&full, &full).unwrap();
+        assert_eq!(frame, (0, 0, 1920, 1079));
+        assert_eq!(roam, vec![(0, 0, 1920, 1079)]);
+        let shifted = [(-1920, -40, 1920, 1080)];
+        assert_eq!(overlay_frame(&shifted, &shifted).unwrap().0, (-1920, -40, 1920, 1079));
+        let tiny = [(0, 0, 100, 1)];
+        assert_eq!(overlay_frame(&tiny, &tiny).unwrap().0, tiny[0]);
+    }
+
+    #[test]
+    fn only_the_bottom_edge_shrinks_when_the_union_is_one_monitor() {
+        let full = [(0, 0, 1920, 1080)];
+        let usable = [(0, 0, 1920, 500), (0, 500, 1920, 580)];
+        let (frame, roam) = overlay_frame(&full, &usable).unwrap();
+        assert_eq!(frame, (0, 0, 1920, 1079));
+        assert_eq!(roam, vec![(0, 0, 1920, 500), (0, 500, 1920, 579)]);
+    }
+
+    #[test]
+    fn a_span_of_monitors_is_not_shortened() {
+        let full = [(0, 0, 1920, 1080), (1920, 0, 2560, 1440)];
+        let (frame, roam) = overlay_frame(&full, &full).unwrap();
+        assert_eq!(frame, (0, 0, 4480, 1440));
+        assert_eq!(roam, full.to_vec());
+        let corner = [(1920 - 460, 1080 - 380, 460, 380)];
+        assert_eq!(overlay_frame(&[(0, 0, 1920, 1080)], &corner).unwrap().0, corner[0]);
+        assert!(overlay_frame(&[], &[]).is_none());
     }
 }

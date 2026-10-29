@@ -622,6 +622,11 @@ mod tests {
         assert!(COMMANDS.contains("pub async fn finish_onboarding("));
         assert!(COMMANDS.contains("pub async fn dismiss_welcome("));
         assert!(WINDOWS.matches("WebviewWindowBuilder::new(&h,").count() >= 2);
+        for name in ["open_window", "open_onboarding", "open_welcome", "open_games", "open_dashboard", "set_tag_window"] {
+            let body = WINDOWS.split(&format!("pub fn {name}")).nth(1).unwrap().split("pub fn ").next().unwrap();
+            assert!(body.contains("off_ui("), "{name} builds off the UI thread");
+            assert!(!body.contains("run_on_main_thread"), "{name} must not build on the UI thread");
+        }
         assert!(!COMMANDS.contains(concat!("settings.html", "#")), "no fragment in the asset URL");
         assert!(!WINDOWS.contains(concat!("settings.html", "#")));
         assert!(!COMMANDS.contains(concat!("pub fn focus_", "answer(")));

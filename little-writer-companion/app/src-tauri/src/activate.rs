@@ -439,20 +439,22 @@ fn from_path(path: &Path, dest: &Path) -> ActivateStatus {
 
 /// Copies packs from Downloads, or from a zip the user chooses when that file is absent.
 /// The page cannot pass a path. Only this command decides which file is opened.
+/// Async so the file dialog is not opened inside the WebView2 click.
 #[tauri::command]
-pub fn activate_supporter(app: AppHandle, st: State<crate::state::AppState>) -> ActivateStatus {
+pub async fn activate_supporter(app: AppHandle, st: State<'_, crate::state::AppState>) -> Result<ActivateStatus, String> {
     let dest = {
         let s = st.lock().unwrap();
         packs::packs_dir(&s.path)
     };
-    match app.path().download_dir().ok().map(|dir| named_zip(&dir)).unwrap_or(Named::Missing) {
+    let status = match app.path().download_dir().ok().map(|dir| named_zip(&dir)).unwrap_or(Named::Missing) {
         Named::Found(path) => from_path(&path, &dest),
         Named::Unreadable => fail("That zip could not be read."),
         Named::Missing => match pick_zip(&app) {
             Some(path) => from_path(&path, &dest),
             None => fail("Couldn't find Little Author Buddy DLC.zip in Downloads."),
         },
-    }
+    };
+    Ok(status)
 }
 
 #[cfg(test)]
@@ -672,7 +674,7 @@ mod tests {
         std::fs::create_dir(downloads.join(ZIP_NAME)).unwrap();
         assert!(matches!(named_zip(&downloads), Named::Unreadable));
         let src = include_str!("activate.rs");
-        let start = src.find("pub fn activate_supporter(").unwrap();
+        let start = src.find("pub async fn activate_supporter(").unwrap();
         let sig = &src[start..start + src[start..].find('{').unwrap()];
         assert!(!sig.contains("path"));
         assert!(!sig.contains("url"));

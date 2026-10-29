@@ -83,6 +83,14 @@ function applyLook(body, look) {
   if ((ch.el.getAttribute('data-dir') === 'left') !== (dir === 'left')) ch.setDir(dir);
 }
 function faceHide(h) { applyLook('peeking', LWMotion.hideLook(h.side, !!h.win)); }
+// Peek as soon as the walk arrives. The pose used to wait for the next companion-state,
+// so a stalled tick left him walking into the bezel.
+function settleHide() {
+  if (!hide || hide.since || path.length) return;
+  hide.since = Date.now();
+  ch.setFace(hide.face);
+  faceHide(hide);
+}
 function watchBox(w) {
   const [x0, y0] = toCss(w.x, w.y), [x1, y1] = toCss(w.x + w.w, w.y + w.h);
   return [x0, y0, x1, y1];
@@ -234,7 +242,7 @@ function placeTag(k) {
   const key = x + ',' + y + ',' + w;
   if (key === hitSent) return;
   hitSent = key;
-  T.core.invoke('place_tag_hit', { x, y, w, h: w }).catch(() => {});
+  T.core.invoke('place_tag_hit', { x, y, w, h: w }).catch(() => { if (hitSent === key) hitSent = ''; });
 }
 function beginCheer() {
   if (celebrating || !snap) return;
@@ -497,6 +505,7 @@ function frame(t) {
       const travel = bodyNow === 'walking' || bodyNow === 'rushing' || bodyNow === 'racing';
       if (path.length && Math.abs(dx) > 1 && !(hide && hide.since) && travel) ch.setWalkDir(dx < 0 ? 'left' : 'right');
     } else vel = 0;
+    settleHide();
     if (lastMode === 'watch' && snap && snap.watch) { if (path.length) ensureWatchWalk(); else faceWatch(); }
     if ((lastMode === 'focus_ask' || lastMode === 'focus_explain') && !path.length) {
       ch.setFace('curious');
