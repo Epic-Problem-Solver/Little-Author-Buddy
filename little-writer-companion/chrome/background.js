@@ -211,14 +211,21 @@ function centerOn(w, h) {
   };
 }
 
+// Chrome rejects windows.create and windows.update when left, top, width, or height
+// is a fractional number. Display bounds and the scale margin often are.
+function wholePx(n, fallback) {
+  const v = Math.round(Number(n));
+  return Number.isFinite(v) ? v : fallback;
+}
+
 async function popup(key, url, opts) {
   const create = extra => chrome.windows.create(Object.assign({
     url,
     type: 'popup',
-    width: opts.width,
-    height: opts.height,
-    left: opts.left,
-    top: opts.top,
+    width: wholePx(opts.width, 200),
+    height: wholePx(opts.height, 200),
+    left: wholePx(opts.left, 0),
+    top: wholePx(opts.top, 0),
     focused: opts.focused !== false,
   }, extra || {}));
   let win;
@@ -377,10 +384,10 @@ async function placeDesk(blur) {
   const spot = deskSpot();
   const update = {
     state: 'normal',
-    left: spot.left,
-    top: spot.top,
-    width: HOME_W,
-    height: HOME_H,
+    left: wholePx(spot.left, 0),
+    top: wholePx(spot.top, 0),
+    width: wholePx(HOME_W, HOME_W),
+    height: wholePx(HOME_H, HOME_H),
   };
   if (blur) update.focused = false;
   try {
