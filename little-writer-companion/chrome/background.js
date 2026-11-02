@@ -17,7 +17,6 @@ let lastSave = 0;
 let flagSig = '';
 let stageDismissed = false;
 let stageLock = null;
-let warnedTop = false;
 let frameMode = 'desk';
 let placing = false;
 let placedAt = 0;
@@ -164,14 +163,16 @@ async function persist(force) {
 async function loadMonitors() {
   try {
     const info = await chrome.system.display.getInfo();
-    const mons = (info || []).map(d => ({
-      x: d.bounds.left,
-      y: d.bounds.top,
-      w: d.bounds.width,
-      h: d.bounds.height,
-      scale: (d.dpiX || 96) / 96,
-      primary: !!d.isPrimary,
-    }));
+    const mons = (info || []).map(d => {
+      const b = d.bounds || {};
+      const a = d.workArea || {};
+      return {
+        x: b.left, y: b.top, w: b.width, h: b.height,
+        ax: a.left, ay: a.top, aw: a.width, ah: a.height,
+        scale: (d.dpiX || 96) / 96,
+        primary: !!d.isPrimary,
+      };
+    });
     LWC.setMonitors(session, mons.length ? mons : [FALLBACK_MONITOR]);
   } catch (_) {
     LWC.setMonitors(session, [FALLBACK_MONITOR]);
@@ -185,16 +186,11 @@ function primary() {
 function deskSpot() {
   const mons = (session && session.monitors) || [];
   const idx = session && session.data.settings.desk_monitor;
+  let list = mons;
   if (Number.isInteger(idx) && mons[idx]) {
-    const m = mons[idx];
-    const marginX = 20 * (m.scale || 1);
-    const marginY = 60 * (m.scale || 1);
-    return {
-      left: Math.max(m.x, Math.round(m.x + m.w - HOME_W - marginX)),
-      top: Math.max(m.y, Math.round(m.y + m.h - HOME_H - marginY)),
-    };
+    list = mons.map((m, i) => Object.assign({}, m, { primary: i === idx }));
   }
-  const p = LWC.placeHome(null, [HOME_W, HOME_H], mons) || [80, 80];
+  const p = LWC.placeHome(null, [HOME_W, HOME_H], list) || [80, 80];
   return { left: p[0], top: p[1] };
 }
 
@@ -204,22 +200,24 @@ function wantGameFrame() {
 }
 
 function centerOn(w, h) {
-  const m = primary();
+  const m = LWC.screenArea(primary());
   return {
     left: Math.round(m.x + Math.max(0, m.w - w) / 2),
     top: Math.round(m.y + Math.max(0, m.h - h) / 2),
   };
 }
 
-// Chrome rejects windows.create and windows.update when left, top, width, or height
-// is a fractional number. Display bounds and the scale margin often are.
+// chrome.windows.create and windows.update accept only 32-bit integers.
+// Math.round can still leave a float, which Chrome reports as
+// "expected integer, found number". The bitwise or forces an Int32.
 function wholePx(n, fallback) {
   const v = Math.round(Number(n));
-  return Number.isFinite(v) ? v : fallback;
+  if (!Number.isFinite(v) || v < -2147483648 || v > 2147483647) return fallback;
+  return v | 0;
 }
 
 async function popup(key, url, opts) {
-  const create = extra => chrome.windows.create(Object.assign({
+  const win = await chrome.windows.create({
     url,
     type: 'popup',
     width: wholePx(opts.width, 200),
@@ -227,21 +225,7 @@ async function popup(key, url, opts) {
     left: wholePx(opts.left, 0),
     top: wholePx(opts.top, 0),
     focused: opts.focused !== false,
-  }, extra || {}));
-  let win;
-  const wantTop = !!opts.alwaysOnTop;
-  try {
-    win = await create(wantTop ? { alwaysOnTop: true } : {});
-  } catch (e) {
-    if (!wantTop) throw e;
-    win = await create({});
-    if (!warnedTop && session) {
-      warnedTop = true;
-      session.warnings.push('This Chrome could not keep the companion above other windows.');
-      session.snap = LWC.paint(session);
-      emit('companion-state', session.snap);
-    }
-  }
+  });
   wins[key] = win.id;
   return win;
 }
@@ -281,8 +265,10 @@ async function ensureHome() {
   session.snap = LWC.paint(session);
   frameMode = 'desk';
   placedAt = Date.now();
+  // An unfocused popup on Windows is only a taskbar button. Chrome will not
+  // show it until the window is focused. Onboarding and settings already focus.
   const win = await popup('home', chrome.runtime.getURL('ui/home.html'), {
-    width: HOME_W, height: HOME_H, left: spot.left, top: spot.top, focused: false, alwaysOnTop: true,
+    width: HOME_W, height: HOME_H, left: spot.left, top: spot.top, focused: true,
   });
   try {
     const got = await chrome.windows.get(win.id);
@@ -299,7 +285,7 @@ async function openGames() {
   }
   const spot = centerOn(420, 560);
   await popup('games', chrome.runtime.getURL('ui/games.html'), {
-    width: 420, height: 560, left: spot.left, top: spot.top, focused: true, alwaysOnTop: false,
+    width: 420, height: 560, left: spot.left, top: spot.top, focused: true,
   });
 }
 
@@ -316,7 +302,7 @@ async function openSettings(tab) {
   }
   const spot = centerOn(580, 680);
   await popup('settings', chrome.runtime.getURL('ui/settings.html'), {
-    width: 580, height: 680, left: spot.left, top: spot.top, focused: true, alwaysOnTop: false,
+    width: 580, height: 680, left: spot.left, top: spot.top, focused: true,
   });
 }
 
@@ -327,7 +313,7 @@ async function openOnboarding() {
   }
   const spot = centerOn(480, 600);
   await popup('onboarding', chrome.runtime.getURL('ui/onboarding.html'), {
-    width: 480, height: 600, left: spot.left, top: spot.top, focused: true, alwaysOnTop: true,
+    width: 480, height: 600, left: spot.left, top: spot.top, focused: true,
   });
 }
 
@@ -340,7 +326,7 @@ async function openWelcome() {
   const spot = centerOn(440, 560);
   try {
     await popup('welcome', chrome.runtime.getURL('ui/welcome.html'), {
-      width: 440, height: 560, left: spot.left, top: spot.top, focused: true, alwaysOnTop: true,
+      width: 440, height: 560, left: spot.left, top: spot.top, focused: true,
     });
   } catch (_) { return false; }
   return wins.welcome != null;
@@ -373,7 +359,6 @@ async function openLetter(project) {
     left: Math.max(0, home.x - 160),
     top: Math.max(0, home.y - 300),
     focused: true,
-    alwaysOnTop: true,
   });
 }
 
@@ -391,11 +376,23 @@ async function placeDesk(blur) {
   };
   if (blur) update.focused = false;
   try {
+    // Bounds on a minimized window are rejected. Restore first, then place.
+    const current = await chrome.windows.get(wins.home);
+    if (current.state && current.state !== 'normal') {
+      await chrome.windows.update(wins.home, { state: 'normal' });
+    }
     await chrome.windows.update(wins.home, update);
     const got = await chrome.windows.get(wins.home);
     LWC.noteHome(session, got.left, got.top, got.width, got.height, Date.now());
   } catch (_) {}
   placing = false;
+}
+
+// Open the desk the taskbar button already points at.
+async function revealHome() {
+  if (wins.home == null || !session || quit) return;
+  await placeDesk(false);
+  try { await chrome.windows.update(wins.home, { state: 'normal', focused: true }); } catch (_) {}
 }
 
 async function fullscreenHome() {
@@ -413,10 +410,10 @@ async function fullscreenHome() {
       await chrome.windows.update(wins.home, {
         state: 'normal',
         focused: true,
-        left: Math.round(m.x),
-        top: Math.round(m.y),
-        width: Math.max(HOME_W, Math.round(m.w)),
-        height: Math.max(HOME_H, Math.round(m.h)),
+        left: wholePx(m.x, 0),
+        top: wholePx(m.y, 0),
+        width: wholePx(Math.max(HOME_W, m.w), HOME_W),
+        height: wholePx(Math.max(HOME_H, m.h), HOME_H),
       });
     } catch (_) {}
   }
@@ -427,6 +424,7 @@ async function repinIfNeeded() {
   if (placing || wins.home == null || Date.now() - placedAt < 1000) return;
   let w;
   try { w = await chrome.windows.get(wins.home); } catch (_) { return; }
+  if (w.state === 'minimized') return;
   const spot = deskSpot();
   const drifted = w.state === 'fullscreen' || w.state === 'maximized'
     || Math.abs(w.left - spot.left) > 24 || Math.abs(w.top - spot.top) > 24
@@ -466,8 +464,8 @@ async function dispatch(events) {
     if (ev.name === 'open-settings') { await openSettings(ev.payload); continue; }
     if (ev.name === 'open-games') { await openGames(); continue; }
     if (ev.name === 'open-onboarding') { await openOnboarding(); continue; }
-    if (ev.name === 'close-onboarding') { await closeWin('onboarding'); continue; }
-    if (ev.name === 'close-welcome') { await closeWin('welcome'); continue; }
+    if (ev.name === 'close-onboarding') { await closeWin('onboarding'); await revealHome(); continue; }
+    if (ev.name === 'close-welcome') { await closeWin('welcome'); await revealHome(); continue; }
     if (ev.name === 'open-download') { chrome.tabs.create({ url: DOWNLOAD }); continue; }
     if (ev.name === 'journal-file') { if (ev.payload) files.push(ev.payload); continue; }
     if (ev.name === 'journal-files') { files.push(...(ev.payload || [])); continue; }
@@ -631,6 +629,7 @@ async function onMessage(msg) {
     };
   }
   if (msg.type === 'resume') { await resume(); return { ok: true }; }
+  if (msg.type === 'show-home') { await revealHome(); return { ok: true }; }
   if (quit || !session) return { ok: false, error: 'Little Author is not running' };
   if (msg.type === 'input') {
     LWC.addInput(session, msg.letters | 0, msg.wheels | 0);
@@ -719,6 +718,7 @@ chrome.windows.onRemoved.addListener(id => {
   if (key) wins[key] = null;
   if (closing.has(id)) { closing.delete(id); return; }
   if (key === 'home') { quitApp(); return; }
+  if (key === 'onboarding' || key === 'welcome') { revealHome().catch(() => {}); return; }
   if (key === 'stage') {
     if (isAway()) stageDismissed = true;
     dismissStageActivity().catch(() => {});

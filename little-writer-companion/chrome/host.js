@@ -155,6 +155,14 @@ window.__TAURI__ = {
   window: { getCurrentWindow: () => ({ startDragging }) },
 };
 
+// chrome.windows.update accepts only 32-bit integers. Math.round can still
+// leave a float, which Chrome reports as "expected integer, found number".
+function wholePx(n, fallback) {
+  const v = Math.round(Number(n));
+  if (!Number.isFinite(v) || v < -2147483648 || v > 2147483647) return fallback;
+  return v | 0;
+}
+
 let down = null;
 document.addEventListener('mousedown', e => {
   if (e.button === 0) down = { sx: e.screenX, sy: e.screenY };
@@ -168,7 +176,7 @@ function startDragging() {
     const ox = origin.sx - win.left, oy = origin.sy - win.top;
     let queued = null;
     const move = ev => {
-      queued = { left: Math.round(ev.screenX - ox), top: Math.round(ev.screenY - oy) };
+      queued = { left: wholePx(ev.screenX - ox, 0), top: wholePx(ev.screenY - oy, 0) };
     };
     let raf = 0;
     const pump = () => {

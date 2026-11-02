@@ -4,7 +4,7 @@
   "version": "0.9.1",
   "description": "A writing companion for Chrome. Letter keys on web pages advance the story. Key contents are never stored.",
   "minimum_chrome_version": "114",
-  "permissions": ["storage", "tabs", "windows", "system.display", "alarms", "alwaysOnTopWindows"],
+  "permissions": ["storage", "tabs", "windows", "system.display", "alarms"],
   "host_permissions": ["<all_urls>"],
   "background": { "service_worker": "background.js" },
   "action": {

@@ -587,10 +587,25 @@
     if (!best) return 'right';
     return cx >= best.x + best.w / 2 ? 'right' : 'left';
   }
+  // The usable rect. A reported work area keeps the desk above the taskbar.
+  // No work area uses the full monitor.
+  function screenArea(m) {
+    if (!m) return null;
+    const aw = Number(m.aw), ah = Number(m.ah);
+    const base = aw > 0 && ah > 0
+      ? { x: m.ax | 0, y: m.ay | 0, w: aw | 0, h: ah | 0 }
+      : { x: m.x | 0, y: m.y | 0, w: m.w | 0, h: m.h | 0 };
+    base.scale = Number(m.scale) || 1;
+    base.primary = !!m.primary;
+    return base;
+  }
   function placeHome(saved, size, mons) {
     if (!mons || !mons.length) return null;
     const w = size[0], h = size[1];
-    const clampOn = (m, x, y) => [Math.max(m.x, Math.min(x, m.x + m.w - w)), Math.max(m.y, Math.min(y, m.y + m.h - h))];
+    const clampOn = (m, x, y) => {
+      const a = screenArea(m);
+      return [Math.max(a.x, Math.min(x, a.x + a.w - w)), Math.max(a.y, Math.min(y, a.y + a.h - h))];
+    };
     if (saved && saved.length === 2) {
       const cx = saved[0] + w / 2, cy = saved[1] + h / 2;
       let near = null, bd = Infinity;
@@ -604,8 +619,9 @@
       return clampOn(near, saved[0], saved[1]);
     }
     const m = mons.find(x => x.primary) || mons[0];
-    const marginX = 20 * (m.scale || 1), marginY = 60 * (m.scale || 1);
-    return clampOn(m, m.x + m.w - w - marginX, m.y + m.h - h - marginY);
+    const a = screenArea(m);
+    const marginX = 20 * (a.scale || 1), marginY = 60 * (a.scale || 1);
+    return clampOn(m, a.x + a.w - w - marginX, a.y + a.h - h - marginY);
   }
 
   function migrate(raw) {
@@ -777,9 +793,12 @@
   }
 
   function setMonitors(s, mons) {
-    s.monitors = (mons || []).map(m => ({
-      x: m.x | 0, y: m.y | 0, w: m.w | 0, h: m.h | 0, scale: Number(m.scale) || 1, primary: !!m.primary,
-    }));
+    s.monitors = (mons || []).map(m => {
+      const row = { x: m.x | 0, y: m.y | 0, w: m.w | 0, h: m.h | 0, scale: Number(m.scale) || 1, primary: !!m.primary };
+      const aw = Number(m.aw), ah = Number(m.ah);
+      if (aw > 0 && ah > 0) { row.ax = m.ax | 0; row.ay = m.ay | 0; row.aw = aw | 0; row.ah = ah | 0; }
+      return row;
+    });
     if (!s.monitors.length) { s.origin = [0, 0]; return; }
     const x0 = Math.min(...s.monitors.map(m => m.x));
     const y0 = Math.min(...s.monitors.map(m => m.y));
@@ -1497,7 +1516,7 @@
 
   const LWC = {
     APP_VERSION, DEFAULT_BUDDY, createSession, tick, invoke, paint, setMonitors, noteHome, setPackFiles,
-    addInput, applyAnswer, noteAnswer, saveJson, migrate, placeHome, deskSide, judgeUpdate, tagName,
+    addInput, applyAnswer, noteAnswer, saveJson, migrate, placeHome, screenArea, deskSide, judgeUpdate, tagName,
     versionParts, wantsHit, sayEvent, letterMd, scanPacks, chooseId, limitMs, dayString,
     pendingWelcome, installZip, installErrorMessage, mergePacks,
     CHROME_NOTES: [

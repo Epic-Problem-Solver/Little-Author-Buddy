@@ -231,6 +231,22 @@ test('placeHome clamps the desk onto a monitor', () => {
   assert.deepEqual(LWC.placeHome([1900, -50], [200, 200], mons), [1720, 0]);
 });
 
+test('placeHome keeps the desk above the taskbar', () => {
+  const mons = [{ x: 0, y: 0, w: 1920, h: 1080, ax: 0, ay: 0, aw: 1920, ah: 1000, scale: 1, primary: true }];
+  const p = LWC.placeHome(null, [230, 240], mons);
+  assert.ok(p[1] >= 0 && p[1] + 240 <= 1000, p.join(','));
+  assert.ok(p[0] + 230 <= 1920);
+  const under = LWC.placeHome([1600, 900], [230, 240], mons);
+  assert.ok(under[1] + 240 <= 1000, under.join(','));
+  assert.equal(under[0], 1600);
+  const s = session(0);
+  LWC.setMonitors(s, mons);
+  assert.equal(s.monitors[0].ah, 1000);
+  assert.equal(s.monitors[0].h, 1080);
+  assert.deepEqual(LWC.screenArea(s.monitors[0]), { x: 0, y: 0, w: 1920, h: 1000, scale: 1, primary: true });
+  assert.equal(LWC.screenArea({ x: 1, y: 2, w: 3, h: 4, scale: 1 }).h, 4);
+});
+
 test('update judgement reads only the release tag', () => {
   assert.equal(LWC.judgeUpdate('0.8.0', 'v0.8.0').state, 'current');
   assert.equal(LWC.judgeUpdate('0.8.0', 'v0.9.0').state, 'newer');

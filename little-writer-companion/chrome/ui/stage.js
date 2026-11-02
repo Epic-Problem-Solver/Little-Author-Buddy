@@ -496,10 +496,10 @@ function moveWindow(now) {
   if (playing && !playFocused) { playFocused = true; extra.focused = true; }
   if (!playing) playFocused = false;
   chrome.windows.update(winId, Object.assign({
-    left: Math.round(rect.left),
-    top: Math.round(rect.top),
-    width: Math.round(rect.width),
-    height: Math.round(rect.height),
+    left: wholePx(rect.left, 0),
+    top: wholePx(rect.top, 0),
+    width: wholePx(rect.width, 220),
+    height: wholePx(rect.height, 240),
   }, extra)).catch(() => {});
 }
 function placeSprite() {
