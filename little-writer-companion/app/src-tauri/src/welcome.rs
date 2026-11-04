@@ -47,6 +47,13 @@ const NOTES: &[Note] = &[
             "Buddy stays above the taskbar. The desk keeps taking clicks while a game is open.",
         ],
     },
+    Note {
+        version: "0.9.7",
+        lines: &[
+            "A word counts when Space, Enter, or Tab follows a letter or a digit.",
+            "An older save keeps the word count it was already showing.",
+        ],
+    },
 ];
 
 #[derive(Clone, Serialize)]
@@ -129,9 +136,10 @@ mod tests {
 
     #[test]
     fn a_newer_build_with_no_written_notes_still_welcomes() {
-        let notes = pending("0.9.1", true, "0.10.0").unwrap();
+        let notes = pending("0.9.7", true, "0.10.0").unwrap();
         assert!(notes.is_empty());
         assert_eq!(versions("0.8.0", "0.9.0").unwrap(), vec!["0.9.0"]);
         assert_eq!(versions("0.9.0", "0.9.1").unwrap(), vec!["0.9.1"]);
+        assert_eq!(versions("0.9.1", "0.9.7").unwrap(), vec!["0.9.7"]);
     }
 }

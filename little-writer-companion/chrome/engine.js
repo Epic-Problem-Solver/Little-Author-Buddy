@@ -2,7 +2,7 @@
 // word counts and timing only, titles never saved, focus streak not written
 // into the save, packs are data (never scripts). No Chrome APIs in this file.
 (function (root) {
-  const APP_VERSION = '0.9.1';
+  const APP_VERSION = '0.9.7';
   const SUGGEST_MS = 15 * 60 * 1000;
   const DEFAULT_BUDDY = 'Buddy';
   const MAX_FOCUS_MINUTES = 180;
@@ -1217,6 +1217,14 @@
       lines: [
         'High Five raises Buddy\'s hand.',
         'The desk window opens when a display reports a fractional position.',
+      ],
+    },
+    {
+      version: '0.9.7',
+      lines: [
+        'A word counts when Space, Enter, or Tab follows a letter or a digit.',
+        'The desk sits above the taskbar.',
+        'Leave your writing window short of full screen so you can see Buddy.',
       ],
     },
   ];
