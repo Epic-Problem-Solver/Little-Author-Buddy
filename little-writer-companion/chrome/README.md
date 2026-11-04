@@ -10,7 +10,7 @@ Chrome cannot do several things the desktop app does. Those limits are real. The
 2. Turn on **Developer mode**.
 3. Choose **Load unpacked** and select this `chrome` folder (`little-writer-companion/chrome`).
 
-The desk opens in a small window, pinned to the bottom-right of the screen, above the taskbar. The desk itself stays in the bottom-right corner of that window. The toolbar button pauses counting, opens Projects, Settings, Journal, and Privacy, and quits. Closing the desk quits too. **Show desk** on the toolbar opens that window, including when it is only a taskbar button.
+The desk opens in a small window, pinned to the bottom-right of the screen, above the taskbar. The desk itself stays in the bottom-right corner of that window. Leave your writing app and the browser short of full screen so you can see Buddy. A full-screen window covers the desk. The toolbar button pauses counting, opens Projects, Settings, Journal, and Privacy, and quits. Closing the desk quits too. **Show desk** on the toolbar opens that window, including when it is only a taskbar button.
 
 To refresh the copied desk pages after a desktop UI change, run `node sync-ui.js` from this folder, then reload the extension.
 
@@ -31,7 +31,7 @@ To refresh the copied desk pages after a desktop UI change, run `node sync-ui.js
 - Keys are counted only in web pages and in this extension. The address bar, `chrome://` pages, Android apps, and Linux (Crostini) apps are not counted.
 - When idle, Buddy sleeps at the desk. A game fills that window, then the window shrinks back to the bottom-right. The cursor is read only inside that window, and it is not saved. The hiding game uses rectangles in that window. The Games list is its own window. Closing that list does not quit. Closing the desk quits, including during a game. Window titles are left alone.
 - Downloads cannot be searched for the supporter zip. Activate asks you to choose `Little Author Buddy DLC.zip`.
-- The desk is an ordinary popup. Chrome does not let an extension keep a window above other windows. That was a packaged-app feature, and this is an extension.
+- The desk is an ordinary popup. Chrome does not let an extension keep a window above other windows, so a full-screen writing app or a full-screen browser covers Buddy. Leave those windows short of full screen. That stay-on-top behavior was a packaged-app feature, and this is an extension.
 
 ## Permissions
 

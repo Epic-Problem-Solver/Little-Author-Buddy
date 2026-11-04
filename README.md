@@ -37,7 +37,7 @@ The [download page](https://epic-problem-solver.github.io/Little-Author-Buddy/li
 
 ## Chrome and Chrome OS
 
-The [Chrome extension](https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/download/v0.9.1/Little-Author-Buddy_0.9.1_chrome.zip) runs the companion inside Chrome and Chrome OS. Unzip it, open `chrome://extensions`, turn on Developer mode, and choose Load unpacked on that folder. Words typed on web pages advance the story. The desk, projects, sprint games, and fan letters are the same idea as the desktop app, within what Chrome can do. The extension keeps its own save, separate from the desktop app. It needs Chrome or Chrome OS 114 or newer. Source is in [`little-writer-companion/chrome`](little-writer-companion/chrome/README.md).
+The [Chrome extension](https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/download/v0.9.1/Little-Author-Buddy_0.9.1_chrome.zip) runs the companion inside Chrome and Chrome OS. Unzip it, open `chrome://extensions`, turn on Developer mode, and choose Load unpacked on that folder. Words typed on web pages advance the story. The desk, projects, sprint games, and fan letters are the same idea as the desktop app, within what Chrome can do. Leave your writing app and the browser short of full screen so you can see Buddy. A full-screen window covers the desk. The extension keeps its own save, separate from the desktop app. It needs Chrome or Chrome OS 114 or newer. Source is in [`little-writer-companion/chrome`](little-writer-companion/chrome/README.md).
 
 ## Opening the Mac app
 
