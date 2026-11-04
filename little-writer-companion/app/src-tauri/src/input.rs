@@ -1,34 +1,75 @@
-//! Global input listener. Counts key-downs and wheel ticks only.
-//! v0.3: ONLY letter keys A-Z count (by physical/virtual code, never by translation):
-//! - Windows: vkCode 0x41-0x5A. IME: when the IME delivers VK_PROCESSKEY (0xE5) we map the hardware scanCode
-//!   through a fixed Set-1 table of the A-Z key positions (QWERTY rows), so composition keystrokes on letter
-//!   keys still count. No ToUnicodeEx / keyboard-layout lookup is ever done.
-//! - Linux: fixed X11 keycode table (evdev + 8) of the A-Z key positions; no keysym lookup.
-//! - macOS: the current layout's unshifted character, tested as A–Z and then discarded.
-//! The code is only compared against these tables and for auto-repeat; it is never stored or logged.
-//! Every letter key, including Y and N, is counted the same way and is passed on to the document.
+//! Global input listener. Counts finished words and wheel ticks only.
+//! A word is one or more letters or digits, closed by Space, Enter, or Tab.
+//! Backspace shrinks that unfinished length. A hyphen or an apostrophe is neither,
+//! so it stays inside the word. The length is a number on this thread. The key is not stored.
+//! Letters and digits still wake the companion before the word is finished.
+//! - Windows: vkCode. Letters are 0x41–0x5A. IME VK_PROCESSKEY (0xE5) uses the hardware scan code
+//!   (letter rows, digit row, space, enter, tab, backspace). No ToUnicodeEx or layout lookup per event.
+//! - Linux: one keycode table built from XKB keysyms when the map changes. Nothing is looked up per event.
+//! - macOS: the current layout's unshifted character is tested and discarded while the table is built.
+//! Every letter key, including Y and N, is passed on to the document.
 //! - Windows: our own WH_KEYBOARD_LL + WH_MOUSE_LL hooks on a dedicated thread with a message loop.
 //!   No ToUnicodeEx / GetKeyboardState / MapVirtualKey calls, so dead keys and IMEs are unaffected.
 //! - Linux: X11 RECORD extension, reading only the event type and keycode byte (no XLookupString).
 //! - macOS: a listen-only session event tap. The character used to classify a key is not stored.
 use std::collections::HashSet;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
+
+/// What a key does to the unfinished word. The key itself is not kept.
+const KIND_OTHER: u8 = 0;
+const KIND_LETTER: u8 = 1;
+const KIND_DIGIT: u8 = 2;
+const KIND_GAP: u8 = 3;
+const KIND_BACK: u8 = 4;
+
+/// One classified key. `Char` is a letter or a digit.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Stroke { Char, Gap, Back, Other }
+
+/// `(open length, activity pulses, finished words)`.
+/// A held letter or digit counts once. Backspace repeats shrink the open word.
+/// Space, Enter, and Tab finish one word when that length is at least 1.
+pub fn fold_stroke(open: u32, stroke: Stroke, fresh: bool) -> (u32, u32, u32) {
+    match stroke {
+        Stroke::Back => (open.saturating_sub(1), 1, 0),
+        Stroke::Char if fresh => (open.saturating_add(1), 1, 0),
+        Stroke::Gap if fresh => if open > 0 { (0, 1, 1) } else { (0, 1, 0) },
+        _ => (open, 0, 0),
+    }
+}
+
+fn stroke_of(kind: u8) -> Stroke {
+    match kind {
+        KIND_LETTER | KIND_DIGIT => Stroke::Char,
+        KIND_GAP => Stroke::Gap,
+        KIND_BACK => Stroke::Back,
+        _ => Stroke::Other,
+    }
+}
 
 #[derive(Default)]
 pub struct Counters {
+    /// Letter, digit, gap, and backspace presses. Wakes the companion and ends a game.
     pub keys: AtomicU64,
+    /// Words closed by Space, Enter, or Tab. This is what the project stores.
+    pub words: AtomicU64,
+    /// Letters and digits since the last gap. Not written to the save.
+    open: AtomicU32,
     pub wheel: AtomicU64,
     pub paused: AtomicBool,
     pub listener_error: Mutex<Option<String>>,
 }
 
 impl Counters {
-    /// Counts a fresh letter key. Nothing is held back from the document.
+    /// Classifies one key-down and drops it. Nothing is held back from the document.
     fn key_down(&self, code: u32, down: &mut HashSet<u32>) -> bool {
         let fresh = down.insert(code);
-        if fresh && !self.paused.load(Ordering::Relaxed) && is_letter(code) {
-            self.keys.fetch_add(1, Ordering::Relaxed);
+        if !self.paused.load(Ordering::Relaxed) {
+            let (open, activity, words) = fold_stroke(self.open.load(Ordering::Relaxed), stroke_of(kind_of(code)), fresh);
+            self.open.store(open, Ordering::Relaxed);
+            if activity > 0 { self.keys.fetch_add(u64::from(activity), Ordering::Relaxed); }
+            if words > 0 { self.words.fetch_add(u64::from(words), Ordering::Relaxed); }
         }
         false
     }
@@ -55,29 +96,86 @@ pub const PROCESSKEY_BASE: u32 = 0x1_0000;
 pub fn is_letter(code: u32) -> bool {
     (0x41..=0x5A).contains(&code) || (code >= PROCESSKEY_BASE && scan_is_letter(code - PROCESSKEY_BASE))
 }
+
+/// Set-1 scan of an IME process key: digit row, space, enter, tab, or backspace.
+#[cfg(windows)]
+fn scan_kind(sc: u32) -> u8 {
+    if scan_is_letter(sc) { KIND_LETTER }
+    else if matches!(sc, 0x02..=0x0B) { KIND_DIGIT }
+    else if matches!(sc, 0x39 | 0x1C | 0x0F) { KIND_GAP }
+    else if sc == 0x0E { KIND_BACK }
+    else { KIND_OTHER }
+}
+
+#[cfg(windows)]
+fn kind_of(code: u32) -> u8 {
+    if is_letter(code) { return KIND_LETTER; }
+    if code >= PROCESSKEY_BASE { return scan_kind(code - PROCESSKEY_BASE); }
+    match code {
+        0x30..=0x39 | 0x60..=0x69 => KIND_DIGIT,
+        0x20 | 0x0D | 0x09 => KIND_GAP,
+        0x08 => KIND_BACK,
+        _ => KIND_OTHER,
+    }
+}
 /// Fallback: X11 keycodes (evdev + 8) of the US A-Z key positions: q..p = 24-33, a..l = 38-46, z..m = 52-58.
 #[cfg(target_os = "linux")]
 pub fn fixed_is_letter(code: u32) -> bool { matches!(code, 24..=33 | 38..=46 | 52..=58) }
 
-/// BUG-19: keycode -> "is a letter" table built from the XKB layout (group 0, level 0 keysym in a..z),
-/// rebuilt once per mapping change; None until built (then the fixed US table is used).
+/// Keycode kinds from the XKB layout (group 0, level 0), rebuilt once per mapping change.
+/// None until built, and when the layout has fewer than 20 Latin letters (then the US table is used).
 #[cfg(target_os = "linux")]
-static XKB_LETTERS: std::sync::RwLock<Option<[bool; 256]>> = std::sync::RwLock::new(None);
+static XKB_KINDS: std::sync::RwLock<Option<[u8; 256]>> = std::sync::RwLock::new(None);
 
-/// Build the table from (keycode, base keysym) pairs. Pure, so it is unit-testable.
+/// Letter keycodes only. Kept so the AZERTY table test can name letters without the other kinds.
 #[cfg(target_os = "linux")]
 pub fn letters_from_keysyms(pairs: impl IntoIterator<Item = (u32, u64)>) -> Option<[bool; 256]> {
     const XK_A_LOWER: u64 = 0x61; const XK_Z_LOWER: u64 = 0x7a;
     let mut t = [false; 256];
     let mut n = 0;
     for (kc, sym) in pairs { if kc < 256 && (XK_A_LOWER..=XK_Z_LOWER).contains(&sym) { t[kc as usize] = true; n += 1; } }
-    if n >= 20 { Some(t) } else { None } // implausible layout (e.g. non-Latin group 0) -> keep fallback
+    if n >= 20 { Some(t) } else { None }
+}
+
+/// Build the kind table from (keycode, base keysym) pairs. The keysym is not kept.
+#[cfg(target_os = "linux")]
+pub fn kinds_from_keysyms(pairs: impl IntoIterator<Item = (u32, u64)>) -> Option<[u8; 256]> {
+    let mut t = [KIND_OTHER; 256];
+    let mut n = 0u32;
+    for (kc, sym) in pairs {
+        if kc >= 256 { continue; }
+        let kind = match sym {
+            0x61..=0x7a => { n += 1; KIND_LETTER }
+            0x30..=0x39 | 0xffb0..=0xffb9 => KIND_DIGIT,
+            0x20 | 0xff09 | 0xff0d | 0xff8d => KIND_GAP,
+            0xff08 => KIND_BACK,
+            _ => continue,
+        };
+        t[kc as usize] = kind;
+    }
+    if n >= 20 { Some(t) } else { None }
+}
+
+/// US fallback: digit row 10–19, backspace 22, tab 23, return 36, keypad enter 104, space 65.
+#[cfg(target_os = "linux")]
+fn fixed_kind(code: u32) -> u8 {
+    if fixed_is_letter(code) { KIND_LETTER }
+    else if matches!(code, 10..=19) { KIND_DIGIT }
+    else if matches!(code, 65 | 36 | 23 | 104) { KIND_GAP }
+    else if code == 22 { KIND_BACK }
+    else { KIND_OTHER }
 }
 
 #[cfg(target_os = "linux")]
-pub fn is_letter(code: u32) -> bool {
-    match &*XKB_LETTERS.read().unwrap() { Some(t) => code < 256 && t[code as usize], None => fixed_is_letter(code) }
+fn kind_of(code: u32) -> u8 {
+    match &*XKB_KINDS.read().unwrap() {
+        Some(t) if code < 256 => t[code as usize],
+        _ => fixed_kind(code),
+    }
 }
+
+#[cfg(target_os = "linux")]
+pub fn is_letter(code: u32) -> bool { kind_of(code) == KIND_LETTER }
 
 /// ANSI virtual keycodes of the US A–Z key positions. Used until the layout table exists,
 /// and when that table has fewer than 20 Latin letters.
@@ -92,31 +190,64 @@ const ANSI_LETTERS: &[u32] = &[
 pub fn fixed_is_letter(code: u32) -> bool { ANSI_LETTERS.contains(&code) }
 
 #[cfg(target_os = "macos")]
-static MAC_LETTERS: std::sync::RwLock<Option<[bool; 256]>> = std::sync::RwLock::new(None);
+static MAC_KINDS: std::sync::RwLock<Option<[u8; 256]>> = std::sync::RwLock::new(None);
 
 /// `(keycode, unshifted scalar)` pairs. The scalar is only tested for ASCII A–Z and is not kept.
 #[cfg(target_os = "macos")]
 pub fn letters_from_unshifted(pairs: impl IntoIterator<Item = (u32, u32)>) -> Option<[bool; 256]> {
-    let mut t = [false; 256];
-    let mut n = 0;
+    kinds_from_unshifted(pairs).map(|t| {
+        let mut letters = [false; 256];
+        for (i, k) in t.iter().enumerate() { letters[i] = *k == KIND_LETTER; }
+        letters
+    })
+}
+
+/// Same pairs. Digits, space, tab, return, and backspace are classified and the scalar is dropped.
+/// ANSI delete (keycode 0x33) is backspace when the layout did not name that key.
+#[cfg(target_os = "macos")]
+pub fn kinds_from_unshifted(pairs: impl IntoIterator<Item = (u32, u32)>) -> Option<[u8; 256]> {
+    let mut t = [KIND_OTHER; 256];
+    let mut n = 0u32;
     for (kc, ch) in pairs {
-        if kc < 256 && ch < 128 && (ch as u8).is_ascii_alphabetic() {
-            t[kc as usize] = true;
-            n += 1;
-        }
+        if kc >= 256 { continue; }
+        let kind = if ch < 128 && (ch as u8).is_ascii_alphabetic() { n += 1; KIND_LETTER }
+            else if ch < 128 && (ch as u8).is_ascii_digit() { KIND_DIGIT }
+            else if matches!(ch, 0x20 | 0x09 | 0x0d | 0x03) { KIND_GAP }
+            else if matches!(ch, 0x08 | 0x7f) { KIND_BACK }
+            else { continue };
+        t[kc as usize] = kind;
     }
-    if n >= 20 { Some(t) } else { None }
+    if n < 20 { return None; }
+    if t[0x33] == KIND_OTHER { t[0x33] = KIND_BACK; }
+    Some(t)
 }
 
 #[cfg(target_os = "macos")]
 pub fn install_layout(pairs: impl IntoIterator<Item = (u32, u32)>) {
-    *MAC_LETTERS.write().unwrap() = letters_from_unshifted(pairs);
+    *MAC_KINDS.write().unwrap() = kinds_from_unshifted(pairs);
+}
+
+/// ANSI fallback: digit keys, return 0x24, tab 0x30, space 0x31, delete 0x33, keypad enter 0x4C.
+#[cfg(target_os = "macos")]
+fn fixed_kind(code: u32) -> u8 {
+    const DIGITS: &[u32] = &[0x12, 0x13, 0x14, 0x15, 0x17, 0x16, 0x1A, 0x1C, 0x19, 0x1D];
+    if fixed_is_letter(code) { KIND_LETTER }
+    else if DIGITS.contains(&code) { KIND_DIGIT }
+    else if matches!(code, 0x24 | 0x30 | 0x31 | 0x4C) { KIND_GAP }
+    else if code == 0x33 { KIND_BACK }
+    else { KIND_OTHER }
 }
 
 #[cfg(target_os = "macos")]
-pub fn is_letter(code: u32) -> bool {
-    match &*MAC_LETTERS.read().unwrap() { Some(t) => code < 256 && t[code as usize], None => fixed_is_letter(code) }
+fn kind_of(code: u32) -> u8 {
+    match &*MAC_KINDS.read().unwrap() {
+        Some(t) if code < 256 => t[code as usize],
+        _ => fixed_kind(code),
+    }
 }
+
+#[cfg(target_os = "macos")]
+pub fn is_letter(code: u32) -> bool { kind_of(code) == KIND_LETTER }
 
 pub fn spawn(c: Arc<Counters>) {
     let _ = COUNTERS.set(c);
@@ -199,9 +330,9 @@ mod platform {
         let (mut lo, mut hi) = (0, 0);
         xlib::XDisplayKeycodes(d, &mut lo, &mut hi);
         let pairs: Vec<(u32, u64)> = (lo.max(0)..=hi.min(255)).map(|kc| (kc as u32, xlib::XkbKeycodeToKeysym(d, kc as u8, 0, 0) as u64)).collect();
-        let t = letters_from_keysyms(pairs.iter().copied());
-        eprintln!("keymap: {} letter keycodes from XKB{}", t.map_or(0, |t| t.iter().filter(|b| **b).count()), if t.is_none() { " (using US fallback)" } else { "" });
-        *XKB_LETTERS.write().unwrap() = t;
+        let t = kinds_from_keysyms(pairs.iter().copied());
+        eprintln!("keymap: {} letter keycodes from XKB{}", t.as_ref().map_or(0, |t| t.iter().filter(|k| **k == KIND_LETTER).count()), if t.is_none() { " (using US fallback)" } else { "" });
+        *XKB_KINDS.write().unwrap() = t;
     }
 
     /// Watches keyboard mapping changes (core MappingNotify + XKB NewKeyboard/Map notify) and rebuilds the table.
@@ -285,8 +416,14 @@ mod tests {
         for (i, c) in row1.chars().enumerate() { pairs.push((24 + i as u32, c as u64)); }
         for (i, c) in row2.chars().enumerate() { pairs.push((38 + i as u32, c as u64)); }
         for (i, c) in row3.chars().enumerate() { pairs.push((52 + i as u32, c as u64)); }
-        pairs.push((58, 0x2c)); pairs.push((10, 0x26)); pairs.push((65, 0x20));
-        let t = letters_from_keysyms(pairs).unwrap();
+        pairs.push((58, 0x2c)); pairs.push((10, 0x31)); pairs.push((65, 0x20)); pairs.push((22, 0xff08));
+        let kinds = kinds_from_keysyms(pairs.iter().copied()).unwrap();
+        assert_eq!(kinds.iter().filter(|k| **k == KIND_LETTER).count(), 26);
+        assert_eq!(kinds[10], KIND_DIGIT);
+        assert_eq!(kinds[65], KIND_GAP);
+        assert_eq!(kinds[22], KIND_BACK);
+        assert_eq!(kinds[58], KIND_OTHER);
+        let t = letters_from_keysyms(pairs.iter().filter(|(kc, _)| *kc != 10).copied()).unwrap();
         assert_eq!(t.iter().filter(|b| **b).count(), 26);
         assert!(t[47] && !t[58] && !t[10] && !t[65]);
         // non-Latin / empty layout -> fallback
@@ -309,10 +446,106 @@ mod tests {
     fn counting_and_repeat() {
         let c = Counters::default();
         let mut d = HashSet::new();
-        c.key_down(OTHERS[0], &mut d);
+        c.key_down(0x70, &mut d); // a function key is not part of a word
         c.key_down(A, &mut d); c.key_down(A, &mut d); // auto-repeat
         d.remove(&A); c.key_down(A, &mut d);
         assert_eq!(c.keys.load(Ordering::Relaxed), 2);
+        assert_eq!(c.words.load(Ordering::Relaxed), 0);
+    }
+
+    fn gap() -> u32 {
+        #[cfg(windows)] { 0x20 }
+        #[cfg(target_os = "linux")] { 65 }
+        #[cfg(target_os = "macos")] { 0x31 }
+    }
+    fn back() -> u32 {
+        #[cfg(windows)] { 0x08 }
+        #[cfg(target_os = "linux")] { 22 }
+        #[cfg(target_os = "macos")] { 0x33 }
+    }
+    fn digit() -> u32 {
+        #[cfg(windows)] { 0x31 }
+        #[cfg(target_os = "linux")] { 10 }
+        #[cfg(target_os = "macos")] { 0x12 }
+    }
+
+    #[test]
+    fn a_gap_finishes_one_word_and_a_repeat_does_not() {
+        let c = Counters::default();
+        let mut d = HashSet::new();
+        for _ in 0..5 {
+            c.key_down(A, &mut d);
+            d.remove(&A);
+        }
+        assert_eq!(c.words.load(Ordering::Relaxed), 0);
+        c.key_down(gap(), &mut d);
+        c.key_down(gap(), &mut d); // held space
+        assert_eq!(c.words.load(Ordering::Relaxed), 1);
+        assert_eq!(c.open.load(Ordering::Relaxed), 0);
+        d.remove(&gap());
+        c.key_down(gap(), &mut d);
+        assert_eq!(c.words.load(Ordering::Relaxed), 1);
+    }
+
+    #[test]
+    fn backspace_and_a_joiner_leave_one_word() {
+        let c = Counters::default();
+        let mut d = HashSet::new();
+        for _ in 0..4 {
+            c.key_down(A, &mut d);
+            d.remove(&A);
+        }
+        c.key_down(0xBA, &mut d); // apostrophe or hyphen on a US keyboard; not a gap
+        d.remove(&0xBA);
+        c.key_down(A, &mut d);
+        d.remove(&A);
+        c.key_down(back(), &mut d);
+        c.key_down(back(), &mut d); // auto-repeat still erases
+        d.remove(&back());
+        c.key_down(gap(), &mut d);
+        assert_eq!(c.words.load(Ordering::Relaxed), 1);
+        assert_eq!(c.open.load(Ordering::Relaxed), 0);
+    }
+
+    #[test]
+    fn backspace_can_erase_the_unfinished_word() {
+        let c = Counters::default();
+        let mut d = HashSet::new();
+        c.key_down(digit(), &mut d);
+        d.remove(&digit());
+        c.key_down(A, &mut d);
+        d.remove(&A);
+        c.key_down(back(), &mut d);
+        c.key_down(back(), &mut d);
+        d.remove(&back());
+        c.key_down(gap(), &mut d);
+        assert_eq!(c.words.load(Ordering::Relaxed), 0);
+    }
+
+    #[test]
+    fn paused_keys_do_not_change_the_open_word() {
+        let c = Counters::default();
+        let mut d = HashSet::new();
+        c.key_down(A, &mut d);
+        d.remove(&A);
+        c.paused.store(true, Ordering::Relaxed);
+        c.key_down(back(), &mut d);
+        c.key_down(gap(), &mut d);
+        assert_eq!(c.open.load(Ordering::Relaxed), 1);
+        assert_eq!(c.words.load(Ordering::Relaxed), 0);
+    }
+
+    #[test]
+    fn fold_stroke_matches_the_word_rule() {
+        let (open, activity, words) = fold_stroke(0, Stroke::Char, true);
+        assert_eq!((open, activity, words), (1, 1, 0));
+        let (open, activity, words) = fold_stroke(open, Stroke::Char, false);
+        assert_eq!((open, activity, words), (1, 0, 0));
+        let (open, _, _) = fold_stroke(open, Stroke::Other, true);
+        let (open, activity, words) = fold_stroke(open, Stroke::Gap, true);
+        assert_eq!((open, activity, words), (0, 1, 1));
+        let (open, activity, words) = fold_stroke(3, Stroke::Back, false);
+        assert_eq!((open, activity, words), (2, 1, 0));
     }
 
     #[test]

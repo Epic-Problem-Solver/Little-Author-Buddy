@@ -20,10 +20,9 @@
   <label>Tool <select id="tool"><option value="pen">Feather pen</option><option value="typewriter">Typewriter 🔒 finish a Short Story</option><option value="laptop">Laptop 🔒 finish a Novella</option></select></label>
   <label><input type="checkbox" id="unlockall"> Unlock all (testing) — unlocks every tier and tool without changing your real progress</label></fieldset>
  <fieldset><legend>Writing</legend>
-  <label>Letter keystrokes per word <input type="range" id="kpw" min="1" max="5" step="1"> <output id="kpwv"></output></label>
   <label>Fall asleep after (seconds idle) <input type="number" id="idle" min="5"></label>
   <label>Tier targets (words): Short story <input type="number" id="t1" min="1"> Novella <input type="number" id="t2" min="1"> Novel <input type="number" id="t3" min="1"></label>
-  <p class="info">Only letter keys A–Z count toward words (by key position, so any layout and IME composition on letter keys work). Digits, punctuation, Space, Enter, Backspace, Tab, Delete, modifiers, function keys, arrows and the numpad never count.</p></fieldset>
+  <p class="info">A word counts when Space, Enter, or Tab follows a letter or a digit. A hyphen or an apostrophe stays inside the word. Backspace shortens the word you have not finished. The app keeps that length as a number and drops it when you quit. It never keeps the letters.</p></fieldset>
  <fieldset><legend>Monitors</legend>
   <label>Desk monitor <select id="desk"></select></label>
   <label><input type="checkbox" id="roam"> Wander across all monitors (off = desk monitor only)</label></fieldset>
@@ -75,7 +74,7 @@
  <h3>Privacy</h3>
  <ul>
   <li>Writing, projects, and the save stay on this computer. The app contacts GitHub only when Check for update is pressed, to read the latest release number, and sends none of that data. It does not download the update. On Windows, the WebView2 runtime it uses may contact Microsoft for runtime updates, independently of this app.</li>
-  <li>Only keystroke <b>counts</b> are kept. The key's position code is checked in memory (letter key or not) and then discarded. The text you type is never recorded.</li>
+  <li>Only word <b>counts</b> are kept. Each key is classified in memory, then discarded. The text you type is never recorded. An unfinished word is a number, and it is not saved.</li>
   <li>No per-key timestamps are stored, only a total per day.</li>
   <li>Window titles are read only to spot distractions and to ignore this app's own windows when a game starts. They are never saved or logged. After fifteen minutes of writing at the desk, Buddy suggests a game. That suggestion is not saved. Falling asleep, wandering, or watching starts the wait over.</li>
   <li>Media detection reads only playing/paused. Scroll detection counts wheel ticks only.</li>

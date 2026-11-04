@@ -50,9 +50,9 @@ test('an idle foreground title is not saved and does not pull Buddy off the desk
   assert.equal(LWC.saveJson(s).includes('lastKey'), false);
 });
 
-test('credit holds keys until a story has a title, then completes and carries overflow', () => {
+test('credit holds words until a story has a title, then completes and carries overflow', () => {
   const s = session(0);
-  s.keys = 10;
+  s.words = 10;
   tick(s, 1000);
   assert.equal(s.data.carry_keystrokes, 10);
   assert.equal(s.data.active, null);
@@ -61,14 +61,14 @@ test('credit holds keys until a story has a title, then completes and carries ov
   s.data.active.keystrokes = 0;
   s.data.active.target_words = 2;
   s.data.settings.keys_per_word = 5;
-  s.keys += 12;
+  s.words += 12;
   const out = tick(s, 3000);
   assert.equal(s.data.active, null);
   assert.equal(s.data.awaiting_next, true);
   assert.equal(s.data.carry_keystrokes, 2);
   assert.equal(s.data.completed[0].keystrokes, 10);
   assert.ok(out.events.some(e => e.name === 'notice' && e.payload === 'Unlocked: Novella + typewriter!'));
-  s.keys += 4;
+  s.words += 4;
   tick(s, 4000);
   assert.equal(s.data.carry_keystrokes, 6);
 });
@@ -163,21 +163,82 @@ test('the window colour is a hex setting', () => {
   assert.equal(s.snap.page_color, '#f6efe2');
 });
 
-test('pause drops letter keys and the save never stores a character', () => {
+test('pause drops words and the save never stores a character', () => {
   const s = session(0);
   LWC.invoke(s, 'finish_onboarding', { buddy: 'Buddy', colors: { body: '#cfe6ff' }, title: 'Notes' }, 1);
   LWC.invoke(s, 'toggle_pause', {}, 1);
-  LWC.addInput(s, 5, 2);
+  LWC.addInput(s, 'LLG', 2);
   tick(s, 2000);
   assert.equal(s.data.total_keystrokes, 0);
+  assert.equal(s.open, 0);
   LWC.invoke(s, 'toggle_pause', {}, 2);
-  LWC.addInput(s, 5, 0);
+  LWC.addInput(s, 'LLG', 0);
   tick(s, 3000);
-  assert.equal(s.data.total_keystrokes, 5);
-  assert.equal(s.data.active.keystrokes, 5);
+  assert.equal(s.data.total_keystrokes, 1);
+  assert.equal(s.data.active.keystrokes, 1);
   const saved = LWC.saveJson(s);
   assert.equal(saved.includes('"title"'), false);
   assert.equal(saved.includes('key_char'), false);
+  assert.equal(saved.includes('"open"'), false);
+});
+
+test('marks finish a word and backspace shortens the unfinished one', () => {
+  const s = session(0);
+  LWC.invoke(s, 'finish_onboarding', { buddy: 'Buddy', colors: { body: '#cfe6ff' }, title: 'Notes' }, 1);
+  LWC.addInput(s, 'LLG', 0);
+  LWC.addInput(s, 9, 0);
+  LWC.addInput(s, 'LLBBG', 0);
+  LWC.addInput(s, 'LGB', 0);
+  tick(s, 1000);
+  assert.equal(s.data.total_keystrokes, 2);
+  assert.equal(s.data.active.keystrokes, 2);
+  assert.equal(s.open, 0);
+  assert.equal(s.words, 2);
+  const long = 'L'.repeat(300) + 'G';
+  LWC.addInput(s, long, 0);
+  assert.equal(s.open, 256);
+  assert.equal(s.words, 2);
+  LWC.addInput(s, 'G', 0);
+  tick(s, 2000);
+  assert.equal(s.words, 3);
+  assert.equal(s.open, 0);
+  assert.equal(s.data.total_keystrokes, 3);
+});
+
+test('an old letter-keystroke save is divided once', () => {
+  const old = {
+    settings: { keys_per_word: 5 },
+    active: { name: 'S', tier: 'short_story', target_words: 3000, keystrokes: 14, started_at: 0, completed_at: null },
+    queue: [{ name: 'Q', tier: 'short_story', target_words: 10, keystrokes: 9, started_at: 0, completed_at: null }],
+    completed: [{ name: 'C', tier: 'short_story', target_words: 3, keystrokes: 11, started_at: 0, completed_at: 1 }],
+    carry_keystrokes: 7,
+    total_keystrokes: 14,
+    daily: [{ day: '2020-01-01', keystrokes: 14 }],
+  };
+  const s = session(0, old);
+  assert.equal(s.data.words_counted, true);
+  assert.equal(s.data.settings.keys_per_word, 1);
+  assert.equal(s.data.active.keystrokes, 2);
+  assert.equal(s.data.queue[0].keystrokes, 1);
+  assert.equal(s.data.completed[0].keystrokes, 2);
+  assert.equal(s.data.carry_keystrokes, 1);
+  assert.equal(s.data.total_keystrokes, 2);
+  assert.equal(s.data.daily[0].keystrokes, 2);
+  const again = session(0, JSON.parse(LWC.saveJson(s)));
+  assert.equal(again.data.total_keystrokes, 2);
+  assert.equal(again.data.active.keystrokes, 2);
+  assert.equal(again.data.settings.keys_per_word, 1);
+  const kept = session(0, { words_counted: true, settings: { keys_per_word: 5 }, total_keystrokes: 14 });
+  assert.equal(kept.data.total_keystrokes, 14);
+  assert.equal(kept.data.settings.keys_per_word, 1);
+  const bare = session(0, { total_keystrokes: 9 });
+  assert.equal(bare.data.total_keystrokes, 1);
+  assert.equal(bare.data.settings.keys_per_word, 1);
+  const fresh = session(0);
+  assert.equal(fresh.data.words_counted, true);
+  assert.equal(fresh.data.settings.keys_per_word, 1);
+  LWC.invoke(fresh, 'update_settings', { settings: Object.assign({}, fresh.data.settings, { keys_per_word: 4 }) }, 1);
+  assert.equal(fresh.data.settings.keys_per_word, 1);
 });
 
 test('supporter packs load in order and a newer pack is refused', () => {

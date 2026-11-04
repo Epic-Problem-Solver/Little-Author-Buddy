@@ -1,6 +1,6 @@
 # Little Author Buddy — prototype (Tauri 2)
 
-Layout: `ui/` (static frontend, no bundler; `character.js` = character component, `content.js` = Writer content loader, `main.js` = movement/HUD), `src-tauri/` (Rust: `input.rs` keystroke/wheel counter, `idle.rs` state machine + tests, `platform.rs` foreground title/rect + media, `store.rs` JSON persistence, `lib.rs` overlay/tray/tick loop).
+Layout: `ui/` (static frontend, no bundler; `character.js` = character component, `content.js` = Writer content loader, `main.js` = movement/HUD), `src-tauri/` (Rust: `input.rs` word/wheel counter, `idle.rs` state machine + tests, `platform.rs` foreground title/rect + media, `store.rs` JSON persistence, `lib.rs` overlay/tray/tick loop).
 
 ## Prereqs (Debian/Ubuntu host)
     sudo apt install libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev libssl-dev libxtst-dev libxi-dev build-essential clang lld llvm nsis
@@ -21,6 +21,7 @@ Outputs: `src-tauri/target/release/bundle/{deb,appimage}/`, `src-tauri/target-wi
 ## Runtime notes
 - Data: `%APPDATA%\dev.lwc.companion\state.json` / `~/.local/share/dev.lwc.companion/state.json` (settings, projects, counts — never key contents). Saved every 10 s when changed and on tray Quit.
 - Tray: Pause/Resume listening, Quit.
+- A word is one or more letters or digits, finished by Space, Enter, or Tab. Backspace shortens the unfinished word. The save stores the word count. An older save's letter keystrokes are divided by its keys-per-word value once.
 - Linux: input via our own X11 RECORD listener (raw keycodes only; no Wayland-native capture). Windows: own WH_KEYBOARD_LL/WH_MOUSE_LL hooks (vkCode only, no ToUnicodeEx). No compositor on Linux → overlay shrinks to a corner box with a warning; window title via `xdotool`, media via `playerctl` (both optional). Transparency needs a compositor.
 
 ## v0.2 additions

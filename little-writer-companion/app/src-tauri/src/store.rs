@@ -253,6 +253,8 @@ pub struct Data {
     pub onboarded: Option<bool>,
     /// Last build that opened this save. Empty on a save from before the welcome note.
     pub seen_version: String,
+    /// Letter-keystroke saves are divided by `keys_per_word` once. After that, each stored unit is one word.
+    pub words_counted: bool,
 }
 
 pub const DEFAULT_BUDDY: &str = "Buddy";
@@ -291,6 +293,7 @@ mod tests {
         std::fs::write(&p, "{\"active\": {broken").unwrap();
         let (d, w) = load(&p, 42);
         assert!(matches!(w.as_ref().unwrap().kind, LoadErrorKind::Parse(_)) && !w.unwrap().block_save() && d.active.is_none());
+        assert!(d.words_counted && d.settings.keys_per_word == 1);
         assert!(!p.exists());
         assert_eq!(std::fs::read_to_string(dir.join("state.corrupt-42.json")).unwrap(), "{\"active\": {broken");
         let _ = std::fs::remove_dir_all(dir);
@@ -336,9 +339,19 @@ mod tests {
         std::fs::write(&p, b).unwrap();
         let (d, w) = load(&p, 1);
         assert!(w.is_none());
-        assert_eq!(d.settings.keys_per_word, 5);
-        assert_eq!(d.total_keystrokes, 5);
+        assert!(d.words_counted);
+        assert_eq!(d.settings.keys_per_word, 1);
+        assert_eq!(d.total_keystrokes, 1); // 5 letters at 5 per word
         assert!(!serde_json::to_string(&d).unwrap().contains("ignore_keys"));
+        let (again, _) = load(&p, 2);
+        assert_eq!(again.total_keystrokes, 1);
+        assert!(again.words_counted);
+        std::fs::write(&p, r#"{"settings":{"keys_per_word":5},"active":{"name":"S","tier":"short_story","target_words":3000,"keystrokes":14,"started_at":0,"completed_at":null},"carry_keystrokes":7,"total_keystrokes":14}"#).unwrap();
+        let (d, _) = load(&p, 3);
+        assert_eq!(d.active.unwrap().keystrokes, 2);
+        assert_eq!(d.carry_keystrokes, 1);
+        assert_eq!(d.total_keystrokes, 2);
+        assert_eq!(d.settings.keys_per_word, 1);
         let _ = std::fs::remove_dir_all(dir);
     }
     fn done(tier: Tier) -> Project { let mut p = Project::new("x", tier, 1, 0); p.completed_at = Some(1); p }
@@ -420,6 +433,8 @@ mod tests {
         let p = dir.join("state.json");
         let (d, _) = load(&p, 1); // fresh install
         assert_eq!(d.onboarded, Some(false));
+        assert!(!p.exists());
+        assert!(d.words_counted && d.settings.keys_per_word == 1);
         std::fs::write(&p, r#"{"active":{"name":"Old","tier":"short_story","target_words":3000,"keystrokes":10,"started_at":0,"completed_at":null}}"#).unwrap();
         let (d, _) = load(&p, 1); // v0.4 save
         assert_eq!(d.onboarded, Some(true));
@@ -456,7 +471,7 @@ mod tests {
 pub const TIERS: [Tier; 3] = [Tier::ShortStory, Tier::Novella, Tier::Novel];
 pub const TOOLS: [Tool; 3] = [Tool::Pen, Tool::Typewriter, Tool::Laptop];
 
-/// What `Data::credit` did with one batch of letter keystrokes.
+/// What `Data::credit` did with one batch of finished words.
 pub struct Credit {
     pub completed: Option<Project>,
     pub notice: Option<String>,
@@ -500,7 +515,7 @@ impl Data {
         self.awaiting_next = false;
     }
 
-    /// Apply `dk` letter keystrokes counted since the previous tick.
+    /// Apply `dk` finished words counted since the previous tick.
     ///
     /// Holds them on `carry_keystrokes` until a story has a title or the reader picks the next
     /// project. Otherwise credits the active project, carries overflow past the word target,
@@ -545,7 +560,29 @@ impl Data {
 }
 
 /// Keystrokes-per-word slider range is 1..=5 (v0.3); older files may hold larger values.
+/// New counting stores one unit per finished word and keeps this at 1.
 pub fn clamp_kpw(v: u64) -> u64 { v.clamp(1, 5) }
+
+/// Divide letter-keystroke totals by the saved keys-per-word, once.
+/// Returns whether the save changed. A fresh profile is marked counted and is not written here.
+pub fn adopt_words(d: &mut Data) -> bool {
+    if d.words_counted {
+        let fix = d.settings.keys_per_word != 1;
+        d.settings.keys_per_word = 1;
+        return fix;
+    }
+    let kpw = d.settings.keys_per_word.max(1);
+    let div = |n: u64| n / kpw;
+    if let Some(a) = d.active.as_mut() { a.keystrokes = div(a.keystrokes); }
+    for p in d.queue.iter_mut() { p.keystrokes = div(p.keystrokes); }
+    for p in d.completed.iter_mut() { p.keystrokes = div(p.keystrokes); }
+    d.carry_keystrokes = div(d.carry_keystrokes);
+    d.total_keystrokes = div(d.total_keystrokes);
+    for day in d.daily.iter_mut() { day.keystrokes = div(day.keystrokes); }
+    d.settings.keys_per_word = 1;
+    d.words_counted = true;
+    true
+}
 
 /// Writing minutes in a sprint. 0 is off. Settings may use any minute from 0 to 180.
 pub const MAX_FOCUS_MINUTES: u32 = 180;
@@ -604,7 +641,11 @@ impl LoadIssue {
 /// state.corrupt-<ms>.json and an issue returned; if it can't be moved, the caller must not save.
 pub fn load(path: &PathBuf, now: u64) -> (Data, Option<LoadIssue>) {
     let kind = match std::fs::read(path) {
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return (Data { onboarded: Some(false), ..Data::default() }, None),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            let mut d = Data { onboarded: Some(false), ..Data::default() };
+            adopt_words(&mut d);
+            return (d, None);
+        }
         Err(e) => LoadErrorKind::Read(e),
         // serde_json skips unknown fields without validating them, so check UTF-8 for the whole file first
         // BUG-18: tolerate a UTF-8 BOM (e.g. file edited in Notepad)
@@ -613,6 +654,7 @@ pub fn load(path: &PathBuf, now: u64) -> (Data, Option<LoadIssue>) {
                 if let Some(a) = d.active.as_mut() { a.target_words = a.target_words.max(1); }
                 for q in d.queue.iter_mut() { q.target_words = q.target_words.max(1); }
                 d.settings.keys_per_word = clamp_kpw(d.settings.keys_per_word);
+                let adopted = adopt_words(&mut d);
                 clamp_motion(&mut d.settings);
                 // v0.5 migration: existing saves skip onboarding (default buddy name), fresh-looking ones get it
                 if d.onboarded.is_none() { d.onboarded = Some(!d.needs_title()); }
@@ -628,7 +670,7 @@ pub fn load(path: &PathBuf, now: u64) -> (Data, Option<LoadIssue>) {
                 let focus_was = d.settings.focus_minutes;
                 d.settings.focus_minutes = clamp_focus_minutes(d.settings.focus_minutes);
                 let focus_changed = d.settings.focus_minutes != focus_was;
-                if d.settings.colors != before || titles_changed || journal_bad || hat_changed || focus_changed { save(path, &d); }
+                if d.settings.colors != before || titles_changed || journal_bad || hat_changed || focus_changed || adopted { save(path, &d); }
                 return (d, None);
             }
             Err(e) => LoadErrorKind::Parse(e),
@@ -636,7 +678,9 @@ pub fn load(path: &PathBuf, now: u64) -> (Data, Option<LoadIssue>) {
     };
     let bak = path.with_file_name(format!("state.corrupt-{now}.json"));
     let backup = std::fs::rename(path, &bak).ok().map(|_| bak);
-    (Data { onboarded: Some(false), ..Data::default() }, Some(LoadIssue { kind, backup }))
+    let mut d = Data { onboarded: Some(false), ..Data::default() };
+    adopt_words(&mut d);
+    (d, Some(LoadIssue { kind, backup }))
 }
 
 pub fn save(path: &PathBuf, data: &Data) {

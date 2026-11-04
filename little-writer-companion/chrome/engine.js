@@ -1,5 +1,5 @@
 // Session engine for the Chrome port. Same rules as the desktop app:
-// letter counts and timing only, titles never saved, focus streak not written
+// word counts and timing only, titles never saved, focus streak not written
 // into the save, packs are data (never scripts). No Chrome APIs in this file.
 (function (root) {
   const APP_VERSION = '0.9.1';
@@ -44,7 +44,7 @@
   }
   function defaultSettings() {
     return {
-      keys_per_word: 5,
+      keys_per_word: 1,
       idle_threshold_ms: 20000,
       wander_min_ms: 60000,
       wander_max_ms: 300000,
@@ -87,6 +87,7 @@
       awaiting_next: false,
       onboarded: false,
       seen_version: '',
+      words_counted: true,
     };
   }
   function freshFocus() {
@@ -264,7 +265,7 @@
     return latched ? scrolls >= leave : scrolls >= enter;
   }
 
-  // Chrome keeps the buddy at the desk. Idle is sleep. A letter key wakes typing in place.
+  // Chrome keeps the buddy at the desk. Idle is sleep. A letter, digit, gap, or backspace wakes typing in place.
   // Sprint games still leave the desk; that walk is focus_phase, not this mode.
   function stepMachine(m, i, p) {
     if (i.newKeys > 0 || i.arrived) {
@@ -654,7 +655,30 @@
     if (!hadOnboarded) d.onboarded = !needsTitle(d);
     else d.onboarded = src.onboarded == null ? false : !!src.onboarded;
     d.seen_version = typeof src.seen_version === 'string' ? takeChars(src.seen_version, 32) : '';
+    adoptWords(d, src);
     return d;
+  }
+
+  // Old saves stored letter keystrokes. Divide by that save's keys-per-word once.
+  // A missing value is the old default of 5. After this, each stored unit is one word.
+  function adoptWords(d, src) {
+    const counted = src.words_counted === true;
+    if (counted) {
+      d.settings.keys_per_word = 1;
+      d.words_counted = true;
+      return;
+    }
+    const saved = src.settings && src.settings.keys_per_word;
+    const kpw = clampKpw(saved == null ? 5 : saved);
+    const div = n => Math.floor(Math.max(0, Number(n) || 0) / kpw);
+    if (d.active) d.active.keystrokes = div(d.active.keystrokes);
+    for (const p of d.queue) p.keystrokes = div(p.keystrokes);
+    for (const p of d.completed) p.keystrokes = div(p.keystrokes);
+    d.carry_keystrokes = div(d.carry_keystrokes);
+    d.total_keystrokes = div(d.total_keystrokes);
+    for (const day of d.daily) day.keystrokes = div(day.keystrokes);
+    d.settings.keys_per_word = 1;
+    d.words_counted = true;
   }
 
   function letterMd(l) {
@@ -706,6 +730,8 @@
       machine: freshMachine(now || 0),
       paused: false,
       keys: 0,
+      words: 0,
+      open: 0,
       wheel: 0,
       warnings: warning ? [warning] : [],
       monitors: [],
@@ -719,6 +745,7 @@
       snap: null,
       settingsTab: 'settings',
       lastKeys: 0,
+      lastWords: 0,
       lastWheel: 0,
       wheelHist: [],
       tickN: 0,
@@ -855,8 +882,10 @@
     input = input || {};
     s.tickN++;
     const dk = s.paused ? 0 : s.keys - s.lastKeys;
+    const credited = s.paused ? 0 : s.words - s.lastWords;
     const dw = s.paused ? 0 : s.wheel - s.lastWheel;
     s.lastKeys = s.keys;
+    s.lastWords = s.words;
     s.lastWheel = s.wheel;
     if (s.homeDb.pending && now - s.homeDb.since >= 600) {
       const p = s.homeDb.pending;
@@ -888,7 +917,7 @@
     }, { idleMs: g.idle_threshold_ms });
     const dt = Math.min(2000, Math.max(0, now - s.focusAt));
     s.focusAt = now;
-    const result = credit(s.data, dk, now);
+    const result = credit(s.data, credited, now);
     if (result.changed) s.dirty = true;
     let spoken = focusTick(s.focus, { dtMs: dt, mode, paused: !!s.paused, keys: dk, limitMs: limitMs(g.focus_minutes) });
     spoken = settle(s, spoken);
@@ -926,7 +955,7 @@
   function applySettings(s, incoming) {
     const cur = s.data.settings;
     const v = Object.assign(defaultSettings(), incoming || {});
-    v.keys_per_word = clampKpw(v.keys_per_word);
+    v.keys_per_word = 1;
     clampMotion(v);
     v.colors = deriveColors(v.colors);
     if (!String(v.buddy_name || '').trim()) v.buddy_name = cur.buddy_name;
@@ -1131,9 +1160,26 @@
     return { value, events };
   }
 
-  function addInput(s, letters, wheels) {
+  // `marks` is a string of L (letter or digit), G (space, enter, tab), and B (backspace).
+  // Anything else is ignored. The characters that were typed are not in the string.
+  function addInput(s, marks, wheels) {
     if (s.paused) return;
-    if (letters > 0) s.keys += letters;
+    if (typeof marks === 'string') {
+      const n = Math.min(marks.length, 256);
+      for (let i = 0; i < n; i++) {
+        const ch = marks.charAt(i);
+        if (ch === 'B') {
+          if (s.open > 0) s.open--;
+          s.keys++;
+        } else if (ch === 'L') {
+          s.open++;
+          s.keys++;
+        } else if (ch === 'G') {
+          if (s.open > 0) { s.open = 0; s.words++; }
+          s.keys++;
+        }
+      }
+    }
     if (wheels > 0) s.wheel += wheels;
   }
 
@@ -1520,7 +1566,7 @@
     versionParts, wantsHit, sayEvent, letterMd, scanPacks, chooseId, limitMs, dayString,
     pendingWelcome, installZip, installErrorMessage, mergePacks,
     CHROME_NOTES: [
-      'Chrome counts letter keys in web pages. The address bar, system windows, and Android or Linux apps on Chrome OS are not counted.',
+      'Chrome counts words in web pages. The address bar, system windows, and Android or Linux apps on Chrome OS are not counted.',
       'When idle, Buddy sleeps at the desk. Fifteen minutes of writing suggests a game there. Sleeping starts that wait over. Play fills this window, then shrinks it back. The cursor is read only inside that window and is not saved.',
       'Hats and games are installed from Little Author Buddy DLC.zip or from a packs folder you choose. They are not in this extension, and nothing in a pack is run.',
     ],

@@ -1,6 +1,6 @@
 # Little Author Buddy for Chrome and Chrome OS
 
-This is the free companion, the same desk as the desktop app, running as an unpacked extension. It counts letter keys on web pages and keeps the projects and the fan letters. The Games button lists Chase the Mouse, Tag the Buddy, Red Light Green Light, High Five, and Hide and Seek, and Play starts one without a supporter pack. A pack changes that game's name and lines. Hats come from the same pack. Neither is bundled in this extension. The extension keeps its own save. The desktop app's `state.json` is left alone.
+This is the free companion, the same desk as the desktop app, running as an unpacked extension. It counts words typed on web pages and keeps the projects and the fan letters. The Games button lists Chase the Mouse, Tag the Buddy, Red Light Green Light, High Five, and Hide and Seek, and Play starts one without a supporter pack. A pack changes that game's name and lines. Hats come from the same pack. Neither is bundled in this extension. The extension keeps its own save. The desktop app's `state.json` is left alone.
 
 Chrome cannot do several things the desktop app does. Those limits are real. The extension does not pretend otherwise.
 
@@ -16,8 +16,8 @@ To refresh the copied desk pages after a desktop UI change, run `node sync-ui.js
 
 ## What works
 
-- Letter keys A–Z on web pages, including inside frames, count toward the open project. A key held down counts once. Keys typed in the desk, settings, and a game count too.
-- The wheel counts as scrolling. Digits, punctuation, Space, Enter, and shortcuts do not count.
+- A word on a web page counts when Space, Enter, or Tab follows a letter or a digit, including inside frames. A hyphen or an apostrophe stays inside the word. Backspace shortens the unfinished word. A held letter counts once. Keys typed in the desk, settings, and a game count the same way.
+- The wheel counts as scrolling and does not add a word. A key held with Ctrl, Alt, or Command does not count.
 - After a pause, Buddy sleeps at the desk and wakes there on the next letter key.
 - After fifteen minutes of writing at the desk, Buddy suggests one game and keeps typing. Falling asleep starts that wait over. The suggestion stays on the desk and is not saved. Tray pause holds the wait. The Games button beside the gear opens the list. Play fills this window, then shrinks it back. A pack is not required. Letter keys end the round. Settings can set the window’s background colour.
 - Projects, tools, and colours. Hats and the pack’s game names load when Activate or a packs folder is used.
@@ -35,7 +35,7 @@ To refresh the copied desk pages after a desktop UI change, run `node sync-ui.js
 
 ## Permissions
 
-The extension asks to read web pages so it can count letter keys and wheel ticks. The message is a count. The key and the page address are not stored.
+The extension asks to read web pages so it can count words and wheel ticks. The message is a sequence of letter, gap, and backspace marks. The key and the page address are not stored.
 
 Storage stays in the extension. Export and import on the Settings tab move that save as JSON. It is not the desktop save.
 

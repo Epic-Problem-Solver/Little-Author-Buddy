@@ -632,7 +632,7 @@ async function onMessage(msg) {
   if (msg.type === 'show-home') { await revealHome(); return { ok: true }; }
   if (quit || !session) return { ok: false, error: 'Little Author is not running' };
   if (msg.type === 'input') {
-    LWC.addInput(session, msg.letters | 0, msg.wheels | 0);
+    LWC.addInput(session, typeof msg.marks === 'string' ? msg.marks : '', msg.wheels | 0);
     return { ok: true };
   }
   if (msg.type === 'answer') {

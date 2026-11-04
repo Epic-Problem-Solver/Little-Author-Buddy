@@ -1,7 +1,8 @@
-// Counts letter keys and wheel ticks in web pages. The message is a count.
-// The key, the code, and the page address are not sent. Y and N during a game
-// question are swallowed so they are not typed into the document.
-let letters = 0, wheels = 0, asking = false, live = true;
+// Counts words and wheel ticks in web pages. The message is marks: L (letter or
+// digit), G (space, enter, tab), B (backspace). The key and the page address
+// are not sent. Y and N during a game question are swallowed so they are not
+// typed into the document.
+let marks = '', wheels = 0, asking = false, live = true;
 
 chrome.storage.session.get(['asking', 'live']).then(s => {
   if (s.asking != null) asking = !!s.asking;
@@ -20,14 +21,25 @@ function isAnswer(e) {
   const c = k.toLowerCase();
   return c === 'y' || c === 'n';
 }
-function isLetter(e) {
-  if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return false;
+
+// A hyphen or an apostrophe returns nothing, so it stays inside the word.
+// Backspace repeats shrink it. A held letter or digit counts once.
+function markOf(e) {
+  if (e.ctrlKey || e.metaKey || e.altKey) return '';
   const k = e.key || '';
+  const code = e.code || '';
+  if (k === 'Backspace' || code === 'Backspace') return 'B';
+  if (e.repeat) return '';
+  if (k === ' ' || k === 'Enter' || k === 'Tab' || code === 'Space' || code === 'Enter' || code === 'NumpadEnter' || code === 'Tab') return 'G';
   if (k.length === 1) {
     const c = k.toLowerCase();
-    return c >= 'a' && c <= 'z';
+    if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) return 'L';
+    return '';
   }
-  return (k === 'Process' || k === 'Unidentified' || k === 'Dead') && /^Key[A-Z]$/.test(e.code || '');
+  if (k === 'Process' || k === 'Unidentified' || k === 'Dead') {
+    if (/^Key[A-Z]$/.test(code) || /^Digit[0-9]$/.test(code) || /^Numpad[0-9]$/.test(code)) return 'L';
+  }
+  return '';
 }
 
 document.addEventListener('keydown', e => {
@@ -38,7 +50,8 @@ document.addEventListener('keydown', e => {
     chrome.runtime.sendMessage({ type: 'answer', yes: e.key.toLowerCase() === 'y' }).catch(() => {});
     return;
   }
-  if (isLetter(e)) letters++;
+  const m = markOf(e);
+  if (m && marks.length < 256) marks += m;
 }, true);
 document.addEventListener('keyup', e => {
   if (!live || !asking) return;
@@ -50,9 +63,9 @@ document.addEventListener('keyup', e => {
 window.addEventListener('wheel', () => { if (live) wheels++; }, { capture: true, passive: true });
 
 setInterval(() => {
-  if (!letters && !wheels) return;
-  const msg = { type: 'input', letters, wheels };
-  letters = 0;
+  if (!marks && !wheels) return;
+  const msg = { type: 'input', marks, wheels };
+  marks = '';
   wheels = 0;
   chrome.runtime.sendMessage(msg).catch(() => {});
 }, 200);

@@ -4,7 +4,7 @@ Inspired by publicly described behavior of _Little Writer Desktop Companion_ (
 
 ## Goals
 
-1. Count the user's own keystrokes toward writing projects.
+1. Count the user's own words toward writing projects.
 2. Animate a desktop companion that mirrors typing vs idle.
 3. On project completion, surface encouraging "fan letters" (local generation only).
 
@@ -19,14 +19,15 @@ Inspired by publicly described behavior of _Little Writer Desktop Companion_ (
 
 ### Typing → writing
 
-- Global low-level keyboard hook (Windows) increments a counter on key-down of **letter keys A–Z only** (v0.3 decision; replaces the earlier configurable ignore list and settles OQ-1):
-    - Windows: virtual-key codes `0x41`–`0x5A`. IME: composition presses arriving as `VK_PROCESSKEY` (`0xE5`) are mapped by their hardware **scan code** against a fixed table of the A–Z key positions (PC Set 1: `0x10`–`0x19`, `0x1E`–`0x26`, `0x2C`–`0x32`), with no translation.
-    - Linux (X11): at startup and on every keyboard-mapping change (core `MappingNotify`, XKB NewKeyboard/Map notify) a keycode→letter table is built once from the XKB layout: a keycode counts if its group-0, level-0 keysym is `a`–`z`. Nothing is looked up per event. If the layout yields fewer than 20 letters (e.g. a non-Latin group 0), the fixed US position table (evdev + 8: 24–33, 38–46, 52–58) is used as fallback.
-    - macOS: a listen-only event tap. A key counts when the current layout's unshifted character is ASCII A–Z; that character is not stored. Fewer than 20 Latin letters falls back to the ANSI letter-key positions. Scroll-wheel events count as ticks. Accessibility (and Input Monitoring, when macOS lists the app there) must be granted. The focused window's title comes from the accessibility API, and its rectangle from window geometry. Now Playing supplies only a playing/not-playing flag.
-    - Never counted: digits, punctuation, Space, Enter, Backspace, Tab, Delete, modifiers, function keys, arrows, numpad. Auto-repeat (held key) counts once.
-    - Windows matches by virtual-key (layout-aware via the OS) or, for IME `VK_PROCESSKEY`, by physical position; Linux matches by the active XKB layout's base keysym (so AZERTY counts A/Q/Z/W/M correctly).
-- Only keystroke _counts_ and timestamps are kept; never the character payload.
-- Active project `words` increases by a mapping (e.g. N keystrokes ≈ 1 word, tunable).
+- A finished word counts as one word. The hook keeps a number, how many letters or digits have been pressed since the last gap, and adds one word when Space, Enter, or Tab arrives and that number is at least 1. Backspace lowers the number, including when the key repeats. A hyphen or an apostrophe does not break the word and does not add to the number. The number is not saved. Quitting drops an unfinished word.
+- The keys that build a word are still classified without storing the character (v0.3 decision for letters; word gaps replace the keys-per-word estimate):
+    - Windows: letter virtual-keys `0x41`–`0x5A`, digit virtual-keys `0x30`–`0x39` and numpad `0x60`–`0x69`, Space `0x20`, Enter `0x0D`, Tab `0x09`, Backspace `0x08`. IME composition arrives as `VK_PROCESSKEY` (`0xE5`) and is mapped by hardware scan code: letter rows `0x10`–`0x19`, `0x1E`–`0x26`, `0x2C`–`0x32`; digit row `0x02`–`0x0B`; space `0x39`, enter `0x1C`, tab `0x0F`, backspace `0x0E`. Numpad scans are not used, because num-lock-off arrows share them. No translation.
+    - Linux (X11): at startup and on every keyboard-mapping change (core `MappingNotify`, XKB NewKeyboard/Map notify) one keycode table is built from group-0 level-0 keysyms: letters `a`–`z`, digits `0`–`9` and keypad digits, space, Tab, Return, keypad Enter, and BackSpace. Nothing is looked up per event. Fewer than 20 letters falls back to the US evdev positions.
+    - macOS: a listen-only event tap. The layout table tests each key's unshifted character and discards it: A–Z, 0–9, space, tab, return, and backspace. Fewer than 20 Latin letters falls back to the ANSI positions. Scroll-wheel events count as ticks. Accessibility (and Input Monitoring, when macOS lists the app there) must be granted. The focused window's title comes from the accessibility API, and its rectangle from window geometry. Now Playing supplies only a playing/not-playing flag.
+    - A letter or a digit adds to the unfinished word. A held letter or digit adds once. Digits are the top row and the numpad. Space, Enter, and Tab close the word. Delete, modifier keys, function keys, arrows, and other punctuation do not. The hook does not read whether Ctrl is held, so a letter pressed with Ctrl still lengthens the unfinished word.
+    - Windows matches letters and digits by virtual-key (layout-aware via the OS) or, for IME `VK_PROCESSKEY`, by physical position. Linux matches by the active XKB layout's base keysym (so AZERTY counts A/Q/Z/W/M correctly).
+- Only the word count is kept, plus a per-day total. The character is never stored.
+- An older save stored letter keystrokes. On load those counts are divided by that save's keys-per-word value, once, and the remainder is dropped. After that, each stored unit is one word.
 
 ### Idle states
 
@@ -121,7 +122,7 @@ One public repository and one `main` branch hold the app and the supporter conte
 
 ### Free app
 
-- The writing companion: keystroke counts, idle and wander, fan letters, and the pen, typewriter, and laptop ladder earned from completed projects.
+- The writing companion: word counts, idle and wander, fan letters, and the pen, typewriter, and laptop ladder earned from completed projects.
 - `app/scripts/sync-assets.sh` copies `assets/` and `content/` into `app/ui/`. It does not copy `supporter/`.
 - One installer. The rest of this spec is the free app's behavior.
 

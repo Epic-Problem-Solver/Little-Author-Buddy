@@ -238,7 +238,7 @@ pub fn start_next(st: State<AppState>) -> bool {
 pub fn update_settings(app: AppHandle, st: State<AppState>, settings: store::Settings) -> Result<(), String> {
     let mut s = st.lock().unwrap();
     let mut v = settings;
-    v.keys_per_word = store::clamp_kpw(v.keys_per_word);
+    v.keys_per_word = 1;
     store::clamp_motion(&mut v);
     v.colors.derive();
     if v.buddy_name.trim().is_empty() { v.buddy_name = s.data.settings.buddy_name.clone(); }

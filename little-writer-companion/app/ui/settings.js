@@ -131,7 +131,7 @@ async function load() {
   const shown = LWPalette.normalize(s.colors); lastBody = shown.body;
   document.querySelectorAll('[data-c]').forEach(i => { if (shown[i.dataset.c]) i.value = shown[i.dataset.c]; });
   ch && ch.setColors(shown);
-  $('kpw').value = Math.min(5, Math.max(1, s.keys_per_word)); $('kpwv').textContent = $('kpw').value; $('idle').value = Math.round(s.idle_threshold_ms / 1000);
+  $('idle').value = Math.round(s.idle_threshold_ms / 1000);
   $('t1').value = s.tiers.short_story; $('t2').value = s.tiers.novella; $('t3').value = s.tiers.novel;
     $('dt').checked = s.detect_titles; $('dm').checked = s.detect_media; $('ds').checked = s.detect_scroll; $('titles').value = s.distraction_titles.join('\n');
   $('roam').checked = s.roam_all_monitors;
@@ -174,9 +174,8 @@ document.querySelectorAll('[data-c]').forEach(i => {
   };
   i.oninput = apply; i.onchange = apply;
 });
-$('kpw').oninput = () => $('kpwv').textContent = $('kpw').value;
 async function saveSettings(msg) {
-  const s = { ...data.settings, colors: colors(), keys_per_word: Math.min(5, Math.max(1, +$('kpw').value | 0)), idle_threshold_ms: Math.max(5, +$('idle').value) * 1000,
+  const s = { ...data.settings, colors: colors(), keys_per_word: 1, idle_threshold_ms: Math.max(5, +$('idle').value) * 1000,
     tiers: { short_story: Math.max(1, +$('t1').value | 0), novella: Math.max(1, +$('t2').value | 0), novel: Math.max(1, +$('t3').value | 0) },
     desk_monitor: $('desk').value === '' ? null : +$('desk').value, roam_all_monitors: $('roam').checked, journal_dir: $('jdir').value.trim() || null,
     buddy_scale: +$('bs').value, walk_speed: +$('ws').value, bubble_px: +$('bp').value, buddy_name: $('buddy').value.trim() || data.settings.buddy_name,

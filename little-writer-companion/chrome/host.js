@@ -197,8 +197,25 @@ function startDragging() {
   });
 }
 
-// Letter keys typed in the desk, settings, or a game count too. The character is not sent.
-let pageLetters = 0;
+// Words typed in the desk, settings, or a game count too. The character is not sent.
+let pageMarks = '';
+function markOf(e) {
+  if (e.ctrlKey || e.metaKey || e.altKey) return '';
+  const k = e.key || '';
+  const code = e.code || '';
+  if (k === 'Backspace' || code === 'Backspace') return 'B';
+  if (e.repeat) return '';
+  if (k === ' ' || k === 'Enter' || k === 'Tab' || code === 'Space' || code === 'Enter' || code === 'NumpadEnter' || code === 'Tab') return 'G';
+  if (k.length === 1) {
+    const c = k.toLowerCase();
+    if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) return 'L';
+    return '';
+  }
+  if (k === 'Process' || k === 'Unidentified' || k === 'Dead') {
+    if (/^Key[A-Z]$/.test(code) || /^Digit[0-9]$/.test(code) || /^Numpad[0-9]$/.test(code)) return 'L';
+  }
+  return '';
+}
 if (location.pathname.endsWith('/onboarding.html')) {
   let characterApi = window.LWCharacter;
   const sleepOnBreak = api => {
@@ -223,22 +240,21 @@ if (location.pathname.endsWith('/onboarding.html')) {
   });
 }
 document.addEventListener('keydown', e => {
-  if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
   const k = e.key || '';
   const asking = document.body && document.body.dataset.asking === '1';
-  if (asking && k.length === 1 && (k === 'y' || k === 'Y' || k === 'n' || k === 'N')) {
+  if (asking && !e.repeat && k.length === 1 && (k === 'y' || k === 'Y' || k === 'n' || k === 'N')) {
     e.preventDefault();
     chrome.runtime.sendMessage({ type: 'answer', yes: k.toLowerCase() === 'y' });
     return;
   }
-  const letter = (k.length === 1 && k.toLowerCase() >= 'a' && k.toLowerCase() <= 'z')
-    || ((k === 'Process' || k === 'Unidentified' || k === 'Dead') && /^Key[A-Z]$/.test(e.code || ''));
-  if (letter) pageLetters++;
+  const m = markOf(e);
+  if (m && pageMarks.length < 256) pageMarks += m;
 }, true);
 setInterval(() => {
-  if (!pageLetters) return;
-  const n = pageLetters; pageLetters = 0;
-  chrome.runtime.sendMessage({ type: 'input', letters: n, wheels: 0 });
+  if (!pageMarks) return;
+  const sent = pageMarks; pageMarks = '';
+  chrome.runtime.sendMessage({ type: 'input', marks: sent, wheels: 0 });
 }, 200);
 chrome.storage.onChanged.addListener((ch, area) => {
   if (area === 'session' && ch.asking && document.body) document.body.dataset.asking = ch.asking.newValue ? '1' : '0';
@@ -402,7 +418,7 @@ function bootPage() {
   if (privacy && !document.getElementById('chromeNote')) {
     const li = document.createElement('li');
     li.id = 'chromeNote';
-    li.textContent = 'In Chrome, letter keys are counted on web pages only. The address bar and apps outside Chrome are not counted. This extension is the free companion. The games button lists every game, and Play works before a pack is installed. A pack changes the names. Activate installs Little Author Buddy DLC.zip, or you can choose a packs folder. Play fills this window, then shrinks it back. The cursor is read only inside this window while a game is playing, and it is not saved.';
+    li.textContent = 'In Chrome, words are counted on web pages only. The address bar and apps outside Chrome are not counted. This extension is the free companion. The games button lists every game, and Play works before a pack is installed. A pack changes the names. Activate installs Little Author Buddy DLC.zip, or you can choose a packs folder. Play fills this window, then shrinks it back. The cursor is read only inside this window while a game is playing, and it is not saved.';
     privacy.appendChild(li);
   }
 }

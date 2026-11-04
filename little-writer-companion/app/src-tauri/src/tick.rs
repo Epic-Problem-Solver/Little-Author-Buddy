@@ -72,6 +72,7 @@ pub fn tracker_loop(app: AppHandle) {
 pub fn tick_loop(app: AppHandle, st: AppState, c: Arc<input::Counters>) {
     let mut machine = Machine::new(state::now_ms());
     let mut last_keys = 0u64;
+    let mut last_words = 0u64;
     let mut last_wheel = 0u64;
     let mut wheel_hist: VecDeque<(u64, u64)> = VecDeque::new();
     let mut tick: u64 = 0;
@@ -87,8 +88,10 @@ pub fn tick_loop(app: AppHandle, st: AppState, c: Arc<input::Counters>) {
         tick += 1;
         let now = state::now_ms();
         let keys = c.keys.load(Ordering::Relaxed);
+        let words = c.words.load(Ordering::Relaxed);
         let wheel = c.wheel.load(Ordering::Relaxed);
         let dk = keys - last_keys; last_keys = keys;
+        let credited = words - last_words; last_words = words;
         let dw = wheel - last_wheel; last_wheel = wheel;
         if tick % 20 == 0 { let r = windows::fit_overlay(&app); origin = r.0; monitors = r.1; }
 
@@ -125,7 +128,7 @@ pub fn tick_loop(app: AppHandle, st: AppState, c: Arc<input::Counters>) {
         focus_at = now;
         let (view, credit, spoken) = {
             let mut s = st.lock().unwrap();
-            let credit = s.data.credit(dk, now);
+            let credit = s.data.credit(credited, now);
             if credit.changed { s.dirty = true; }
             if credit.completed.is_some() { s.save(); last_save = now; }
             let limit_ms = focus::limit_ms(s.data.settings.focus_minutes);

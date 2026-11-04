@@ -6,7 +6,7 @@
 
 <p align="center">
   A small desktop companion that sits with you while you write.<br>
-  Letter keys advance the story on its desk. When you stop, it sleeps, wanders, and comes back.
+  Finished words advance the story on its desk. When you stop, it sleeps, wanders, and comes back.
 </p>
 
 <p align="center">
@@ -17,7 +17,7 @@
   <a href="LICENSE">MIT License</a>
 </p>
 
-Little Author Buddy is a writing companion for Windows, macOS, and Linux. It counts your own letter keys toward a project, keeps a quiet desk on screen, and marks a finished story with a fan letter written on your machine. Version 0.9.1 is the public beta.
+Little Author Buddy is a writing companion for Windows, macOS, and Linux. It counts your own words toward a project, keeps a quiet desk on screen, and marks a finished story with a fan letter written on your machine. Version 0.9.1 is the public beta.
 
 ## Download
 
@@ -37,7 +37,7 @@ The [download page](https://epic-problem-solver.github.io/Little-Author-Buddy/li
 
 ## Chrome and Chrome OS
 
-The [Chrome extension](https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/download/v0.9.1/Little-Author-Buddy_0.9.1_chrome.zip) runs the companion inside Chrome and Chrome OS. Unzip it, open `chrome://extensions`, turn on Developer mode, and choose Load unpacked on that folder. Letter keys on web pages advance the story. The desk, projects, sprint games, and fan letters are the same idea as the desktop app, within what Chrome can do. The extension keeps its own save, separate from the desktop app. It needs Chrome or Chrome OS 114 or newer. Source is in [`little-writer-companion/chrome`](little-writer-companion/chrome/README.md).
+The [Chrome extension](https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/download/v0.9.1/Little-Author-Buddy_0.9.1_chrome.zip) runs the companion inside Chrome and Chrome OS. Unzip it, open `chrome://extensions`, turn on Developer mode, and choose Load unpacked on that folder. Words typed on web pages advance the story. The desk, projects, sprint games, and fan letters are the same idea as the desktop app, within what Chrome can do. The extension keeps its own save, separate from the desktop app. It needs Chrome or Chrome OS 114 or newer. Source is in [`little-writer-companion/chrome`](little-writer-companion/chrome/README.md).
 
 ## Opening the Mac app
 
@@ -74,13 +74,13 @@ In the Finder, Control-click **Little Author Buddy** and choose **Open**, then c
 After the app is allowed to launch, turn on the permissions it asks for. Both live under Apple menu → System Settings → Privacy & Security.
 
 - [Accessibility](https://support.apple.com/guide/mac-help/allow-accessibility-apps-to-access-your-mac-mh43185/mac). The companion reads the front window’s title and rectangle from here.
-- [Input Monitoring](https://support.apple.com/guide/mac-help/control-access-to-input-monitoring-on-mac-mchl4cedafb6/mac). Turn this on when macOS lists Little Author Buddy there. Letter keys are counted through a listen-only event tap, and the character of each key is not stored.
+- [Input Monitoring](https://support.apple.com/guide/mac-help/control-access-to-input-monitoring-on-mac-mchl4cedafb6/mac). Turn this on when macOS lists Little Author Buddy there. Words are counted through a listen-only event tap, and the character of each key is not stored.
 
 If the app is missing from a list, click the add button and choose it in Applications. Quit and open Little Author Buddy again after changing either switch.
 
 ## What it does
 
-- **Writing.** Letter keys A–Z add words to the active project. Five keystrokes make one word by default, and Settings can set that from one to five. A key held down counts once.
+- **Writing.** A word counts when Space, Enter, or Tab follows a letter or a digit. A hyphen or an apostrophe stays inside the word. Backspace shortens a word you have not finished. A held letter counts once.
 - **Idle.** After a pause the companion falls asleep at the desk, then wakes and wanders the monitors you allow. The next letter key sends it racing back.
 - **Distractions.** With the switches you turn on, it walks over to watch a window whose title is on your list, media that is playing while you are idle, or scrolling on the wheel.
 - **Fan letters.** Finishing a project opens a letter — encouragement, a quote, or a joke — filled in from local templates, then asks for the next project. Each letter can be kept in a journal of Markdown files.
