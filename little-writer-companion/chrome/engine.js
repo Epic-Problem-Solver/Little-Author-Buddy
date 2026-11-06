@@ -71,6 +71,8 @@
       hat_color: '',
       hat_extra: false,
       focus_minutes: 30,
+      menu_dark: false,
+      menu_hue: 19,
       page_color: '#f6efe2',
     };
   }
@@ -979,6 +981,9 @@
     v.hat = String(v.hat || '');
     v.hat_color = String(v.hat_color || '');
     v.hat_extra = !!v.hat_extra;
+    v.menu_dark = !!v.menu_dark;
+    const menuHue = Number(v.menu_hue);
+    v.menu_hue = Math.max(0, Math.min(360, Math.round(Number.isFinite(menuHue) ? menuHue : 19)));
     clampHat(v, s.hats);
     v.focus_minutes = clampFocus(v.focus_minutes);
     v.page_color = hexOk(v.page_color) || '#f6efe2';

@@ -217,6 +217,7 @@ function markOf(e) {
   return '';
 }
 if (location.pathname.endsWith('/onboarding.html')) {
+  document.documentElement.dataset.desk = 'chrome';
   let characterApi = window.LWCharacter;
   const sleepOnBreak = api => {
     if (!api || api.__chromeSleep || typeof api.mount !== 'function') return api;
@@ -401,10 +402,9 @@ function dressNoWander() {
 }
 
 function dressOnboarding() {
-  for (const p of document.querySelectorAll('p')) {
-    if (!p.textContent.includes('wanders')) continue;
-    p.textContent = 'This little companion lives in this window and keeps you company while you write. Every word you type helps your buddy finish its own story. When you take a break, Buddy sleeps at the desk.';
-  }
+  document.documentElement.dataset.desk = 'chrome';
+  const hello = document.getElementById('hello');
+  if (hello) hello.textContent = 'This little companion lives in this window and keeps you company while you write. Every word you finish helps your buddy\'s own story. When you take a break, Buddy sleeps at the desk.';
 }
 
 function bootPage() {

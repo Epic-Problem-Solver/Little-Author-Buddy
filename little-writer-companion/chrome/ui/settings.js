@@ -119,8 +119,32 @@ function syncGameList() {
     list.appendChild(li);
   }
 }
+let menuDark = false;
+let menuHue = 19;
+let savedMenuHue = 19;
+function applyMenu(on, hue) {
+  menuDark = !!on;
+  if (arguments.length > 1 && hue != null && hue !== '') {
+    const n = Math.round(Number(hue));
+    if (Number.isFinite(n)) menuHue = Math.min(360, Math.max(0, n));
+  }
+  document.documentElement.style.setProperty('--menu-h', String(menuHue));
+  document.body.classList.toggle('menu-dark', menuDark);
+  const bar = $('menuHue');
+  if (bar) bar.hidden = !menuDark;
+  const range = $('menuHueRange');
+  if (range && document.activeElement !== range) range.value = String(menuHue);
+  const b = $('menuTheme');
+  if (!b) return;
+  const label = menuDark ? 'Light menu' : 'Dark menu';
+  b.setAttribute('aria-pressed', menuDark ? 'true' : 'false');
+  b.setAttribute('aria-label', label);
+  b.title = label;
+}
 async function load() {
   data = await I('get_data'); const s = data.settings, snap = await I('get_snapshot');
+  applyMenu(!!s.menu_dark, s.menu_hue == null ? 19 : s.menu_hue);
+  savedMenuHue = menuHue;
   try { hats = await I('list_hats') || []; hatsFailed = false; }
   catch (_) { hats = []; hatsFailed = true; }
   try { games = await I('list_games') || []; gamesFailed = false; }
@@ -130,7 +154,7 @@ async function load() {
   $('warns').innerHTML = (await I('get_warnings')).map(w => `<div>${esc(w)}</div>`).join('');
   const shown = LWPalette.normalize(s.colors); lastBody = shown.body;
   document.querySelectorAll('[data-c]').forEach(i => { if (shown[i.dataset.c]) i.value = shown[i.dataset.c]; });
-  ch && ch.setColors(shown);
+  paintBody(shown);
   $('idle').value = Math.round(s.idle_threshold_ms / 1000);
   $('t1').value = s.tiers.short_story; $('t2').value = s.tiers.novella; $('t3').value = s.tiers.novel;
     $('dt').checked = s.detect_titles; $('dm').checked = s.detect_media; $('ds').checked = s.detect_scroll; $('titles').value = s.distraction_titles.join('\n');
@@ -159,18 +183,31 @@ async function load() {
   $('done').innerHTML = '<h4>Completed</h4>' + (data.completed.map(p => `<div>${esc(p.name)} — ${p.target_words.toLocaleString()} words</div>`).join('') || 'None yet.');
   $('letters').innerHTML = data.journal.slice().reverse().map(l => `<div class="letter"><small>${esc(l.category)} · ${esc(l.project)} · ${new Date(l.received_at).toLocaleString()}</small><p>${esc(l.body)}</p><i>— ${esc(l.from)}</i></div>`).join('') || 'No fan letters yet — finish a project!';
 }
-for (const n of Object.keys(LWPalette.PRESETS)) {
-  const b = document.createElement('button'); b.type = 'button'; b.textContent = n;
-  b.onclick = () => { const c = LWPalette.colors(n); lastBody = c.body; document.querySelector('[data-c=body]').value = c.body; deriveInputs(); const shown = colors(); ch.setColors(shown); mp && mp.setColors(shown); };
-  $('presets').append(b);
+function paintBody(shown) {
+  const named = LWPalette.markPreset($('presets'), shown.body);
+  const any = document.querySelector('.any-color');
+  if (any) any.classList.toggle('on', !named);
+  ch && ch.setColors(shown);
+  mp && mp.setColors(shown);
 }
+LWPalette.fillPresets($('presets'), (_name, c) => {
+  document.querySelector('.any-color')?.classList.remove('nudge');
+  lastBody = c.body;
+  document.querySelector('[data-c=body]').value = c.body;
+  deriveInputs();
+  paintBody(colors());
+});
 // Body picker only. Shading and hands are derived. A body with OKLCH L < 0.42 snaps back.
 function deriveInputs() { const d = LWPalette.derive(document.querySelector('[data-c=body]').value); if (d) for (const k in d) document.querySelector(`[data-c=${k}]`).value = d[k]; }
 document.querySelectorAll('[data-c]').forEach(i => {
   const apply = () => {
     if (i.dataset.c === 'body' && !LWPalette.bodyAllowed(i.value)) { i.value = lastBody; return; }
-    if (i.dataset.c === 'body') { lastBody = i.value; deriveInputs(); }
-    const shown = colors(); ch.setColors(shown); mp && mp.setColors(shown);
+    if (i.dataset.c === 'body') {
+      document.querySelector('.any-color')?.classList.remove('nudge');
+      lastBody = i.value;
+      deriveInputs();
+    }
+    paintBody(colors());
   };
   i.oninput = apply; i.onchange = apply;
 });
@@ -180,9 +217,42 @@ async function saveSettings(msg) {
     desk_monitor: $('desk').value === '' ? null : +$('desk').value, roam_all_monitors: $('roam').checked, journal_dir: $('jdir').value.trim() || null,
     buddy_scale: +$('bs').value, walk_speed: +$('ws').value, bubble_px: +$('bp').value, buddy_name: $('buddy').value.trim() || data.settings.buddy_name,
     tool: $('tool').value, unlock_all: $('unlockall').checked, detect_titles: $('dt').checked, detect_media: $('dm').checked, detect_scroll: $('ds').checked, distraction_titles: $('titles').value.split('\n').map(x => x.trim()).filter(Boolean),
-    ...savedHatFields() };
+    ...savedHatFields(), menu_dark: menuDark, menu_hue: menuHue };
   try { await I('update_settings', { settings: s }); msg.textContent = 'Saved'; setTimeout(() => msg.textContent = '', 2000); load(); }
   catch (e) { msg.textContent = String(e); }
+}
+$('menuTheme').onclick = async () => {
+  if (!data || !data.settings) return;
+  const prev = menuDark;
+  const prevHue = menuHue;
+  applyMenu(!prev);
+  try {
+    await I('update_settings', { settings: { ...data.settings, menu_dark: menuDark, menu_hue: menuHue } });
+    data.settings.menu_dark = menuDark;
+    data.settings.menu_hue = menuHue;
+    savedMenuHue = menuHue;
+  } catch (e) {
+    applyMenu(prev, prevHue);
+    $('msg').textContent = String(e);
+  }
+};
+const hueRange = $('menuHueRange');
+if (hueRange) {
+  hueRange.oninput = () => applyMenu(true, hueRange.value);
+  hueRange.onchange = async () => {
+    if (!data || !data.settings) return;
+    const prevHue = savedMenuHue;
+    applyMenu(true, hueRange.value);
+    try {
+      await I('update_settings', { settings: { ...data.settings, menu_dark: true, menu_hue: menuHue } });
+      data.settings.menu_dark = true;
+      data.settings.menu_hue = menuHue;
+      savedMenuHue = menuHue;
+    } catch (e) {
+      applyMenu(true, prevHue);
+      $('msg').textContent = String(e);
+    }
+  };
 }
 $('save').onclick = () => saveSettings($('msg'));
 $('saveHat').onclick = () => saveSettings($('supporterMsg'));

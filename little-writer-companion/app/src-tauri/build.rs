@@ -38,7 +38,6 @@ fn main() {
                 "check_update",
                 "open_download_page",
                 "activate_supporter",
-                "dash_event",
             ]),
         ),
     )

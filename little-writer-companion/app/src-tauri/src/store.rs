@@ -84,7 +84,14 @@ pub struct Settings {
     pub hat_extra: bool,
     /// Writing minutes in a sprint before Buddy offers a game. 0 turns the offer off. Clamped to 0–180.
     pub focus_minutes: u32,
+    /// Settings page uses the outline ink instead of the tan.
+    pub menu_dark: bool,
+    /// Dark settings hue in degrees (0–360). Lightness stays at the outline ink.
+    #[serde(default = "default_menu_hue")]
+    pub menu_hue: u16,
 }
+
+fn default_menu_hue() -> u16 { 19 }
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Tiers { pub short_story: u64, pub novella: u64, pub novel: u64 }
 impl Tiers {
@@ -214,6 +221,8 @@ impl Default for Settings {
             hat_color: String::new(),
             hat_extra: false,
             focus_minutes: 30,
+            menu_dark: false,
+            menu_hue: default_menu_hue(),
         }
     }
 }

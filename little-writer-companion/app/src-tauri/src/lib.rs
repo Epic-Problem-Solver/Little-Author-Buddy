@@ -47,8 +47,7 @@ pub fn run() {
             commands::finish_onboarding, commands::reopen_onboarding,
             commands::get_welcome, commands::dismiss_welcome,
             update::check_update, update::open_download_page,
-            activate::activate_supporter,
-            commands::dash_event
+            activate::activate_supporter
         ])
         .setup(|app| {
             let path = app.path().app_data_dir()?.join("state.json");
@@ -90,7 +89,6 @@ pub fn run() {
             for w in app.webview_windows().values() { let _ = w.set_content_protected(false); }
             if !st.lock().unwrap().data.onboarded.unwrap_or(true) { windows::open_onboarding(&handle); }
             else if show_welcome { windows::open_welcome(&handle); }
-            windows::open_dashboard(&handle);
             let h = handle.clone();
             std::thread::spawn(move || tick::tick_loop(h, st, counters));
             let h2 = handle.clone();

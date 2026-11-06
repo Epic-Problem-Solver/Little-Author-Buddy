@@ -311,9 +311,9 @@ async function openOnboarding() {
   if (wins.onboarding != null) {
     try { await chrome.windows.update(wins.onboarding, { focused: true }); return; } catch (_) { wins.onboarding = null; }
   }
-  const spot = centerOn(480, 600);
+  const spot = centerOn(520, 720);
   await popup('onboarding', chrome.runtime.getURL('ui/onboarding.html'), {
-    width: 480, height: 600, left: spot.left, top: spot.top, focused: true,
+    width: 520, height: 720, left: spot.left, top: spot.top, focused: true,
   });
 }
 

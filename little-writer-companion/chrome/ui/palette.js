@@ -40,6 +40,35 @@ window.LWPalette = {
     const f = globalThis.lwBodyAllowed || (typeof require !== 'undefined' && require('./assets/lw-color.js').lwBodyAllowed);
     return f(body);
   },
+  /** Four example chips. onPick(name, colors). */
+  fillPresets(host, onPick) {
+    host.replaceChildren();
+    for (const name of Object.keys(this.PRESETS)) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip';
+      b.dataset.preset = name;
+      const dot = document.createElement('i');
+      dot.style.background = this.PRESETS[name].body;
+      const label = document.createElement('span');
+      label.textContent = name;
+      b.append(dot, label);
+      b.addEventListener('click', () => onPick(name, this.colors(name)));
+      host.append(b);
+    }
+  },
+  /** Mark the chip whose body matches. Returns false when the colour is a custom one. */
+  markPreset(host, body) {
+    const hex = String(body || '').toLowerCase();
+    let named = false;
+    host.querySelectorAll('button').forEach(b => {
+      const on = String(this.PRESETS[b.dataset.preset].body).toLowerCase() === hex;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      if (on) named = true;
+    });
+    return named;
+  },
 };
 
 if (typeof module !== 'undefined') module.exports = window.LWPalette;

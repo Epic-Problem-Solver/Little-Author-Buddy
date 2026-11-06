@@ -1,5 +1,25 @@
-body{font:14px system-ui,sans-serif;background:#f3e4cb;color:#241414;margin:0}
-nav{display:flex;gap:4px;background:#e8cfa9;padding:6px;flex-wrap:wrap}nav a{padding:6px 12px;border-radius:6px;text-decoration:none;color:inherit}nav a.on{background:#fff}
+html{background:#f3e4cb;--menu-h:19}body{font:14px system-ui,sans-serif;background:#f3e4cb;color:#241414;margin:0;min-height:100%}
+nav{position:relative;display:flex;gap:4px;background:#e8cfa9;padding:6px 46px 6px 6px;flex-wrap:wrap}nav a{padding:6px 12px;border-radius:6px;text-decoration:none;color:inherit}nav a.on{background:#fff}
+#menuTheme{position:absolute;top:6px;right:6px;width:32px;height:32px;margin:0;padding:0;border:0;background:transparent;line-height:0;cursor:pointer;overflow:visible}
+#menuTheme svg{display:block;width:32px;height:32px}
+#menuTheme:focus{outline:none}#menuTheme:focus-visible{outline:3px solid #241414;outline-offset:2px;border-radius:50%}
+/* Dark menu lightness stays at the outline ink (OKLCH L 0.213). --menu-h is degrees only. */
+html:has(body.menu-dark),body.menu-dark{background:oklch(0.213 0.05 var(--menu-h));color:#f6efe2}
+body.menu-dark nav{background:oklch(0.213 0.05 var(--menu-h));color:#f6efe2}body.menu-dark nav a.on{background:#f6efe2;color:oklch(0.213 0.05 var(--menu-h))}
+body.menu-dark #menuTheme:focus-visible{outline-color:#f6efe2}
+body.menu-dark .info,body.menu-dark .derived,body.menu-dark .any-copy small,body.menu-dark .letter small{color:oklch(0.85 0.03 var(--menu-h))}
+body.menu-dark fieldset,body.menu-dark #motionPreview{border-color:oklch(0.64 0.08 var(--menu-h))}
+body.menu-dark .any-color,body.menu-dark .any-color.on,body.menu-dark #motionPreview,body.menu-dark .letter,body.menu-dark input:not([type=color]):not([type=checkbox]):not([type=range]),body.menu-dark textarea,body.menu-dark select{background:oklch(0.30 0.05 var(--menu-h));color:#f6efe2;border-color:oklch(0.64 0.08 var(--menu-h))}
+body.menu-dark .any-color,body.menu-dark .any-color.on{box-shadow:3px 3px 0 oklch(0.64 0.08 var(--menu-h))}
+body.menu-dark #mpBubble{background:#fff;color:#241414}
+body.menu-dark #warns div,body.menu-dark #await{color:#241414}
+body.menu-dark button{color:#241414}
+#menuHue{display:none;align-items:center;gap:10px;padding:8px 12px 0;color:#f6efe2}
+#menuHue[hidden]{display:none}body.menu-dark #menuHue:not([hidden]){display:flex}
+#menuHue label{font-size:12px;font-weight:700}
+#menuHueRange{-webkit-appearance:none;appearance:none;flex:1;height:16px;margin:0;border-radius:999px;border:2px solid #f6efe2;background:linear-gradient(90deg,oklch(0.213 0.05 0),oklch(0.213 0.05 60),oklch(0.213 0.05 120),oklch(0.213 0.05 180),oklch(0.213 0.05 240),oklch(0.213 0.05 300),oklch(0.213 0.05 360))}
+#menuHueRange::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:18px;height:18px;border-radius:50%;background:#f6efe2;border:2px solid #241414;cursor:pointer}
+#menuTheme .lw-sun{display:none}body.menu-dark #menuTheme .lw-moon{display:none}body.menu-dark #menuTheme .lw-sun{display:inline}
 section{display:none;padding:14px}section.on{display:block}
 fieldset{border:1px solid #b77d48;border-radius:8px;margin:0 0 12px}label{display:block;margin:5px 0}
 input[type=number]{width:70px}textarea,#jdir{width:95%}
@@ -21,6 +41,21 @@ button{padding:5px 10px}#msg,#expmsg,#supporterMsg{color:#3d7a35;margin-left:8px
 #mpBubble{position:absolute;bottom:58px;left:0;white-space:nowrap;background:#fff;border:2px solid #241414;border-radius:10px;padding:2px 7px}
 
 .derived{color:#7a6248;font-size:11px;margin-left:2px}
+#presets{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+#presets button.chip{display:inline-flex;align-items:center;gap:6px;width:auto;margin:0;padding:4px 10px 4px 4px;border:2px solid #241414;border-radius:999px;background:#fff;color:#241414;font-weight:700;cursor:pointer}
+#presets button.chip i{width:22px;height:22px;border:2px solid #241414;border-radius:50%;display:block}
+#presets button.chip.on{background:#241414;color:#f6efe2}
+.any-color{clear:both;display:flex;align-items:center;gap:12px;margin:4px 0 8px;padding:8px 10px;background:#fff;border:3px solid #241414;border-radius:14px;box-shadow:3px 3px 0 #241414;cursor:pointer}
+.any-color.on{background:#fffaf0}
+.any-color input[type=color]{width:56px;height:56px;padding:0;border:3px solid #241414;border-radius:12px;background:#fff;cursor:pointer;-webkit-appearance:none;appearance:none}
+.any-color input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+.any-color input[type=color]::-webkit-color-swatch{border:0;border-radius:8px}
+.any-copy{display:block}
+.any-copy strong{display:block;font-size:16px}
+.any-copy small{display:block;color:#5a4636;font-size:12px;line-height:1.35}
+.any-color.nudge{animation:any-nudge 1.6s ease-in-out infinite}
+@keyframes any-nudge{50%{transform:translate(-1px,-1px);box-shadow:5px 5px 0 #241414}}
+@media (prefers-reduced-motion:reduce){.any-color.nudge{animation:none}}
 .hat-off{display:none}
 #hatSwatches button{margin:0 6px 6px 0}
 #hatSwatches button.on{outline:2px solid #241414;outline-offset:1px}

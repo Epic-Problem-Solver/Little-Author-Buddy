@@ -1,4 +1,4 @@
-//! Tray, overlay, desk, settings, onboarding, and the Events test window.
+//! Tray, overlay, desk, settings, and onboarding.
 
 use crate::focus;
 use crate::home_geo;
@@ -211,7 +211,7 @@ pub fn open_onboarding(app: &AppHandle) {
     off_ui(move || {
         if let Some(w) = h.get_webview_window("onboarding") { let _ = w.show(); let _ = w.set_focus(); return; }
         let _ = tauri::WebviewWindowBuilder::new(&h, "onboarding", tauri::WebviewUrl::App("onboarding.html".into()))
-            .title("Welcome to Little Author").inner_size(480.0, 600.0).resizable(false).center()
+            .title("Welcome to Little Author").inner_size(520.0, 720.0).resizable(false).center()
             .always_on_top(true).content_protected(false).build();
     });
 }
@@ -263,37 +263,16 @@ pub fn open_games(app: &AppHandle) {
     });
 }
 
-/// Test build. Buttons in this window run real companion events.
-pub fn open_dashboard(app: &AppHandle) {
-    let h = app.clone();
-    off_ui(move || {
-        if let Some(w) = h.get_webview_window("dashboard") {
-            let _ = w.unminimize();
-            let _ = w.show();
-            let _ = w.set_focus();
-            return;
-        }
-        let _ = tauri::WebviewWindowBuilder::new(&h, "dashboard", tauri::WebviewUrl::App("dashboard.html".into()))
-            .title("Little Author — Events")
-            .inner_size(400.0, 560.0)
-            .position(16.0, 16.0)
-            .always_on_top(true)
-            .content_protected(false)
-            .build();
-    });
-}
-
 pub fn install_tray(app: &AppHandle, st: &AppState, counters: &Arc<input::Counters>) -> tauri::Result<()> {
     let pause = MenuItem::with_id(app, "pause", "Pause listening", true, None::<&str>)?;
     let interact = MenuItem::with_id(app, "interact", "Interact with companion (30 s)", true, None::<&str>)?;
-    let events = MenuItem::with_id(app, "events", "Events…", true, None::<&str>)?;
     let projects = MenuItem::with_id(app, "projects", "Projects…", true, None::<&str>)?;
     let settings = MenuItem::with_id(app, "settings", "Settings…", true, None::<&str>)?;
     let journal = MenuItem::with_id(app, "journal", "Letter journal…", true, None::<&str>)?;
     let privacy = MenuItem::with_id(app, "privacy", "Privacy…", true, None::<&str>)?;
     let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
     let sep = PredefinedMenuItem::separator(app)?;
-    let menu = Menu::with_items(app, &[&pause, &interact, &events, &projects, &settings, &journal, &privacy, &sep, &quit_item])?;
+    let menu = Menu::with_items(app, &[&pause, &interact, &projects, &settings, &journal, &privacy, &sep, &quit_item])?;
     app.manage(TrayItems { pause, interact });
     let st_q = st.clone();
     let c_t = counters.clone();
@@ -304,7 +283,6 @@ pub fn install_tray(app: &AppHandle, st: &AppState, counters: &Arc<input::Counte
         .on_menu_event(move |app, ev| match ev.id().as_ref() {
             "pause" => { do_toggle(app, &c_t); }
             "interact" => { let on = st_q.lock().unwrap().interactive_until == 0; set_interactive(app, &st_q, on); }
-            "events" => open_dashboard(app),
             "settings" | "journal" | "projects" | "privacy" => open_window(app, ev.id().as_ref()),
             "quit" => quit(app),
             _ => {}
