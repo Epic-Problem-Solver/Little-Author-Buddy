@@ -41,4 +41,4 @@ Storage stays in the extension. Export and import on the Settings tab move that 
 
 ## Version
 
-The extension version matches the desktop app, currently 0.9.7. The release file is Little-Author-Buddy_0.9.7_chrome.zip. Unzip it and load that folder. It needs Chrome or Chrome OS 114 or newer.
+The extension version matches the desktop app, currently 1.0.0. The release file is Little-Author-Buddy_1.0.0_chrome.zip. Unzip it and load that folder. It needs Chrome or Chrome OS 114 or newer.

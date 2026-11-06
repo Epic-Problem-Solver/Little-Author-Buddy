@@ -54,6 +54,13 @@ const NOTES: &[Note] = &[
             "An older save keeps the word count it was already showing.",
         ],
     },
+    Note {
+        version: "1.0.0",
+        lines: &[
+            "Settings can use a dark page. The hue slider changes its colour, not how dark it is.",
+            "Any colour in Settings is not limited to the four examples.",
+        ],
+    },
 ];
 
 #[derive(Clone, Serialize)]
@@ -136,10 +143,11 @@ mod tests {
 
     #[test]
     fn a_newer_build_with_no_written_notes_still_welcomes() {
-        let notes = pending("0.9.7", true, "0.10.0").unwrap();
+        let notes = pending("1.0.0", true, "1.0.1").unwrap();
         assert!(notes.is_empty());
         assert_eq!(versions("0.8.0", "0.9.0").unwrap(), vec!["0.9.0"]);
         assert_eq!(versions("0.9.0", "0.9.1").unwrap(), vec!["0.9.1"]);
         assert_eq!(versions("0.9.1", "0.9.7").unwrap(), vec!["0.9.7"]);
+        assert_eq!(versions("0.9.7", "1.0.0").unwrap(), vec!["1.0.0"]);
     }
 }

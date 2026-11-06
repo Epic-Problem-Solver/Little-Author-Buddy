@@ -2,7 +2,7 @@
 // word counts and timing only, titles never saved, focus streak not written
 // into the save, packs are data (never scripts). No Chrome APIs in this file.
 (function (root) {
-  const APP_VERSION = '0.9.7';
+  const APP_VERSION = '1.0.0';
   const SUGGEST_MS = 15 * 60 * 1000;
   const DEFAULT_BUDDY = 'Buddy';
   const MAX_FOCUS_MINUTES = 180;
@@ -1230,6 +1230,13 @@
         'A word counts when Space, Enter, or Tab follows a letter or a digit.',
         'The desk sits above the taskbar.',
         'Leave your writing window short of full screen so you can see Buddy.',
+      ],
+    },
+    {
+      version: '1.0.0',
+      lines: [
+        'Settings can use a dark page. The hue slider changes its colour, not how dark it is.',
+        'Any colour in Settings is not limited to the four examples.',
       ],
     },
   ];

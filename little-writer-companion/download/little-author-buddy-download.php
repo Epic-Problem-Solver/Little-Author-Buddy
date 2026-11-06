@@ -168,11 +168,11 @@ function lab_dl_shortcode() {
 
     $latest = lab_dl_latest();
     $stable = array(
-        'windows' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_0.9.7_x64-setup.exe',
-        'mac' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_0.9.7_universal.dmg',
-        'appimage' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_0.9.7_amd64.AppImage',
-        'deb' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_0.9.7_amd64.deb',
-        'chrome' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_0.9.7_chrome.zip',
+        'windows' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_1.0.0_x64-setup.exe',
+        'mac' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_1.0.0_universal.dmg',
+        'appimage' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_1.0.0_amd64.AppImage',
+        'deb' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_1.0.0_amd64.deb',
+        'chrome' => 'https://github.com/' . LAB_DL_REPO . '/releases/latest/download/Little-Author-Buddy_1.0.0_chrome.zip',
     );
     foreach ($stable as $key => $from) {
         if (!empty($latest[$key])) {

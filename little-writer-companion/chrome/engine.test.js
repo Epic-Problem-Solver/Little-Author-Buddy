@@ -462,7 +462,7 @@ test('welcome notes follow the saved version and describe the Chrome desk', () =
   assert.equal(all.map(s => s.lines.join('\n')).join('\n').includes('active window'), false);
   const jumped = session(0, { onboarded: true, seen_version: '0.7.0', settings: { buddy_name: 'Ada' } });
   assert.equal(jumped.welcomeDue, true);
-  assert.deepEqual(jumped.welcome.map(s => s.version), ['0.8.0', '0.9.0', '0.9.1', '0.9.7']);
+  assert.deepEqual(jumped.welcome.map(s => s.version), ['0.8.0', '0.9.0', '0.9.1', '0.9.7', '1.0.0']);
   const view = LWC.invoke(jumped, 'get_welcome', {}, 1).value;
   assert.equal(view.buddy, 'Ada');
   assert.equal(view.sections[0].version, '0.8.0');
@@ -472,12 +472,12 @@ test('welcome notes follow the saved version and describe the Chrome desk', () =
   assert.equal(LWC.pendingWelcome('0.8.0', true, '0.8.0'), null);
   assert.equal(LWC.pendingWelcome('0.9.0', true, '0.8.0'), null);
   assert.deepEqual(LWC.pendingWelcome('0.8.0', true, '0.9.0').map(s => s.version), ['0.9.0']);
-  assert.deepEqual(LWC.pendingWelcome('0.9.7', true, '0.10.0'), []);
+  assert.deepEqual(LWC.pendingWelcome('1.0.0', true, '1.0.1'), []);
   assert.deepEqual(LWC.pendingWelcome('0.9.0', true, '0.9.1').map(s => s.version), ['0.9.1']);
   assert.match(LWC.pendingWelcome('0.9.1', true, '0.9.7').map(s => s.lines.join(' ')).join(' '), /full screen/);
   const fresh = session(0);
   assert.equal(fresh.welcomeDue, false);
   LWC.invoke(fresh, 'finish_onboarding', { buddy: 'Ada', colors: { body: '#cfe6ff' }, title: 'Notes' }, 1);
-  assert.equal(fresh.data.seen_version, '0.9.7');
+  assert.equal(fresh.data.seen_version, '1.0.0');
   assert.equal(LWC.pendingWelcome(fresh.data.seen_version, true, LWC.APP_VERSION), null);
 });
