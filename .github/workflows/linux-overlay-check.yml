@@ -71,24 +71,37 @@ jobs:
           fi
           sleep 2
 
+          # /proc/pid/environ is the environment at exec. The app sets the WebKit
+          # variables after it starts, so they show up on the helper it spawns,
+          # not on the app's own /proc entry.
           check_env() {
             pid=$1
             label=$2
             env=$(tr '\0' '\n' < "/proc/$pid/environ")
             printf '%s\n' "$env" | grep -qx 'WEBKIT_DISABLE_COMPOSITING_MODE=1' || {
               echo "FAILED: $label $pid missing compositing-off"
-              printf '%s\n' "$env" | grep WEBKIT_ || true
+              printf '%s\n' "$env" | grep '^WEBKIT_' || true
               exit 1
             }
             printf '%s\n' "$env" | grep -qx 'WEBKIT_DMABUF_RENDERER_FORCE_SHM=1' || {
               echo "FAILED: $label $pid missing shared-memory force"
-              printf '%s\n' "$env" | grep WEBKIT_ || true
+              printf '%s\n' "$env" | grep '^WEBKIT_' || true
               exit 1
             }
             echo "env ok: $label $pid"
           }
 
-          check_env "$BPID" app
+          found=0
+          for d in /proc/[0-9]*; do
+            exe=$(readlink "$d/exe" 2>/dev/null || true)
+            case "$exe" in
+              *WebKitWebProcess*|*WebKitNetworkProcess*)
+                check_env "${d#/proc/}" "$exe"
+                found=1
+                ;;
+            esac
+          done
+          [ "$found" = 1 ]
           check_env "$web" webkit
           if find "/proc/$web/fd" -printf '%l\n' 2>/dev/null | grep -q dmabuf; then
             echo "FAILED: web process holds a dma-buf"
