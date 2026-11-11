@@ -1,0 +1,100 @@
+name: Linux overlay check
+
+# Launch the published deb on Ubuntu and confirm the process turned WebKit onto
+# shared-memory buffers. This does not build or upload a package.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - name: Install the published package
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y curl ca-certificates xvfb xcompmgr x11-utils procps dbus-x11
+          curl -fsSL -o buddy.deb https://github.com/Epic-Problem-Solver/Little-Author-Buddy/releases/download/v1.0.0/Little-Author-Buddy_1.0.0_amd64.deb
+          sudo apt-get install -y ./buddy.deb
+          dpkg -l | awk '/libwebkit2gtk-4.1/{print}'
+
+      - name: Confirm shared-memory mode
+        run: |
+          set -euo pipefail
+          unset WEBKIT_DISABLE_COMPOSITING_MODE || true
+          unset WEBKIT_DMABUF_RENDERER_FORCE_SHM || true
+          strings /usr/bin/little-writer-companion | grep -q WEBKIT_DMABUF_RENDERER_FORCE_SHM
+          strings /usr/bin/little-writer-companion | grep -q WEBKIT_DISABLE_COMPOSITING_MODE
+          if [ -e /dev/dri ]; then echo "dri: present"; ls /dev/dri || true; else echo "dri: absent"; fi
+
+          export DISPLAY=:99
+          export XDG_SESSION_TYPE=x11
+          Xvfb :99 -screen 0 1280x800x24 +extension COMPOSITE >/tmp/xvfb.log 2>&1 &
+          sleep 0.5
+          xcompmgr -d :99 >/tmp/xcompmgr.log 2>&1 &
+          sleep 0.5
+          eval "$(dbus-launch --sh-syntax)"
+          export HOME="${RUNNER_TEMP}/lwc-home"
+          export XDG_RUNTIME_DIR="${RUNNER_TEMP}/runtime"
+          mkdir -p "$HOME" "$XDG_RUNTIME_DIR"
+          chmod 700 "$XDG_RUNTIME_DIR"
+
+          /usr/bin/little-writer-companion >/tmp/buddy.log 2>&1 &
+          BPID=$!
+          echo "app pid $BPID"
+
+          web=""
+          for _ in $(seq 1 25); do
+            if ! kill -0 "$BPID" 2>/dev/null; then
+              echo "FAILED: app exited"
+              cat /tmp/buddy.log
+              exit 1
+            fi
+            for d in /proc/[0-9]*; do
+              exe=$(readlink "$d/exe" 2>/dev/null || true)
+              case "$exe" in
+                *WebKitWebProcess*) web="${d#/proc/}"; break ;;
+              esac
+            done
+            [ -n "$web" ] && break
+            sleep 1
+          done
+          if [ -z "$web" ]; then
+            echo "FAILED: no WebKit web process"
+            cat /tmp/buddy.log
+            ps -ef
+            exit 1
+          fi
+          sleep 2
+
+          check_env() {
+            pid=$1
+            label=$2
+            env=$(tr '\0' '\n' < "/proc/$pid/environ")
+            printf '%s\n' "$env" | grep -qx 'WEBKIT_DISABLE_COMPOSITING_MODE=1' || {
+              echo "FAILED: $label $pid missing compositing-off"
+              printf '%s\n' "$env" | grep WEBKIT_ || true
+              exit 1
+            }
+            printf '%s\n' "$env" | grep -qx 'WEBKIT_DMABUF_RENDERER_FORCE_SHM=1' || {
+              echo "FAILED: $label $pid missing shared-memory force"
+              printf '%s\n' "$env" | grep WEBKIT_ || true
+              exit 1
+            }
+            echo "env ok: $label $pid"
+          }
+
+          check_env "$BPID" app
+          check_env "$web" webkit
+          if find "/proc/$web/fd" -printf '%l\n' 2>/dev/null | grep -q dmabuf; then
+            echo "FAILED: web process holds a dma-buf"
+            find "/proc/$web/fd" -printf '%l\n' | grep dmabuf || true
+            exit 1
+          fi
+          echo "OK: WebKit web process is on shared memory and holds no dma-buf"
+          kill "$BPID" || true
+          wait "$BPID" || true
