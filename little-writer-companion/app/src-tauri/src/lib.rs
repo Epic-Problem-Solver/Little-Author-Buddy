@@ -21,14 +21,18 @@ use std::sync::Arc;
 use std::time::Duration;
 use tauri::Manager;
 
-/// WebKitGTK accelerated compositing leaves the previous transparent frame on X11,
-/// and its monitor-sized child window is what makes Cinnamon hide the panel.
-/// Shared-memory frames repaint the whole view. A value already in the environment stays.
+/// Compositing leaves the previous transparent frame on X11. The UI process still
+/// presents GBM buffers, and GTK 3 paints a partial update into the flipped rect,
+/// so Buddy's old pixels stay until a full redraw. Force shared-memory buffers too.
+/// A value already in the environment stays.
 #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 fn prefer_shared_webkit_frames() {
+    // Before the builder and before any worker thread, so nothing else is reading the environment.
     if std::env::var_os("WEBKIT_DISABLE_COMPOSITING_MODE").is_none() {
-        // Before the builder and before any worker thread, so nothing else is reading the environment.
         unsafe { std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1"); }
+    }
+    if std::env::var_os("WEBKIT_DMABUF_RENDERER_FORCE_SHM").is_none() {
+        unsafe { std::env::set_var("WEBKIT_DMABUF_RENDERER_FORCE_SHM", "1"); }
     }
 }
 
