@@ -11,7 +11,10 @@
 //! - Windows: our own WH_KEYBOARD_LL + WH_MOUSE_LL hooks on a dedicated thread with a message loop.
 //!   No ToUnicodeEx / GetKeyboardState / MapVirtualKey calls, so dead keys and IMEs are unaffected.
 //! - Linux: X11 RECORD extension, reading only the event type and keycode byte (no XLookupString).
-//! - macOS: a listen-only session event tap. The character used to classify a key is not stored.
+//! - macOS: an event tap. Listen-only when Input Monitoring is granted. On Golden Gate 27.2
+//!   that tap is created with key events removed unless that permission is on, so the fallback
+//!   is an active tap that returns every event unchanged. The character used to classify a key
+//!   is not stored.
 use std::collections::HashSet;
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
@@ -248,6 +251,31 @@ fn kind_of(code: u32) -> u8 {
 
 #[cfg(target_os = "macos")]
 pub fn is_letter(code: u32) -> bool { kind_of(code) == KIND_LETTER }
+
+/// `(location, options)` pairs for `CGEventTapCreate`.
+/// Location 2 is the annotated session tap, 1 is the session tap.
+/// Options 1 is listen-only. Options 0 is an active tap; the callback returns the event unchanged.
+/// Golden Gate 27.2 clears key-down and key-up on a listen-only tap that lacks Input Monitoring
+/// and still returns a port, so that permission chooses listen-only first. Without it, only an
+/// active tap (Accessibility) still carries keystrokes.
+#[cfg(any(test, target_os = "macos"))]
+pub(crate) fn mac_tap_attempts(listen_granted: bool) -> &'static [(u32, u32)] {
+    if listen_granted {
+        &[(2, 1), (1, 1), (2, 0), (1, 0)]
+    } else {
+        &[(2, 0), (1, 0)]
+    }
+}
+
+/// `None` means the tap list could not be read, so a created port is kept.
+/// A mask counts only when key-down (10) and key-up (11) are still set.
+#[cfg(any(test, target_os = "macos"))]
+pub(crate) fn mac_tap_mask_counts(mask: Option<u64>) -> bool {
+    match mask {
+        None => true,
+        Some(mask) => mask & ((1 << 10) | (1 << 11)) == (1 << 10) | (1 << 11),
+    }
+}
 
 pub fn spawn(c: Arc<Counters>) {
     let _ = COUNTERS.set(c);
@@ -546,6 +574,28 @@ mod tests {
         assert_eq!((open, activity, words), (0, 1, 1));
         let (open, activity, words) = fold_stroke(3, Stroke::Back, false);
         assert_eq!((open, activity, words), (2, 1, 0));
+    }
+
+    #[test]
+    fn golden_gate_without_input_monitoring_uses_an_active_tap() {
+        let attempts = mac_tap_attempts(false);
+        assert_eq!(attempts, &[(2, 0), (1, 0)]);
+    }
+
+    #[test]
+    fn input_monitoring_tries_listen_only_before_the_active_tap() {
+        let attempts = mac_tap_attempts(true);
+        assert_eq!(attempts[0], (2, 1));
+        assert_eq!(attempts[1], (1, 1));
+        assert!(attempts.contains(&(2, 0)));
+    }
+
+    #[test]
+    fn a_tap_with_key_events_cleared_does_not_count() {
+        assert!(mac_tap_mask_counts(None));
+        assert!(mac_tap_mask_counts(Some((1 << 10) | (1 << 11) | (1 << 22))));
+        assert!(!mac_tap_mask_counts(Some(1 << 22)));
+        assert!(!mac_tap_mask_counts(Some(0)));
     }
 
     #[test]

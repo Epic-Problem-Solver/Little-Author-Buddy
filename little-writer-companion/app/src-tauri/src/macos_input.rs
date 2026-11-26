@@ -1,5 +1,9 @@
-//! Listen-only key and scroll tap. Keycodes are classified as letters and discarded.
-//! The unshifted character used for that test is never stored or logged.
+//! Key and scroll tap. Keycodes are classified and discarded.
+//! The unshifted character used to build the layout table is never stored or logged.
+//! Golden Gate 27.2 still returns a listen-only port after it clears key-down and key-up,
+//! so a port is kept only when those bits remain. Otherwise an active tap is used and
+//! every event is returned unchanged. The tap is attached to the main run loop, which is
+//! where Golden Gate delivers keystrokes for an AppKit process.
 
 use super::{install_layout, with_down, COUNTERS};
 use core_foundation::base::{CFTypeRef, TCFType};
@@ -28,8 +32,26 @@ extern "C" {
         user: *mut c_void,
     ) -> CFMachPortRef;
     fn CGEventGetIntegerValueField(event: *mut c_void, field: u32) -> i64;
+    fn CGEventGetType(event: *mut c_void) -> u32;
     fn CGEventTapEnable(tap: CFMachPortRef, enable: u8);
     fn CGRequestListenEventAccess() -> u8;
+    fn CGPreflightListenEventAccess() -> u8;
+    fn CGGetEventTapList(max_number: u32, list: *mut CGEventTapInformation, count: *mut u32) -> i32;
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+struct CGEventTapInformation {
+    _event_tap_id: u32,
+    tap_point: u32,
+    options: u32,
+    events_of_interest: u64,
+    tapping_process: i32,
+    _process_being_tapped: i32,
+    _enabled: u8,
+    _min_usec_latency: f32,
+    _avg_usec_latency: f32,
+    _max_usec_latency: f32,
 }
 
 #[link(name = "ApplicationServices", kind = "framework")]
@@ -124,7 +146,37 @@ unsafe extern "C" fn layout_changed(_: *mut c_void, _: *mut c_void, _: *const c_
     rebuild_layout();
 }
 
+fn event_type(ty: u32, event: *mut c_void) -> u32 {
+    if matches!(ty, KEY_DOWN | KEY_UP | SCROLL | TAP_DISABLED_TIMEOUT | TAP_DISABLED_USER) { return ty; }
+    if event.is_null() { return ty; }
+    // Golden Gate can pass a null type argument for a real key event. The event's own type is the one to count.
+    let real = unsafe { CGEventGetType(event) };
+    if matches!(real, KEY_DOWN | KEY_UP | SCROLL) { real } else { ty }
+}
+
+/// Mask of this process's tap at `location` with `options`, if the tap list names one.
+/// `Err` means the list could not be read. `Ok(None)` means that tap is not listed.
+fn listed_key_mask(location: u32, options: u32) -> Result<Option<u64>, ()> {
+    let mut count = 0u32;
+    if unsafe { CGGetEventTapList(0, std::ptr::null_mut(), &mut count) } != 0 { return Err(()); }
+    if count == 0 || count > 64 { return Ok(None); }
+    let mut taps = vec![unsafe { std::mem::zeroed::<CGEventTapInformation>() }; count as usize];
+    let mut got = 0u32;
+    if unsafe { CGGetEventTapList(count, taps.as_mut_ptr(), &mut got) } != 0 { return Err(()); }
+    let pid = std::process::id() as i32;
+    let mut found = false;
+    let mut best = 0u64;
+    let bits = (1u64 << KEY_DOWN) | (1u64 << KEY_UP);
+    for tap in taps.iter().take(got as usize) {
+        if tap.tapping_process != pid || tap.tap_point != location || tap.options != options { continue; }
+        found = true;
+        if tap.events_of_interest & bits == bits { best = tap.events_of_interest; }
+    }
+    if !found { Ok(None) } else { Ok(Some(best)) }
+}
+
 unsafe extern "C" fn tap_cb(_proxy: *mut c_void, ty: u32, event: *mut c_void, _user: *mut c_void) -> *mut c_void {
+    let ty = event_type(ty, event);
     if ty == TAP_DISABLED_TIMEOUT || ty == TAP_DISABLED_USER {
         let tap = TAP.load(Ordering::Relaxed) as CFMachPortRef;
         if !tap.is_null() { CGEventTapEnable(tap, 1); }
@@ -139,7 +191,7 @@ unsafe extern "C" fn tap_cb(_proxy: *mut c_void, ty: u32, event: *mut c_void, _u
         let code = CGEventGetIntegerValueField(event, KEYCODE_FIELD);
         if (0..=255).contains(&code) {
             let code = code as u32;
-            // Listen-only: the event is always returned. An active tap could stall the keyboard.
+            // Always returned, including from an active tap, so the key still reaches the document.
             match ty {
                 KEY_DOWN => { if let Some(c) = COUNTERS.get() { with_down(|d| { let _ = c.key_down(code, d); }); } }
                 KEY_UP => { with_down(|d| { d.remove(&code); }); }
@@ -161,15 +213,26 @@ pub fn run() {
         );
     }
     let mask = (1u64 << KEY_DOWN) | (1u64 << KEY_UP) | (1u64 << SCROLL);
-    // kCGSessionEventTap = 1, kCGHeadInsertEventTap = 0, kCGEventTapOptionListenOnly = 1.
-    let raw = unsafe { CGEventTapCreate(1, 0, 1, mask, tap_cb, std::ptr::null_mut()) };
-    if raw.is_null() {
-        fail("Keystroke counting needs permission. Enable Little Author Buddy in System Settings, Privacy & Security, Accessibility. If Input Monitoring lists the app, enable it there too, then restart.");
+    let listen = unsafe { CGPreflightListenEventAccess() != 0 };
+    let mut chosen: CFMachPortRef = std::ptr::null_mut();
+    for &(location, options) in super::mac_tap_attempts(listen) {
+        // place 0 is head insert. The callback returns the event either way.
+        let raw = unsafe { CGEventTapCreate(location, 0, options, mask, tap_cb, std::ptr::null_mut()) };
+        if raw.is_null() { continue; }
+        unsafe { CGEventTapEnable(raw, 1); }
+        let counts = super::mac_tap_mask_counts(listed_key_mask(location, options).unwrap_or(None));
+        if counts {
+            chosen = raw;
+            break;
+        }
+        unsafe { CFRelease(raw as *const c_void); }
+    }
+    if chosen.is_null() {
+        fail("Keystroke counting needs permission. Enable Little Author Buddy in System Settings, Privacy & Security, under Input Monitoring or Accessibility, then restart.");
         return;
     }
-    TAP.store(raw as *mut c_void, Ordering::Relaxed);
-    unsafe { CGEventTapEnable(raw, 1); }
-    let port = unsafe { CFMachPort::wrap_under_create_rule(raw) };
+    TAP.store(chosen as *mut c_void, Ordering::Relaxed);
+    let port = unsafe { CFMachPort::wrap_under_create_rule(chosen) };
     let source = match port.create_runloop_source(0) {
         Ok(s) => s,
         Err(()) => {
@@ -178,6 +241,10 @@ pub fn run() {
             return;
         }
     };
-    CFRunLoop::get_current().add_source(&source, unsafe { kCFRunLoopCommonModes });
+    // The main run loop is already running. A private thread's loop does not receive
+    // Golden Gate keystrokes. This thread stays in its own loop for layout notifications.
+    CFRunLoop::get_main().add_source(&source, unsafe { kCFRunLoopCommonModes });
+    std::mem::forget(port);
+    std::mem::forget(source);
     CFRunLoop::run_current();
 }
